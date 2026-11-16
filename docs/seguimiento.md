@@ -1,6 +1,6 @@
 # Seguimiento del proyecto
 
-Este archivo establece cómo registrar avances y decisiones. El reparto de trabajo por integrante y el calendario detallado se acordarán después de la creación del repositorio.
+Este archivo establece cómo registrar avances y decisiones. El plan de desarrollo y el reparto inicial están en [`plan-de-desarrollo.md`](plan-de-desarrollo.md); el equipo debe confirmar y ajustar la asignación.
 
 ## Registro de hitos
 
@@ -9,6 +9,7 @@ Este archivo establece cómo registrar avances y decisiones. El reparto de traba
 | 2026-10-19 | Propuesta V2 preparada para revisión docente | Equipo | Documento de propuesta local | Completado |
 | Pendiente | Aprobación docente | Equipo | Confirmación del profesor | Completado, sin observaciones |
 | 2026-11-16 | Repositorio público y documentación inicial | Omar | Enlace del repositorio | En curso |
+| 2026-11-16 | Plan inicial de desarrollo, fechas y responsables | Equipo | [Plan de desarrollo](plan-de-desarrollo.md) | Propuesto para coordinación del equipo |
 
 ## Actualización de avances
 

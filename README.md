@@ -55,8 +55,9 @@ Las casillas de desarrollo se actualizarán cuando exista evidencia verificable.
 - [Fuentes de datos y consideraciones](docs/fuentes-de-datos.md)
 - [Arquitectura propuesta](docs/arquitectura-propuesta.md)
 - [Criterios de trabajo y registro de avances](docs/seguimiento.md)
+- [Plan de desarrollo y reparto por integrante](docs/plan-de-desarrollo.md)
 
-El reparto de tareas y el calendario por integrante se definirán en una sesión posterior del equipo.
+El plan de desarrollo es una propuesta de organización basada en la guía disponible; se actualizará si el profesor comparte una rúbrica detallada o confirma fechas y requisitos adicionales.
 
 ## Repositorio
 
