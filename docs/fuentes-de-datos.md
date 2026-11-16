@@ -4,9 +4,11 @@ Las fuentes siguientes son las previstas en la propuesta aprobada. Su presencia 
 
 | Fuente | Aplicación prevista | Validaciones pendientes |
 |---|---|---|
-| ResStock 2025.1 | Perfiles residenciales modelados, características de vivienda y resúmenes estatales | Acceso a archivos, licencia/uso, esquema, cobertura estatal, periodo meteorológico 2018, granularidad de 15 minutos, variables disponibles y tamaño real. |
-| EIA | Series mensuales/anuales de consumo residencial por estado y demanda horaria del sistema | Endpoints/archivos disponibles, sectores, estados cubiertos, unidades, fechas, retrasos de publicación, límites de consulta y atribución requerida. |
-| Open-Meteo | Temperatura y otras variables meteorológicas | Términos de uso, variables, resolución espacial/temporal, disponibilidad histórica/previsión y alineación de zona horaria. |
+| ResStock 2025.1 | MVP: agregados geográficos y metadatos/anuales; perfiles individuales sujetos a prueba de tamaño | Revisar inventario, licencia/uso, esquema, cobertura, granularidad, variables y tamaños de los archivos candidatos. |
+| EIA | MVP: serie residencial oficial por estado y periodo; demanda horaria EIA-930 opcional como contexto de red | Elegir archivo/API, confirmar sectores, estados, unidades, fechas, retrasos, clave de API si aplica y atribución. |
+| Open-Meteo | MVP: muestra histórica pequeña de temperatura y variables complementarias justificadas | Confirmar términos para uso académico, variables, resolución, disponibilidad histórica y alineación de zona horaria. |
+
+El orden y los límites del primer MVP están registrados en [`decision-alcance-mvp.md`](decision-alcance-mvp.md). La priorización no cambia las metas generales de la propuesta aprobada.
 
 ## Procedimiento de incorporación
 
@@ -16,4 +18,4 @@ Antes de combinar fuentes se comprobarán claves de ubicación y tiempo, zonas h
 
 ## Volumen de referencia
 
-La propuesta estima al menos 10,000 perfiles con registros de 15 minutos para un año, aproximadamente 350.4 millones de filas. Se validará la fórmula y el volumen real según perfiles disponibles, faltantes, periodo cubierto y formato descargado. No publicar datos fuente en el repositorio hasta confirmar que su licencia permite redistribución; preferir scripts, metadatos y muestras autorizadas.
+La propuesta estima al menos 10,000 perfiles con registros de 15 minutos para un año, aproximadamente 350.4 millones de filas. Se mantiene como meta de escala a validar, no como requisito para el primer incremento. El MVP comienza con un subconjunto cuyo volumen se medirá. No publicar datos fuente hasta confirmar que su licencia permite redistribución; preferir scripts, metadatos y muestras autorizadas.

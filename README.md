@@ -20,10 +20,10 @@ Desarrollar una plataforma de análisis para explorar el consumo eléctrico resi
 | Fuente | Uso previsto | Consideración |
 |---|---|---|
 | ResStock 2025.1 | Perfiles residenciales, características de viviendas y resúmenes estatales | Son perfiles modelados, no mediciones directas de hogares. |
-| U.S. Energy Information Administration (EIA) | Estadísticas residenciales por estado y demanda horaria del sistema | La demanda horaria cubre los 48 estados contiguos, varios sectores y tiene retraso de publicación. |
+| U.S. Energy Information Administration (EIA) | Estadísticas residenciales por estado; demanda horaria del sistema como contexto opcional | Las estadísticas residenciales y la demanda multisectorial de red son productos distintos. EIA-930 se pospone hasta justificar su uso y normalizar el tiempo. |
 | Open-Meteo | Variables meteorológicas históricas y previsiones disponibles | Se validará la compatibilidad espacial y temporal con las demás fuentes. |
 
-La propuesta contempla iniciar el análisis detallado con al menos 10,000 perfiles. Un año de registros cada 15 minutos para esa selección equivaldría aproximadamente a 350.4 millones de filas. Son estimaciones de planeación; se sustituirán por cifras efectivamente descargadas, procesadas y verificadas.
+La propuesta contempla iniciar el análisis detallado con al menos 10,000 perfiles. Un año de registros cada 15 minutos para esa selección equivaldría aproximadamente a 350.4 millones de filas. Son metas de escala de la propuesta, no el primer hito técnico: el MVP empieza con agregados geográficos y un subconjunto medido para reducir riesgo de tamaño, acceso y costo. Consulta la [decisión inicial de alcance](docs/decision-alcance-mvp.md).
 
 ## Arquitectura propuesta
 
@@ -60,6 +60,7 @@ Las casillas de desarrollo se actualizarán cuando exista evidencia verificable.
 - [Tareas para la revisión de avance del 17 de noviembre](docs/plan-avance-17-noviembre.md)
 - [Validación inicial de fuentes](docs/validacion-inicial-fuentes.md)
 - [Esquema conceptual y calidad inicial de datos](docs/esquema-inicial-calidad-datos.md)
+- [Decisión inicial de alcance y MVP](docs/decision-alcance-mvp.md)
 
 El plan de desarrollo es una propuesta de organización basada en la guía disponible; se actualizará si el profesor comparte una rúbrica detallada o confirma fechas y requisitos adicionales.
 

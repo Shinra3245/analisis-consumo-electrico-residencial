@@ -21,6 +21,8 @@ La plantilla `Big Data Project Proposal Template.pdf` contiene 12 secciones: res
 
 Este calendario es una propuesta intensiva construida con las fechas disponibles, no un calendario oficial del profesor. El equipo debe reducir alcance antes que presentar funciones sin validar. Primero se comprobará acceso, licencia, tamaño y esquema de ResStock, EIA y Open-Meteo; si una fuente no está disponible a tiempo, se documentará y se ajustará el análisis conservando la distinción entre datos modelados y oficiales.
 
+La primera implementación seguirá la [decisión inicial de alcance del MVP](decision-alcance-mvp.md): empezar por agregados de ResStock y muestras oficiales/climáticas acotadas, y ampliar solo con inventario, licencia, tamaño y pruebas medidos. Esto organiza el orden de trabajo sin reemplazar los objetivos de la propuesta aprobada.
+
 ## División inicial por integrante
 
 La asignación organiza responsabilidades principales; los cuatro integrantes deben revisar interfaces, decisiones y entrega final. Cada bloque debe producir un resultado integrado y revisable.
