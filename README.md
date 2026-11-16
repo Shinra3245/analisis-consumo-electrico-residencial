@@ -33,7 +33,8 @@ La propuesta plantea Amazon S3 para archivos y resultados, Amazon Kinesis Data S
 
 - [x] Propuesta versión 2 elaborada.
 - [x] Aprobación del profesor para continuar sin observaciones pendientes.
-- [ ] Repositorio y documentación inicial.
+- [x] Repositorio público y documentación inicial.
+- [x] Primer avance documental: validación preliminar de fuentes y esquema conceptual (16 de noviembre de 2026; con pendientes explícitos).
 - [ ] Validación de disponibilidad, licencias, formatos y cobertura de las fuentes.
 - [ ] Diseño técnico y configuración del entorno.
 - [ ] Implementación, evaluación y documentación de resultados.
@@ -57,6 +58,8 @@ Las casillas de desarrollo se actualizarán cuando exista evidencia verificable.
 - [Criterios de trabajo y registro de avances](docs/seguimiento.md)
 - [Plan de desarrollo y reparto por integrante](docs/plan-de-desarrollo.md)
 - [Tareas para la revisión de avance del 17 de noviembre](docs/plan-avance-17-noviembre.md)
+- [Validación inicial de fuentes](docs/validacion-inicial-fuentes.md)
+- [Esquema conceptual y calidad inicial de datos](docs/esquema-inicial-calidad-datos.md)
 
 El plan de desarrollo es una propuesta de organización basada en la guía disponible; se actualizará si el profesor comparte una rúbrica detallada o confirma fechas y requisitos adicionales.
 

@@ -8,9 +8,11 @@ Este archivo establece cómo registrar avances y decisiones. El plan de desarrol
 |---|---|---|---|---|
 | 2026-10-19 | Propuesta V2 preparada para revisión docente | Equipo | Documento de propuesta local | Completado |
 | Pendiente | Aprobación docente | Equipo | Confirmación del profesor | Completado, sin observaciones |
-| 2026-11-16 | Repositorio público y documentación inicial | Omar | Enlace del repositorio | En curso |
+| 2026-11-16 | Repositorio público y documentación inicial | Omar | README y documentos base | Completado |
 | 2026-11-16 | Plan inicial de desarrollo, fechas y responsables | Equipo | [Plan de desarrollo](plan-de-desarrollo.md) | Propuesto para coordinación del equipo |
 | 2026-11-16 | Plan de preparación para revisión del 17 de noviembre | Equipo | [Plan de avance](plan-avance-17-noviembre.md) | Propuesto para ejecutar hoy |
+| 2026-11-16 | Investigación inicial de fuentes | Claude | [Validación inicial](validacion-inicial-fuentes.md) | Completado; pendiente revisión del equipo |
+| 2026-11-16 | Esquema y controles conceptuales iniciales | Antigravity (AGY) | [Esquema inicial](esquema-inicial-calidad-datos.md) | Completado; pendiente revisión del equipo |
 
 ## Actualización de avances
 
