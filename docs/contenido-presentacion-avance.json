@@ -1,0 +1,126 @@
+{
+  "presentation": {
+    "title": "Análisis del consumo eléctrico residencial",
+    "occasion": "Revisión de avance del proyecto de Big Data",
+    "date": "2026-11-17",
+    "language": "es-MX",
+    "estimated_duration_minutes": 5,
+    "status": "contenido listo; estilo visual pendiente de la referencia del usuario",
+    "content_rules": [
+      "Explicar en palabras sencillas qué se hizo y cómo.",
+      "Separar datos modelados, estadísticas oficiales y estimaciones climáticas.",
+      "Presentar inferencias como preliminares y conservar sus límites.",
+      "No afirmar que el tablero, las anomalías o las estimaciones finales están implementados."
+    ],
+    "slides": [
+      {
+        "number": 1,
+        "title": "Qué proyecto realizamos",
+        "screen_text": [
+          "Analizar patrones de consumo eléctrico residencial en Estados Unidos.",
+          "Usar perfiles modelados, estadísticas oficiales y datos del clima.",
+          "La propuesta V2 fue aprobada por el profesor."
+        ],
+        "what_we_did": "Iniciamos la revisión de las fuentes propuestas con una muestra pequeña de Colorado.",
+        "how_we_did_it": "Consultamos archivos públicos del año 2018 y verificamos qué representa cada fuente.",
+        "conclusion_or_inference": "El objetivo general sigue vigente; este avance comprueba fuentes y datos antes de construir el sistema.",
+        "visual_intent": "Mapa de Estados Unidos con Colorado resaltado y el título del proyecto.",
+        "speaker_notes": "Comenzamos a revisar si las fuentes propuestas permiten iniciar el análisis. Para este avance trabajamos con una muestra pequeña de Colorado."
+      },
+      {
+        "number": 2,
+        "title": "Qué información revisamos",
+        "screen_text": [
+          "ResStock: consumo residencial estimado por computadora.",
+          "EIA: ventas residenciales de electricidad por mes.",
+          "Open-Meteo: historial estimado de temperatura para un punto de Denver."
+        ],
+        "what_we_did": "Reunimos una muestra de cada fuente relacionada con Colorado y 2018.",
+        "how_we_did_it": "Revisamos un archivo agregado de ResStock, la publicación mensual de EIA y una consulta histórica de clima.",
+        "conclusion_or_inference": "Las fuentes aportan perspectivas diferentes; no son mediciones iguales y deben conservarse separadas hasta revisar sus diferencias.",
+        "visual_intent": "Tres tarjetas con una casa, un gráfico de ventas y un termómetro o mapa.",
+        "speaker_notes": "Cada fuente describe algo distinto: ResStock representa viviendas mediante modelos, EIA informa ventas estatales y Open-Meteo estima el clima de una ubicación."
+      },
+      {
+        "number": 3,
+        "title": "Primera muestra de consumo",
+        "screen_text": [
+          "Colorado · viviendas unifamiliares separadas · 2018.",
+          "35,040 intervalos de consumo, uno cada 15 minutos.",
+          "5,869 modelos representan aproximadamente 1.49 millones de viviendas en el cálculo de ResStock."
+        ],
+        "what_we_did": "Descargamos y revisamos un archivo agregado de ResStock de aproximadamente 31 MB.",
+        "how_we_did_it": "Inspeccionamos campos, fechas y valores; el archivo resume modelos de vivienda, no lecturas individuales de medidores.",
+        "conclusion_or_inference": "La muestra ofrece detalle temporal para iniciar el análisis, pero solo describe una categoría modelada y no todo el consumo de Estados Unidos.",
+        "visual_intent": "Una casa junto a una línea anual dividida en intervalos de 15 minutos.",
+        "speaker_notes": "Este es un subconjunto pequeño del conjunto completo. ResStock pondera modelos para representar unidades de vivienda; no estamos contando medidores reales."
+      },
+      {
+        "number": 4,
+        "title": "Qué encontramos al compararla",
+        "screen_text": [
+          "ResStock: 16.81 millones de MWh en la categoría seleccionada.",
+          "EIA: 19.29 millones de MWh para todo el sector residencial de Colorado.",
+          "Relación numérica simple: 87%."
+        ],
+        "what_we_did": "Sumamos los meses de ResStock y los comparamos con las ventas residenciales mensuales publicadas por EIA.",
+        "how_we_did_it": "Convertimos las dos series a la misma unidad y graficamos sus valores mes a mes.",
+        "conclusion_or_inference": "La diferencia cambia según el mes. El 87% no mide precisión porque se comparó una categoría modelada con todas las viviendas residenciales reportadas por EIA.",
+        "visual_intent": "Gráfica mensual de las dos series con una nota visible sobre sus diferentes alcances.",
+        "speaker_notes": "La relación sirve para observar escala y variación mensual. No es una calificación de qué fuente es correcta ni una medida de error del modelo."
+      },
+      {
+        "number": 5,
+        "title": "Cómo comprobamos los datos",
+        "screen_text": [
+          "La secuencia ResStock tiene intervalos regulares durante el año.",
+          "No encontramos celdas vacías ni valores negativos en el total revisado.",
+          "La consulta climática devolvió 8,760 horas para Denver, sin datos faltantes."
+        ],
+        "what_we_did": "Aplicamos comprobaciones iniciales a las fechas, valores y registros de la muestra.",
+        "how_we_did_it": "Revisamos continuidad temporal, espacios vacíos y valores negativos; el clima se consultó para un solo punto.",
+        "conclusion_or_inference": "La muestra sirve para pruebas iniciales; consumo y clima aún no se combinan porque cubren lugares y horarios distintos.",
+        "visual_intent": "Tres indicadores simples de revisión y un reloj o mapa que muestre diferencias de horario y ubicación.",
+        "speaker_notes": "El clima histórico es una estimación basada en modelos, no una lectura directa de un termómetro. Denver tampoco representa todo Colorado."
+      },
+      {
+        "number": 6,
+        "title": "Qué sigue",
+        "screen_text": [
+          "Confirmar atribuciones y condiciones de uso de las fuentes.",
+          "Ampliar la comparación a más tipos de vivienda o lugares.",
+          "Construir el procesamiento, analizar cambios inusuales y preparar un tablero."
+        ],
+        "what_we_did": "Dejamos una muestra, resultados y un procedimiento que se puede repetir.",
+        "how_we_did_it": "El siguiente paso es ampliar los datos de forma gradual, revisar su compatibilidad y después desarrollar análisis adicionales.",
+        "conclusion_or_inference": "Ya hay una base medible para continuar; el análisis actual no incluye aún tablero, detección de anomalías ni estimaciones finales.",
+        "visual_intent": "Ruta por etapas desde muestra revisada hasta análisis y tablero.",
+        "speaker_notes": "Primero resolveremos las diferencias entre fuentes y ampliaremos la muestra. Después mediremos el procesamiento antes de decidir si hace falta usar servicios de nube."
+      }
+    ],
+    "sources": [
+      {
+        "name": "ResStock FAQ",
+        "url": "https://natlabrockies.github.io/ResStock.github.io/docs/FAQ.html",
+        "supports": "Agregados ponderados, unidades y marcas de tiempo."
+      },
+      {
+        "name": "EIA-861M",
+        "url": "https://www.eia.gov/electricity/data/eia861m/",
+        "supports": "Ventas mensuales por estado y sector."
+      },
+      {
+        "name": "Open-Meteo Historical Weather API",
+        "url": "https://open-meteo.com/en/docs/historical-weather-api",
+        "supports": "Datos históricos de reanálisis y variables meteorológicas."
+      },
+      {
+        "name": "Resultados de la muestra",
+        "path": "resultados-muestra-inicial.md",
+        "supports": "Cifras, controles, comparación mensual, hashes y limitaciones."
+      }
+    ],
+    "pending_visual_style": true,
+    "generate_images_before_style_reference": false
+  }
+}

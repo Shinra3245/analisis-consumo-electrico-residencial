@@ -1,93 +1,125 @@
-# Guion para la revisión de avance — 17 de noviembre
+# Contenido para la presentación del avance
 
-**Duración sugerida:** 4–5 minutos más preguntas.
-**Estado:** material listo para exponer como avance parcial. No es la presentación final ni afirma que el sistema esté terminado.
+**Duración sugerida:** 4–5 minutos.
+**Estado:** contenido resumido listo para aplicar al estilo visual que entregue el equipo. El PowerPoint y PDF existentes son un borrador anterior; se actualizarán después de aplicar ese estilo.
 
-Diapositivas: [PowerPoint](../presentaciones/Avance_Big_Data_17_noviembre_2026.pptx) y [PDF](../presentaciones/Avance_Big_Data_17_noviembre_2026.pdf). Para regenerar el PowerPoint con la muestra local: `python scripts/generar_presentacion.py`.
+La fuente editable del contenido es [`contenido-presentacion-avance.json`](contenido-presentacion-avance.json). Aquí está la versión para lectura y exposición.
 
-## Diapositiva 1 — Proyecto y pregunta (30 s)
+## Diapositiva 1 — Qué proyecto realizamos
 
-**Mostrar:** título, objetivo y aprobación de la propuesta V2.
+**En pantalla**
 
-**Decir:** “El proyecto analiza patrones de consumo eléctrico residencial de Estados Unidos con perfiles modelados, estadísticas oficiales y clima. La propuesta V2 fue aprobada sin observaciones. Este avance se concentra en comprobar una muestra pequeña antes de escalar.”
+- Analizar patrones de consumo eléctrico residencial en Estados Unidos.
+- Usar perfiles modelados, estadísticas oficiales y datos del clima.
+- La propuesta V2 fue aprobada por el profesor.
 
-## Diapositiva 2 — Qué representa cada fuente (40 s)
+**Qué se hizo y cómo decirlo**
 
-| Fuente | En esta prueba | Qué no representa |
-|---|---|---|
-| ResStock 2025.1 | Perfil modelado, agregado y ponderado para Colorado | Lectura de medidores individuales |
-| EIA | Ventas mensuales del sector residencial de Colorado | Serie horaria ni subgrupo de vivienda |
-| Open-Meteo | Temperatura de reanálisis horaria en un punto de Denver | Lectura directa de estación o clima representativo de todo Colorado |
+“Comenzamos a revisar si las fuentes propuestas permiten iniciar el análisis. Para este avance trabajamos con una muestra pequeña de Colorado.”
 
-**Decir:** “Las fuentes tienen alcances distintos; las conservamos separadas. La lluvia de datos de red EIA-930 se deja como contexto opcional, no como consumo doméstico.”
+**Conclusión**
 
-## Diapositiva 3 — Primera muestra inspeccionada (50 s)
+El objetivo general sigue vigente; este avance comprueba fuentes y datos antes de construir el sistema.
 
-- ResStock: baseline `upgrade=0`, Colorado, vivienda unifamiliar separada.
-- Archivo de 31.0 MB, 96 columnas y 35,040 filas.
-- `models_used`: 5,869; unidades ponderadas representadas: 1,490,160.655.
-- Periodo 2018, marcas cada 15 minutos; la marca indica fin del intervalo y está publicada en EST.
-- EIA: 12 meses de 2018, estado `Final`, unidad MWh.
-- Clima: 8,760 temperaturas horarias de reanálisis en °C, ubicación Denver, zona UTC; consulta con el `Best Match` predeterminado, no un modelo fijado.
+**Idea visual para el diseño posterior:** mapa de Estados Unidos con Colorado resaltado y el título del proyecto.
 
-**Decir:** “La primera extracción fue deliberadamente pequeña frente a la salida completa de ResStock. No incluimos los archivos originales en Git; guardamos un procedimiento para volver a obtenerlos.”
+## Diapositiva 2 — Qué información revisamos
 
-## Diapositiva 4 — Comprobaciones y comparación exploratoria (60 s)
+**En pantalla**
 
-**Mostrar:** [gráfica mensual](evidencia/comparacion-resstock-eia-co-2018.svg) y [tabla reproducible](resultados-muestra-inicial.md).
+- ResStock: consumo residencial estimado por computadora.
+- EIA: ventas residenciales de electricidad por mes.
+- Open-Meteo: historial estimado de temperatura para un punto de Denver.
 
-- En la muestra ResStock: 35,040 timestamps únicos, secuencia continua de 15 minutos, cero celdas vacías y cero negativos en el total de electricidad.
-- Total anual en el perfil agregado de vivienda separada: 16.81 millones de MWh.
-- Ventas residenciales EIA para todo Colorado: 19.29 millones de MWh.
-- Razón anual simple entre ambas series: 87.16%; las razones mensuales van de 68.31% a 114.85%.
+**Qué se hizo y cómo decirlo**
 
-**Decir:** “La razón sirve para inspeccionar forma y escala, no es una métrica de precisión. ResStock describe un tipo de vivienda modelado y EIA todas las ventas residenciales estatales. No afirmamos que deban coincidir.”
+“Consultamos datos públicos de 2018 para Colorado. Cada fuente describe algo distinto: una representa viviendas mediante modelos, otra informa ventas estatales y la tercera estima el clima de una ubicación.”
 
-## Diapositiva 5 — Decisión técnica y límites (45 s)
+**Conclusión**
 
-- Comenzar con agregados ResStock y muestras estatales pequeñas; ampliar después de medir archivos y procesamiento.
-- Usar EIA residencial para referencia macro mensual; no mezclarla con demanda horaria de red.
-- Mantener clima aparte hasta resolver representatividad y conversión entre UTC, EST y hora local.
-- No activar AWS hasta medir volumen local y estimar costo.
-- La detección de anomalías, estimación, tablero integrado y reproducción progresiva todavía no están implementados.
+Las fuentes pueden aportar perspectivas complementarias, pero no son mediciones iguales ni deben mezclarse sin revisar sus diferencias.
 
-## Diapositiva 6 — Próximos pasos (35 s)
+**Idea visual para el diseño posterior:** tres tarjetas con una casa, un gráfico de ventas y un termómetro/mapa.
 
-1. Confirmar atribución/avisos de columnas de ResStock y condiciones de reutilización EIA/Open-Meteo.
-2. Revisar con el profesor/equipo la muestra y registrar comentarios.
-3. Ampliar el análisis mensual por tipo de vivienda y comparar coberturas con cautela.
-4. Implementar controles, análisis reproducible y después una primera detección de anomalías evaluable.
-5. Definir si la escala observada justifica una prueba cloud con costo estimado.
+## Diapositiva 3 — Primera muestra de consumo
 
-## Demostración opcional
+**En pantalla**
 
-Si el equipo quiere repetir el resumen desde los archivos locales:
+- Colorado · viviendas unifamiliares separadas · año 2018.
+- 35,040 intervalos de consumo, uno cada 15 minutos.
+- 5,869 modelos representan aproximadamente 1.49 millones de viviendas en el cálculo de ResStock.
 
-```bash
-python -m pip install -r requirements.txt
-python scripts/analizar_muestra_inicial.py
-```
+**Qué se hizo y cómo decirlo**
 
-Si no están los tres archivos en `data/raw/`, el script puede obtener únicamente la muestra acotada:
+“Descargamos un archivo agregado de unos 31 MB y revisamos sus campos, fechas y valores. El archivo resume modelos de vivienda; no son lecturas individuales de medidores.”
 
-```bash
-python scripts/analizar_muestra_inicial.py --descargar
-```
+**Conclusión**
 
-La descarga del agregado ResStock es de aproximadamente 31 MB; todos los originales quedan excluidos del repositorio.
+La muestra tiene suficiente detalle temporal para comenzar un análisis; representa una categoría modelada y no todo el consumo de Estados Unidos.
 
-## Preguntas previsibles
+**Idea visual para el diseño posterior:** una casa con una línea anual dividida en intervalos de 15 minutos.
 
-- **¿Por qué Colorado?** Para validar un primer extracto estatal y el proceso de lectura; aún no representa análisis nacional.
-- **¿Por qué un resultado modelado?** ResStock permite explorar resolución subhoraria y características de vivienda; las ventas EIA aportan una referencia macro independiente.
-- **¿87.16% significa que ResStock tiene 12.84% de error?** No. Las poblaciones y definiciones no son equivalentes; la razón es exploratoria y requiere reconciliación metodológica.
-- **¿Ya hay anomalías o predicciones?** Todavía no. El avance actual valida acceso, esquema y controles básicos de una muestra.
-- **¿Está desplegado en AWS o es streaming en vivo?** No. La nube está condicionada a costo y volumen; el flujo planeado será replay de históricos, no medidores en vivo.
+## Diapositiva 4 — Qué encontramos al compararla
 
-## Fuentes para citar en la exposición
+**En pantalla**
 
-- [ResStock FAQ: unidades, timestamps, ponderación y agregados](https://natlabrockies.github.io/ResStock.github.io/docs/FAQ.html)
-- [ResStock Data: estructura del release y tipos de archivo](https://natlabrockies.github.io/ResStock.github.io/docs/data.html)
-- [Registro OEDI: licencia general CC BY 3.0 US](https://registry.opendata.aws/oedi-data-lake/)
-- [EIA EIA-861M: ventas mensuales por estado y sector](https://www.eia.gov/electricity/data/eia861m/)
-- [Open-Meteo Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api): reanálisis meteorológico; `Best Match` combina modelos.
+- ResStock: 16.81 millones de MWh en la categoría seleccionada.
+- EIA: 19.29 millones de MWh para todo el sector residencial de Colorado.
+- Relación numérica simple: 87%.
+
+**Qué se hizo y cómo decirlo**
+
+“Sumamos los meses de la muestra de ResStock y los comparamos con las ventas residenciales mensuales publicadas por EIA. También generamos una gráfica para ver cómo cambian los valores durante el año.”
+
+**Conclusión**
+
+La diferencia entre las dos series cambia según el mes. El 87% no es una calificación de precisión: se comparó una categoría modelada con todas las viviendas residenciales reportadas por EIA.
+
+**Idea visual para el diseño posterior:** la gráfica mensual existente, con ambas series y una nota visible sobre sus distintos alcances.
+
+## Diapositiva 5 — Cómo comprobamos los datos
+
+**En pantalla**
+
+- La secuencia ResStock tiene intervalos regulares durante el año.
+- No encontramos celdas vacías ni valores negativos en el total revisado.
+- La consulta climática devolvió 8,760 horas para Denver, sin datos faltantes.
+
+**Qué se hizo y cómo decirlo**
+
+“Revisamos que las fechas avanzaran de forma constante y que los campos principales tuvieran valores. El clima corresponde a una estimación histórica para un punto, no a todo Colorado ni a una medición directa de una estación.”
+
+**Conclusión**
+
+La muestra permite continuar con pruebas iniciales. Aún necesitamos alinear ubicación y horario antes de relacionar consumo y clima.
+
+**Idea visual para el diseño posterior:** tres indicadores simples de revisión y un reloj/mapa que muestre las diferencias de horario y ubicación.
+
+## Diapositiva 6 — Qué sigue
+
+**En pantalla**
+
+1. Confirmar atribuciones y condiciones de uso de las fuentes.
+2. Ampliar la comparación a más tipos de vivienda o lugares.
+3. Construir el procesamiento y revisar la calidad de los datos.
+4. Después, probar detección de cambios inusuales y estimaciones.
+5. Preparar un tablero y evaluar si hace falta infraestructura de nube.
+
+**Qué se hizo y cómo decirlo**
+
+“Ya comprobamos una muestra y dejamos un análisis que puede repetirse. El siguiente avance será ampliar el análisis sin perder de vista qué representa cada fuente.”
+
+**Conclusión**
+
+Tenemos una base medible para continuar; todavía no están construidos el tablero, las anomalías ni las estimaciones finales.
+
+**Idea visual para el diseño posterior:** una ruta por etapas desde “muestra revisada” hasta “análisis y tablero”.
+
+## Fuentes para notas o diapositiva final
+
+- [ResStock: unidades, intervalos y archivos agregados](https://natlabrockies.github.io/ResStock.github.io/docs/FAQ.html)
+- [EIA: ventas mensuales por estado y sector](https://www.eia.gov/electricity/data/eia861m/)
+- [Open-Meteo: datos históricos de reanálisis](https://open-meteo.com/en/docs/historical-weather-api)
+- [Resultados detallados, controles y limitaciones](resultados-muestra-inicial.md)
+
+Las ideas visuales son descripciones de contenido, no imágenes generadas. Se aplicará el estilo que proporcione el usuario antes de producir la versión visual final.

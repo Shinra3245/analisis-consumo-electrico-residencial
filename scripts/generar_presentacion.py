@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Genera la presentación breve del avance con las muestras ya descargadas."""
+"""Generador del borrador visual anterior.
+
+El contenido maestro ahora vive en docs/contenido-presentacion-avance.json.
+No regenerar este borrador; crear el diseño actualizado cuando se reciba la
+referencia de estilo del usuario.
+"""
 
 from __future__ import annotations
 
@@ -275,4 +280,8 @@ def build_deck():
 
 
 if __name__ == "__main__":
-    build_deck()
+    raise SystemExit(
+        "Este generador corresponde al borrador visual anterior. "
+        "El contenido vigente está en docs/contenido-presentacion-avance.json; "
+        "esperar la referencia de estilo antes de generar el nuevo deck."
+    )

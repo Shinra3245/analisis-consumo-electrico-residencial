@@ -61,9 +61,10 @@ Las casillas se actualizan con evidencia verificable. Ya se descargaron y analiz
 - [Tareas para la revisión de avance del 17 de noviembre](docs/plan-avance-17-noviembre.md)
 - [Validación inicial de fuentes](docs/validacion-inicial-fuentes.md)
 - [Resultados de la primera muestra](docs/resultados-muestra-inicial.md)
-- [Guion para la revisión de avance del 17 de noviembre](docs/presentacion-avance-17-noviembre.md)
-- [Diapositivas para la revisión de avance](presentaciones/Avance_Big_Data_17_noviembre_2026.pptx)
-- [Versión PDF de las diapositivas](presentaciones/Avance_Big_Data_17_noviembre_2026.pdf)
+- [Contenido resumido por diapositiva en JSON](docs/contenido-presentacion-avance.json)
+- [Versión legible del contenido de presentación](docs/presentacion-avance-17-noviembre.md)
+- [PowerPoint borrador anterior, pendiente de aplicar el estilo final](presentaciones/Avance_Big_Data_17_noviembre_2026.pptx)
+- [PDF borrador anterior](presentaciones/Avance_Big_Data_17_noviembre_2026.pdf)
 - [Esquema conceptual y calidad inicial de datos](docs/esquema-inicial-calidad-datos.md)
 - [Decisión inicial de alcance y MVP](docs/decision-alcance-mvp.md)
 

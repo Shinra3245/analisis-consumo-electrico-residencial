@@ -15,7 +15,7 @@ Este archivo establece cómo registrar avances y decisiones. El plan de desarrol
 | 2026-11-16 | Esquema y controles conceptuales iniciales | Antigravity (AGY) | [Esquema inicial](esquema-inicial-calidad-datos.md) | Completado; pendiente revisión del equipo |
 | 2026-11-16 | Recomendación inicial de alcance del MVP | Equipo | [Decisión de alcance](decision-alcance-mvp.md) | Propuesta técnica para revisar después de la exposición; basada en revisión documental, sin descarga de datos |
 | 2026-11-16 | Primera muestra empírica y validación reproducible | Equipo | [Resultados](resultados-muestra-inicial.md), [script](../scripts/analizar_muestra_inicial.py) | Completado localmente; agregado ResStock, EIA mensual y Open-Meteo; fuentes originales excluidas de Git |
-| 2026-11-16 | Material de apoyo para revisión de avance | Equipo | [Guion](presentacion-avance-17-noviembre.md), [PowerPoint](../presentaciones/Avance_Big_Data_17_noviembre_2026.pptx), [PDF](../presentaciones/Avance_Big_Data_17_noviembre_2026.pdf) | Listo para exponer como avance parcial; la fecha de revisión es 17 de noviembre según la guía |
+| 2026-11-16 | Contenido resumido de presentación por diapositiva | Equipo | [JSON editable](contenido-presentacion-avance.json), [versión legible](presentacion-avance-17-noviembre.md) | Contenido actualizado; falta aplicar el estilo visual que entregará el usuario. El PowerPoint/PDF anterior quedan como borradores |
 
 ## Actualización de avances
 
