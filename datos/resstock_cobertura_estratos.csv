@@ -1,0 +1,255 @@
+estado,tipo_vivienda,candidatos,cuota_propuesta,condados_con_codigo
+AK,Mobile Home,64,2,15
+AK,Multi-Family with 2 - 4 Units,156,4,18
+AK,Multi-Family with 5+ Units,148,4,17
+AK,Single-Family Attached,93,3,12
+AK,Single-Family Detached,794,15,28
+AL,Mobile Home,1225,23,67
+AL,Multi-Family with 2 - 4 Units,449,9,63
+AL,Multi-Family with 5+ Units,1065,20,62
+AL,Single-Family Attached,142,3,38
+AL,Single-Family Detached,6184,111,67
+AR,Mobile Home,667,13,73
+AR,Multi-Family with 2 - 4 Units,366,7,68
+AR,Multi-Family with 5+ Units,552,11,64
+AR,Single-Family Attached,91,3,29
+AR,Single-Family Detached,3831,69,75
+AZ,Mobile Home,1285,24,15
+AZ,Multi-Family with 2 - 4 Units,566,11,14
+AZ,Multi-Family with 5+ Units,1891,35,14
+AZ,Single-Family Attached,580,11,13
+AZ,Single-Family Detached,7630,136,15
+CA,Mobile Home,2169,39,58
+CA,Multi-Family with 2 - 4 Units,4577,82,53
+CA,Multi-Family with 5+ Units,13427,239,56
+CA,Single-Family Attached,4018,72,53
+CA,Single-Family Detached,32884,584,58
+CO,Mobile Home,386,8,54
+CO,Multi-Family with 2 - 4 Units,466,9,44
+CO,Multi-Family with 5+ Units,1991,36,46
+CO,Single-Family Attached,662,13,36
+CO,Single-Family Detached,5869,105,64
+CT,Mobile Home,48,2,8
+CT,Multi-Family with 2 - 4 Units,1029,19,8
+CT,Multi-Family with 5+ Units,1121,21,8
+CT,Single-Family Attached,329,7,8
+CT,Single-Family Detached,3605,65,8
+DC,Multi-Family with 2 - 4 Units,124,3,1
+DC,Multi-Family with 5+ Units,675,13,1
+DC,Single-Family Attached,307,6,1
+DC,Single-Family Detached,153,4,1
+DE,Mobile Home,134,3,3
+DE,Multi-Family with 2 - 4 Units,67,2,3
+DE,Multi-Family with 5+ Units,242,5,3
+DE,Single-Family Attached,267,6,3
+DE,Single-Family Detached,1005,19,3
+FL,Mobile Home,3370,61,67
+FL,Multi-Family with 2 - 4 Units,2274,41,62
+FL,Multi-Family with 5+ Units,9235,165,60
+FL,Single-Family Attached,2312,42,55
+FL,Single-Family Detached,20359,362,67
+GA,Mobile Home,1553,29,158
+GA,Multi-Family with 2 - 4 Units,881,17,129
+GA,Multi-Family with 5+ Units,2681,49,122
+GA,Single-Family Attached,663,13,74
+GA,Single-Family Detached,11274,201,159
+HI,Mobile Home,5,1,3
+HI,Multi-Family with 2 - 4 Units,135,3,4
+HI,Multi-Family with 5+ Units,682,13,4
+HI,Single-Family Attached,202,5,4
+HI,Single-Family Detached,1139,21,4
+IA,Mobile Home,207,5,72
+IA,Multi-Family with 2 - 4 Units,317,7,83
+IA,Multi-Family with 5+ Units,739,14,88
+IA,Single-Family Attached,224,5,42
+IA,Single-Family Detached,4104,74,99
+ID,Mobile Home,244,5,39
+ID,Multi-Family with 2 - 4 Units,186,4,33
+ID,Multi-Family with 5+ Units,247,5,31
+ID,Single-Family Attached,87,3,26
+ID,Single-Family Detached,2050,37,44
+IL,Mobile Home,548,11,93
+IL,Multi-Family with 2 - 4 Units,2649,48,83
+IL,Multi-Family with 5+ Units,4561,82,91
+IL,Single-Family Attached,1242,23,54
+IL,Single-Family Detached,12787,228,102
+IN,Mobile Home,547,11,87
+IN,Multi-Family with 2 - 4 Units,699,13,84
+IN,Multi-Family with 5+ Units,1472,27,85
+IN,Single-Family Attached,434,9,62
+IN,Single-Family Detached,8463,151,92
+KS,Mobile Home,221,5,64
+KS,Multi-Family with 2 - 4 Units,316,7,61
+KS,Multi-Family with 5+ Units,626,12,67
+KS,Single-Family Attached,229,5,35
+KS,Single-Family Detached,3735,67,105
+KY,Mobile Home,956,18,118
+KY,Multi-Family with 2 - 4 Units,600,12,98
+KY,Multi-Family with 5+ Units,875,16,96
+KY,Single-Family Attached,204,5,59
+KY,Single-Family Detached,5372,96,120
+LA,Mobile Home,1084,20,64
+LA,Multi-Family with 2 - 4 Units,681,13,57
+LA,Multi-Family with 5+ Units,883,17,54
+LA,Single-Family Attached,216,5,34
+LA,Single-Family Detached,5386,96,64
+MA,Mobile Home,97,3,12
+MA,Multi-Family with 2 - 4 Units,2413,44,14
+MA,Multi-Family with 5+ Units,2458,45,14
+MA,Single-Family Attached,629,12,14
+MA,Single-Family Detached,6041,108,14
+MD,Mobile Home,136,3,24
+MD,Multi-Family with 2 - 4 Units,364,7,24
+MD,Multi-Family with 5+ Units,2225,40,24
+MD,Single-Family Attached,2132,39,24
+MD,Single-Family Detached,5083,91,24
+ME,Mobile Home,247,5,16
+ME,Multi-Family with 2 - 4 Units,302,6,16
+ME,Multi-Family with 5+ Units,271,6,16
+ME,Single-Family Attached,71,2,13
+ME,Single-Family Detached,2095,38,16
+MI,Mobile Home,989,19,81
+MI,Multi-Family with 2 - 4 Units,922,17,78
+MI,Multi-Family with 5+ Units,2437,44,78
+MI,Single-Family Attached,873,16,60
+MI,Single-Family Detached,13424,239,83
+MN,Mobile Home,331,7,73
+MN,Multi-Family with 2 - 4 Units,411,8,62
+MN,Multi-Family with 5+ Units,1781,33,82
+MN,Single-Family Attached,694,13,56
+MN,Single-Family Detached,6561,117,87
+MO,Mobile Home,694,13,112
+MO,Multi-Family with 2 - 4 Units,897,17,97
+MO,Multi-Family with 5+ Units,1370,25,90
+MO,Single-Family Attached,376,8,55
+MO,Single-Family Detached,7897,141,115
+MS,Mobile Home,804,15,80
+MS,Multi-Family with 2 - 4 Units,296,6,67
+MS,Multi-Family with 5+ Units,492,10,72
+MS,Single-Family Attached,63,2,33
+MS,Single-Family Detached,3660,66,82
+MT,Mobile Home,211,5,44
+MT,Multi-Family with 2 - 4 Units,152,4,33
+MT,Multi-Family with 5+ Units,179,4,36
+MT,Single-Family Attached,79,2,25
+MT,Single-Family Detached,1395,26,53
+NC,Mobile Home,2340,42,99
+NC,Multi-Family with 2 - 4 Units,887,17,93
+NC,Multi-Family with 5+ Units,2397,43,89
+NC,Single-Family Attached,743,14,70
+NC,Single-Family Detached,11903,212,100
+ND,Mobile Home,103,3,36
+ND,Multi-Family with 2 - 4 Units,81,2,25
+ND,Multi-Family with 5+ Units,351,7,47
+ND,Single-Family Attached,82,2,25
+ND,Single-Family Detached,819,15,52
+NE,Mobile Home,111,3,44
+NE,Multi-Family with 2 - 4 Units,163,4,51
+NE,Multi-Family with 5+ Units,520,10,58
+NE,Single-Family Attached,133,3,27
+NE,Single-Family Detached,2419,44,93
+NH,Mobile Home,143,4,10
+NH,Multi-Family with 2 - 4 Units,286,6,10
+NH,Multi-Family with 5+ Units,372,8,10
+NH,Single-Family Attached,137,3,10
+NH,Single-Family Detached,1609,30,10
+NJ,Mobile Home,138,3,20
+NJ,Multi-Family with 2 - 4 Units,2283,41,21
+NJ,Multi-Family with 5+ Units,3016,54,21
+NJ,Single-Family Attached,1412,26,21
+NJ,Single-Family Detached,7867,140,21
+NM,Mobile Home,655,13,31
+NM,Multi-Family with 2 - 4 Units,218,5,27
+NM,Multi-Family with 5+ Units,363,7,26
+NM,Single-Family Attached,127,3,21
+NM,Single-Family Detached,2381,43,33
+NV,Mobile Home,267,6,15
+NV,Multi-Family with 2 - 4 Units,382,8,12
+NV,Multi-Family with 5+ Units,1124,21,15
+NV,Single-Family Attached,224,5,10
+NV,Single-Family Detached,2931,53,17
+NY,Mobile Home,785,15,62
+NY,Multi-Family with 2 - 4 Units,5823,104,62
+NY,Multi-Family with 5+ Units,11262,201,62
+NY,Single-Family Attached,1690,31,55
+NY,Single-Family Detached,14043,250,62
+OH,Mobile Home,798,15,88
+OH,Multi-Family with 2 - 4 Units,1842,34,86
+OH,Multi-Family with 5+ Units,3060,55,86
+OH,Single-Family Attached,969,18,75
+OH,Single-Family Detached,14443,257,88
+OK,Mobile Home,655,13,71
+OK,Multi-Family with 2 - 4 Units,315,7,58
+OK,Multi-Family with 5+ Units,779,15,61
+OK,Single-Family Attached,142,3,35
+OK,Single-Family Detached,5080,91,77
+OR,Mobile Home,572,11,35
+OR,Multi-Family with 2 - 4 Units,494,10,30
+OR,Multi-Family with 5+ Units,1178,22,31
+OR,Single-Family Attached,314,7,29
+OR,Single-Family Detached,4442,80,36
+PA,Mobile Home,899,17,67
+PA,Multi-Family with 2 - 4 Units,1935,35,66
+PA,Multi-Family with 5+ Units,2769,50,66
+PA,Single-Family Attached,4253,76,61
+PA,Single-Family Detached,13093,233,67
+RI,Mobile Home,20,1,5
+RI,Multi-Family with 2 - 4 Units,442,9,5
+RI,Multi-Family with 5+ Units,333,7,5
+RI,Single-Family Attached,64,2,5
+RI,Single-Family Detached,1039,19,5
+SC,Mobile Home,1470,27,46
+SC,Multi-Family with 2 - 4 Units,426,9,42
+SC,Multi-Family with 5+ Units,1153,21,43
+SC,Single-Family Attached,267,6,34
+SC,Single-Family Detached,5676,102,46
+SD,Mobile Home,132,3,45
+SD,Multi-Family with 2 - 4 Units,77,2,31
+SD,Multi-Family with 5+ Units,231,5,43
+SD,Single-Family Attached,59,2,18
+SD,Single-Family Detached,1040,19,66
+TN,Mobile Home,1091,20,93
+TN,Multi-Family with 2 - 4 Units,710,14,85
+TN,Multi-Family with 5+ Units,1544,28,78
+TN,Single-Family Attached,365,7,50
+TN,Single-Family Detached,8079,144,95
+TX,Mobile Home,3133,57,227
+TX,Multi-Family with 2 - 4 Units,2196,40,177
+TX,Multi-Family with 5+ Units,8617,154,171
+TX,Single-Family Attached,1106,21,107
+TX,Single-Family Detached,27793,494,252
+UT,Mobile Home,143,4,24
+UT,Multi-Family with 2 - 4 Units,300,6,21
+UT,Multi-Family with 5+ Units,635,12,24
+UT,Single-Family Attached,264,6,18
+UT,Single-Family Detached,2861,52,29
+VA,Mobile Home,728,14,116
+VA,Multi-Family with 2 - 4 Units,628,12,104
+VA,Multi-Family with 5+ Units,2553,46,115
+VA,Single-Family Attached,1542,28,98
+VA,Single-Family Detached,8680,155,133
+VT,Mobile Home,89,3,14
+VT,Multi-Family with 2 - 4 Units,166,4,14
+VT,Multi-Family with 5+ Units,147,4,14
+VT,Single-Family Attached,54,2,13
+VT,Single-Family Detached,886,17,14
+WA,Mobile Home,797,15,38
+WA,Multi-Family with 2 - 4 Units,705,13,38
+WA,Multi-Family with 5+ Units,2490,45,37
+WA,Single-Family Attached,475,9,30
+WA,Single-Family Detached,7704,138,39
+WI,Mobile Home,368,8,69
+WI,Multi-Family with 2 - 4 Units,1093,20,70
+WI,Multi-Family with 5+ Units,1715,31,70
+WI,Single-Family Attached,463,9,54
+WI,Single-Family Detached,7232,129,72
+WV,Mobile Home,541,11,54
+WV,Multi-Family with 2 - 4 Units,176,4,37
+WV,Multi-Family with 5+ Units,269,6,48
+WV,Single-Family Attached,81,2,29
+WV,Single-Family Detached,2558,46,55
+WY,Mobile Home,149,4,20
+WY,Multi-Family with 2 - 4 Units,73,2,20
+WY,Multi-Family with 5+ Units,103,3,21
+WY,Single-Family Attached,53,2,19
+WY,Single-Family Detached,723,14,23
