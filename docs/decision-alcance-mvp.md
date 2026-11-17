@@ -1,7 +1,7 @@
 # Decisión inicial de alcance y MVP
 
 **Fecha:** 16 de noviembre de 2026  
-**Estado:** Recomendación técnica para ejecutar; revisar con el equipo después del avance del 17 de noviembre.  
+**Estado:** Piloto inicial medido el 16 de noviembre; revisar con el equipo después del avance del 17 de noviembre.
 **Base:** Propuesta V2 aprobada sin observaciones, guía de entrega del curso y revisión documental de fuentes. Esta decisión organiza el desarrollo y no cambia los objetivos académicos aprobados.
 
 ## Decisión ejecutiva
@@ -12,9 +12,9 @@ El MVP usará como eje los **agregados geográficos de ResStock**, una muestra d
 
 ## Qué entra primero
 
-1. **ResStock:** comenzar por `timeseries_aggregates` y `metadata_and_annual_results`. Inspeccionar el inventario de archivos y sus particiones; elegir una geografía y periodo que puedan procesarse en el entorno disponible. No fijar todavía cuántos estados, filas o perfiles se usarán: se decidirá después de ver tamaño, columnas, resolución y condiciones de uso.
-2. **EIA residencial:** seleccionar una serie oficial de ventas residenciales por estado y periodo compatible con el análisis. Preferir inicialmente archivo público descargable o consulta manual reproducible; solicitar una clave gratuita de API solo si se necesita automatización, y acordarlo entre el equipo antes de gestionar la cuenta.
-3. **Open-Meteo:** probar una ubicación representativa y el periodo histórico 2018 con una o dos variables justificadas. Mantener las peticiones acotadas, guardar atribución y comprobar el huso horario antes de unir la serie con perfiles.
+1. **ResStock:** empezar por `timeseries_aggregates` y `metadata_and_annual_results`. La primera candidata medida es Colorado, `upgrade=0`, vivienda unifamiliar separada; su agregado de 31 MB permite un piloto local. No implica que esta categoría/estado sea el alcance total final.
+2. **EIA residencial:** usar como referencia inicial el libro público mensual `sales_revenue.xlsx`, hoja `Monthly-States`; se extrajeron los 12 meses finales de Colorado para 2018. Solicitar una clave de API solo si luego se necesita automatización, con acuerdo del equipo.
+3. **Open-Meteo:** la prueba histórica de 2018 se hizo para temperatura en un punto de Denver. Se conserva separada hasta resolver representatividad espacial y alineación horaria con el perfil estatal.
 4. **Procesamiento:** implementar primero inventario, validación de esquema, trazabilidad y agregaciones reproducibles; después análisis descriptivo y una detección de anomalías sencilla con métricas o ejemplos verificables.
 5. **Demostración de flujo:** reproducir históricamente una muestra ya validada para mostrar procesamiento progresivo, rotulándolo siempre como replay simulado y no como telemetría en vivo.
 
@@ -31,19 +31,20 @@ Se podrá pasar de la muestra inicial a más perfiles/estados o a nube cuando es
 
 ## Próximo bloque de trabajo
 
-1. Revisar este acuerdo después de la exposición del 17 de noviembre y registrar ajustes del profesor/equipo.
-2. Hacer inventario de ResStock sin descargar el conjunto completo; identificar archivos agregados candidatos, tamaños y particiones.
-3. Elegir un extracto de ResStock y una serie residencial EIA con intersección geográfica/temporal justificable.
-4. Probar la consulta histórica de Open-Meteo para esa geografía y periodo.
-5. Incorporar una muestra pequeña solo después de verificar sus condiciones de uso; registrar fuente, URL, fecha, periodo, tamaño, formato, hash, unidades y huso horario.
-6. Implementar el primer flujo reproducible y actualizar el seguimiento con evidencia real.
+1. Presentar el resultado de la muestra y registrar comentarios del profesor/equipo después de la revisión del 17 de noviembre.
+2. Revisar el aviso de columnas del release y los términos/atribuciones específicas de ResStock y EIA.
+3. Ajustar el piloto mensual por tipo de vivienda y validar que la comparación con EIA se comunique como exploratoria.
+4. Resolver qué cobertura climática representa la geografía y cómo alinear EST de ResStock con UTC/clima local antes de fusionar.
+5. Ampliar el flujo solo con base en datos y costo medidos; mantener las fuentes originales fuera de Git.
+
+La primera muestra ya fue procesada; cifras, hashes y controles están en [`resultados-muestra-inicial.md`](resultados-muestra-inicial.md), con reproducción mediante `scripts/analizar_muestra_inicial.py`.
 
 ## Evidencia y límites de la decisión
 
-- El README de ResStock distingue resultados anuales/características, series agregadas geográficamente y series individuales; recomienda al menos 1,000 modelos para conclusiones con incertidumbre de 15%: [README oficial del release 2025.1 (OEDI)](https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2025/resstock_amy2018_release_1/README_resstock_20251.pdf).
+- La documentación de ResStock distingue resultados anuales/características, series agregadas geográficamente y series individuales; recomienda al menos 1,000 modelos para conclusiones con incertidumbre de 15%: [datos oficiales de ResStock](https://natlabrockies.github.io/ResStock.github.io/docs/data.html) y [FAQ](https://natlabrockies.github.io/ResStock.github.io/docs/FAQ.html).
 - La guía técnica indica que 550,000 muestras sin mejoras, a paso de 15 minutos, producen aproximadamente 500 GB: [ResStock Technical Reference Guide 2025.1](https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2025/resstock_amy2018_release_1/ResStockTechnicalReferenceGuide_2025_1.pdf). Es una señal de escala; no equivale a un tamaño medido de los archivos que usará el MVP.
 - La API v2 de EIA requiere una clave: [documentación oficial de EIA](https://www.eia.gov/opendata/documentation.php). No se solicitó ni se guardó ninguna clave.
 - EIA describe EIA-930 como demanda calculada por Balancing Authority y explica convenciones horarias y transiciones DST: [EIA-930, información oficial](https://www.eia.gov/electricity/930-content/about.html).
 - Open-Meteo limita el uso gratuito a casos no comerciales y exige atribución conforme a sus términos: [términos de Open-Meteo](https://open-meteo.com/en/terms). El equipo debe verificar que su uso académico concreto encaje en esos términos antes de incorporarlo.
 
-La inspección hasta ahora ha sido documental. Esta recomendación no afirma que se descargaron datos, se probó el pipeline, se estimó rendimiento ni se aprobó un presupuesto cloud.
+La muestra local y sus controles se documentan en [`resultados-muestra-inicial.md`](resultados-muestra-inicial.md). Se midió solo este agregado: no se descargó el conjunto completo, no se implementó un pipeline de producción, no se midió escalamiento ni se aprobó un presupuesto cloud.

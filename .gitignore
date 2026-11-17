@@ -1,0 +1,4 @@
+# Fuentes descargadas para análisis local; no se publican en el repositorio.
+/data/raw/
+__pycache__/
+*.py[cod]

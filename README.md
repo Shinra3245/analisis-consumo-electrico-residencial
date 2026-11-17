@@ -35,11 +35,12 @@ La propuesta plantea Amazon S3 para archivos y resultados, Amazon Kinesis Data S
 - [x] Aprobación del profesor para continuar sin observaciones pendientes.
 - [x] Repositorio público y documentación inicial.
 - [x] Primer avance documental: validación preliminar de fuentes y esquema conceptual (16 de noviembre de 2026; con pendientes explícitos).
+- [x] Primera muestra empírica reproducible: agregado ResStock de Colorado, 12 meses residenciales EIA y consulta climática horaria (16 de noviembre de 2026).
 - [ ] Validación de disponibilidad, licencias, formatos y cobertura de las fuentes.
 - [ ] Diseño técnico y configuración del entorno.
 - [ ] Implementación, evaluación y documentación de resultados.
 
-Las casillas de desarrollo se actualizarán cuando exista evidencia verificable. Este README describe el planteamiento aprobado; no afirma que las fuentes se hayan descargado ni que la arquitectura esté desplegada.
+Las casillas se actualizan con evidencia verificable. Ya se descargaron y analizaron tres muestras acotadas; no se descargó el conjunto completo ni se desplegó la arquitectura en nube.
 
 ## Equipo
 
@@ -59,10 +60,16 @@ Las casillas de desarrollo se actualizarán cuando exista evidencia verificable.
 - [Plan de desarrollo y reparto por integrante](docs/plan-de-desarrollo.md)
 - [Tareas para la revisión de avance del 17 de noviembre](docs/plan-avance-17-noviembre.md)
 - [Validación inicial de fuentes](docs/validacion-inicial-fuentes.md)
+- [Resultados de la primera muestra](docs/resultados-muestra-inicial.md)
+- [Guion para la revisión de avance del 17 de noviembre](docs/presentacion-avance-17-noviembre.md)
+- [Diapositivas para la revisión de avance](presentaciones/Avance_Big_Data_17_noviembre_2026.pptx)
+- [Versión PDF de las diapositivas](presentaciones/Avance_Big_Data_17_noviembre_2026.pdf)
 - [Esquema conceptual y calidad inicial de datos](docs/esquema-inicial-calidad-datos.md)
 - [Decisión inicial de alcance y MVP](docs/decision-alcance-mvp.md)
 
 El plan de desarrollo es una propuesta de organización basada en la guía disponible; se actualizará si el profesor comparte una rúbrica detallada o confirma fechas y requisitos adicionales.
+
+La muestra y sus resultados son exploratorios: no acreditan que la plataforma final, la detección de anomalías ni el modelo de estimación estén implementados.
 
 ## Repositorio
 

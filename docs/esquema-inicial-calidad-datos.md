@@ -54,10 +54,10 @@ flowchart TD
    - *Alternativas técnicas a verificar:* EIA-930 o API v2 de demanda horaria por Balancing Authority **[Pendiente de selección]**.
    - *Naturaleza:* Telemetría global de balance de red (incluye industria, comercio, residencial y pérdidas). Funciona como contexto de la red y no sustituye al consumo domiciliario.
 
-4. **Capa 4 — Variables Climáticas:**
-   - *Origen previsto:* API de Open-Meteo (temperatura y variables complementarias).
-   - *Naturaleza:* Información meteorológica exógena para explorar correlaciones térmicas.
-   - *Estado:* Formato de coordenadas, resolución horaria y unidad (°C o °F) están **[Pendientes de parametrización]**.
+4. **Capa 4 — Datos Meteorológicos Históricos:**
+   - *Origen previsto:* API histórica de Open-Meteo (temperatura y variables complementarias).
+   - *Naturaleza:* Datos de reanálisis meteorológico exógenos; no se etiquetarán como mediciones directas de una estación si provienen de la API histórica.
+   - *Estado:* En la consulta piloto se observó temperatura horaria en °C y UTC para un punto de Denver. Se usó `Best Match` predeterminado; fijar un modelo y una cobertura espacial representativa sigue **[Pendiente]**.
 
 ---
 
@@ -93,13 +93,13 @@ Las siguientes tablas presentan los atributos mínimos propuestos. Todo campo, t
 | `system_demand` | Numérico | Demanda multisectorial de la red | Megavatios (MW) | Registro horario | Pendiente de verificar en fuente |
 | `source_type` | Texto constante | Etiqueta de capa (`'sistema_eia_red'`) | Texto | N/A | Regla de diseño interno |
 
-### 3.4 Variables Climáticas (`clima_observado_prevision`)
+### 3.4 Datos Meteorológicos Históricos (`clima_historico`)
 
 | Campo Candidato | Tipo Sugerido | Significado Previsto | Unidad Prevista | Base Temporal / Zona Horaria | Estado de Confirmación |
 |---|---|---|---|---|---|
 | `location_ref` | Alfanumérico | Coordenada (lat/lon) o zona climática | Grados decimales | N/A | Pendiente de parametrizar |
-| `timestamp` | Marca temporal | Momento de la observación o previsión | ISO 8601 | Horaria; UTC preferente | Pendiente de parametrizar |
-| `temperature` | Numérico | Temperatura ambiente de superficie | °C (preferente) | Horaria puntual/promedio | Pendiente de confirmar en API |
+| `timestamp` | Marca temporal | Momento asociado al valor de reanálisis | ISO 8601 | Horaria; la consulta piloto fue en UTC | Confirmado en la respuesta piloto |
+| `temperature_2m` | Numérico | Temperatura de aire a 2 m de un producto meteorológico histórico | °C (preferente) | Horaria; modelo y zona horaria por confirmar | Confirmado en la consulta puntual; el modelo quedó en Best Match predeterminado |
 | `source_type` | Texto constante | Etiqueta de capa (`'meteo_open_meteo'`) | Texto | N/A | Regla de diseño interno |
 
 ---
@@ -132,4 +132,10 @@ Flujo metodológico propuesto para inspeccionar la primera muestra autorizada qu
 ## 6. Evidencia y Limitaciones
 
 * **Evidencia consultada:** Alcance y objetivos documentados en `Propuesta_consumo_electrico_V2.docx` y lineamientos de inmutabilidad de [`docs/descripcion-del-proyecto.md`](descripcion-del-proyecto.md).
-* **Limitaciones:** Trabajo estrictamente acotado a diseño documental preliminar. No se descargaron datos, no se asumieron esquemas finales ni se definieron umbrales numéricos rígidos sin calibración empírica.
+* **Limitaciones de la versión conceptual:** No se asume un esquema global a partir de un solo archivo y no se definen umbrales numéricos rígidos sin calibración empírica. La muestra posterior se documenta en la sección 7.
+
+## 7. Contraste empírico de la primera muestra
+
+Después de redactar este esquema conceptual se inspeccionó un archivo agregado de ResStock (Colorado, `upgrade=0`, vivienda unifamiliar separada). Para **ese archivo** se confirmaron 96 columnas; campos `in.state`, `in.geometry_building_type_recs`, `timestamp`, `models_used`, `units_represented` y `out.electricity.total.energy_consumption..kwh`; intervalo de 15 minutos; timestamps en EST que marcan el cierre del intervalo; energía en kWh; y agregado ponderado. El archivo tuvo 35,040 intervalos únicos consecutivos, sin nulos ni valores negativos en el campo de energía total.
+
+Estos hallazgos empíricos aplican solo al archivo observado; no convierten todos los campos y reglas candidatos de este esquema en contrato general. Consulte [`resultados-muestra-inicial.md`](resultados-muestra-inicial.md) para procedencia, hashes, contraste mensual exploratorio con EIA y pendientes de alineación climática.

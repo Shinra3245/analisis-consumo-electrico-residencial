@@ -10,6 +10,8 @@ Las fuentes siguientes son las previstas en la propuesta aprobada. Su presencia 
 
 El orden y los límites del primer MVP están registrados en [`decision-alcance-mvp.md`](decision-alcance-mvp.md). La priorización no cambia las metas generales de la propuesta aprobada.
 
+Se procesó una primera muestra local reproducible de Colorado (ResStock, ventas EIA y temperatura histórica de Denver). El detalle de inventario, comprobaciones, cifras y límites de comparación está en [`resultados-muestra-inicial.md`](resultados-muestra-inicial.md). Los archivos originales se mantienen bajo `data/raw/`, ignorados por Git.
+
 ## Procedimiento de incorporación
 
 Para cada extracción se registrarán fuente, URL o identificador, fecha de consulta, versión, periodo, cobertura, unidades, formato, licencia/atribución, cantidad de registros y hash del archivo original. Se conservarán los datos crudos sin alteraciones y las transformaciones se ejecutarán en copias reproducibles.

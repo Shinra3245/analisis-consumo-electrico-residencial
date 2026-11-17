@@ -6,7 +6,7 @@
 
 ## Acuerdo de alcance para mañana
 
-Mostrar: problema y propuesta V2 aprobada; fuentes seleccionadas y estado real de validación; un ejemplo de datos o metadatos si se obtiene hoy; flujo de procesamiento propuesto; prototipo simple de salida; división de responsabilidades, riesgos y próximos pasos.
+Mostrar: problema y propuesta V2 aprobada; fuentes seleccionadas y estado real de validación; un ejemplo procesado de ResStock/EIA; controles aplicados; visualización exploratoria; riesgos, límites y próximos pasos. El [guion actualizado](presentacion-avance-17-noviembre.md) contiene los datos observados.
 
 No afirmar como realizado: integración de las tres fuentes, 350.4 millones de filas procesadas, flujo en vivo, modelos evaluados, tablero conectado a datos, despliegue en AWS ni costos medidos, salvo que el equipo complete y guarde evidencia hoy.
 
@@ -25,7 +25,7 @@ Las tareas de esta iteración se asignaron a agentes para producir evidencia ini
 2. **Antes de la exposición:** acordar qué hallazgos mostrar y quién presenta cada sección, sin convertir esa distribución en una asignación permanente de desarrollo.
 3. **Mañana:** explicar la propuesta aprobada, el estado de las fuentes, el esquema conceptual inicial y las limitaciones; registrar preguntas y próximos pasos.
 
-El alcance de esta revisión se limita a los dos documentos y a su explicación; el desarrollo técnico continuará después de recibir comentarios del profesor.
+El plan original cubría el avance documental de los dos agentes. Después se añadió una muestra empírica y un análisis local; el desarrollo técnico seguirá después de recibir comentarios del profesor.
 
 ## Guion sugerido para la exposición
 
