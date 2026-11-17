@@ -1,0 +1,35 @@
+{
+  "solicitados": 10,
+  "obtenidos": 10,
+  "fallidos": 0,
+  "filas": 350400,
+  "bytes_total": 64509497,
+  "bytes_min": 5378721,
+  "bytes_max": 7042415,
+  "bytes_media": 6450949.7,
+  "segundos_lote": 12.897,
+  "bytes_estimados_meta": 64509497000,
+  "perfiles_meta": 10000,
+  "eia_filas": 5304,
+  "eia_anios_completos_finales": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "clima_filas": 336,
+  "resstock_estratos": 254,
+  "resstock_candidatos": 549971,
+  "demo": {
+    "modelos": 5869,
+    "viviendas_representadas": 1490160.6552363716,
+    "intervalos": 35040,
+    "resstock_mwh": 16809653.3,
+    "eia_mwh": 19286952.0,
+    "razon_descriptiva_pct": 87.155572
+  }
+}

@@ -16,6 +16,7 @@ Este archivo establece cómo registrar avances y decisiones. El plan de desarrol
 | 2026-11-16 | Recomendación inicial de alcance del MVP | Equipo | [Decisión de alcance](decision-alcance-mvp.md) | Propuesta técnica para revisar después de la exposición; basada en revisión documental, sin descarga de datos |
 | 2026-11-16 | Primera muestra empírica y validación reproducible | Equipo | [Resultados](resultados-muestra-inicial.md), [script](../scripts/analizar_muestra_inicial.py) | Completado localmente; agregado ResStock, EIA mensual y Open-Meteo; fuentes originales excluidas de Git |
 | 2026-11-16 | Contenido resumido de presentación por diapositiva | Equipo | [JSON editable](contenido-presentacion-avance.json), [versión legible](presentacion-avance-17-noviembre.md) | Contenido actualizado; falta aplicar el estilo visual que entregará el usuario. El PowerPoint/PDF anterior quedan como borradores |
+| 2026-11-17 | Piloto individual de ResStock, cobertura multianual EIA, muestra climática y catálogo | Brian García Mares | [Ejecución y conteos](ejecucion-piloto-datos.md) | Piloto verificado localmente; revisión del equipo e integración pendientes |
 
 ## Actualización de avances
 

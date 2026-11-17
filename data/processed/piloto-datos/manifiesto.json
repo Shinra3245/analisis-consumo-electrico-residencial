@@ -1,0 +1,241 @@
+[
+  {
+    "archivo": "raw/eia/sales_revenue.xlsx",
+    "fuente": "https://www.eia.gov/electricity/data/eia861m/xls/sales_revenue.xlsx",
+    "fecha_utc": "2026-11-17T22:25:06+00:00",
+    "estado": "descargado",
+    "bytes": 2280162,
+    "filas": 10200,
+    "sha256": "c7963ad7c9bd2020cc7472f100a9c5330a4dff97a62be95407137a14b9c4044e",
+    "alcance_filas": "registros mensuales de 50 estados y DC en Monthly-States",
+    "segundos": 4.609
+  },
+  {
+    "archivo": "datos/eia_residencial_mensual.csv",
+    "fuente": "https://www.eia.gov/electricity/data/eia861m/xls/sales_revenue.xlsx",
+    "fecha_utc": "2026-11-17T22:25:06+00:00",
+    "estado": "derivado",
+    "bytes": 171187,
+    "filas": 5304,
+    "sha256": "dff80ba19688732949ef340046e1257eab4bb1e206b0480162b7ed61fba9f93a"
+  },
+  {
+    "archivo": "datos/cobertura_eia.csv",
+    "fuente": "https://www.eia.gov/electricity/data/eia861m/xls/sales_revenue.xlsx",
+    "fecha_utc": "2026-11-17T22:25:06+00:00",
+    "estado": "derivado",
+    "bytes": 15625,
+    "filas": 459,
+    "sha256": "51f80a45eeca0e6606fb9d44d827a76591d50becd65effbf65af07a6901e210c"
+  },
+  {
+    "archivo": "raw/open_meteo/denver_co_2018-01-01_2018-01-07.json",
+    "fuente": "https://archive-api.open-meteo.com/v1/archive?latitude=39.7392&longitude=-104.9903&start_date=2018-01-01&end_date=2018-01-07&hourly=temperature_2m&models=era5_land&timezone=GMT&temperature_unit=celsius",
+    "fecha_utc": "2026-11-17T22:25:11+00:00",
+    "estado": "descargado",
+    "bytes": 4259,
+    "filas": 168,
+    "sha256": "7886357673a014f92d326d378d053f40d651f9ac89b0248d05767e0eb587d6c5",
+    "segundos": 4.185
+  },
+  {
+    "archivo": "raw/open_meteo/grand_junction_co_2018-01-01_2018-01-07.json",
+    "fuente": "https://archive-api.open-meteo.com/v1/archive?latitude=39.0639&longitude=-108.5506&start_date=2018-01-01&end_date=2018-01-07&hourly=temperature_2m&models=era5_land&timezone=GMT&temperature_unit=celsius",
+    "fecha_utc": "2026-11-17T22:25:14+00:00",
+    "estado": "descargado",
+    "bytes": 4199,
+    "filas": 168,
+    "sha256": "194663df092a4c3047b24917ce64633634f9c086a77a06b503b94ce347b41ed2",
+    "segundos": 3.472
+  },
+  {
+    "archivo": "datos/clima_open_meteo_muestra.csv",
+    "fuente": "https://archive-api.open-meteo.com/v1/archive",
+    "fecha_utc": "2026-11-17T22:25:14+00:00",
+    "estado": "derivado",
+    "bytes": 29891,
+    "filas": 336,
+    "sha256": "c73e7c14b7c1d6c5b72ef158b35b061fb2c6da213798c99993aee398503f10a6"
+  },
+  {
+    "archivo": null,
+    "fuente": "https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2025/resstock_amy2018_release_1/metadata_and_annual_results/national/full/parquet/upgrade0.parquet",
+    "fecha_utc": "2026-11-17T22:25:43+00:00",
+    "estado": "lectura_remota_parcial",
+    "filas": 549971,
+    "bytes": null,
+    "sha256": null,
+    "bytes_http": 2486800,
+    "bytes_objeto": 465060991,
+    "etag_objeto": "\"dcaa5c1d994a279be79d1dbc061e078d-9\"",
+    "segundos": 28.651
+  },
+  {
+    "archivo": "datos/resstock_cobertura_estratos.csv",
+    "fuente": "https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2025/resstock_amy2018_release_1/metadata_and_annual_results/national/full/parquet/upgrade0.parquet",
+    "fecha_utc": "2026-11-17T22:25:44+00:00",
+    "estado": "derivado",
+    "bytes": 9494,
+    "filas": 254,
+    "sha256": "0609af77240580337285ab0b987765ef9d923332a4acf9ea5b89684bdb311519"
+  },
+  {
+    "archivo": "datos/resstock_seleccion_propuesta.csv",
+    "fuente": "https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2025/resstock_amy2018_release_1/metadata_and_annual_results/national/full/parquet/upgrade0.parquet",
+    "fecha_utc": "2026-11-17T22:25:44+00:00",
+    "estado": "derivado",
+    "bytes": 2812952,
+    "filas": 10000,
+    "sha256": "caaf96067883d6a7c2b79010647614e66bd631f6d30aab38190015a4a2a8f826"
+  },
+  {
+    "archivo": "raw/resstock/CO/259599-0.parquet",
+    "fuente": "https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2025/resstock_amy2018_release_1/timeseries_individual_buildings/by_state/upgrade=0/state=CO/259599-0.parquet",
+    "fecha_utc": "2026-11-17T22:25:48+00:00",
+    "estado": "descargado",
+    "bytes": 6531337,
+    "filas": 35040,
+    "sha256": "ec5ea5ac8719c83792185d4cb1fdde198b6976fd1a3cce777b3de2a1913d5594",
+    "segundos": 4.39,
+    "bldg_id": 259599,
+    "estado_eeuu": "CO"
+  },
+  {
+    "archivo": "raw/resstock/CO/464397-0.parquet",
+    "fuente": "https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2025/resstock_amy2018_release_1/timeseries_individual_buildings/by_state/upgrade=0/state=CO/464397-0.parquet",
+    "fecha_utc": "2026-11-17T22:25:48+00:00",
+    "estado": "descargado",
+    "bytes": 6694573,
+    "filas": 35040,
+    "sha256": "5eaa0534af24c7b78479f5ebc662a3e9b58b4bc3f54ca98cdcd3ceeb15b37f29",
+    "segundos": 4.482,
+    "bldg_id": 464397,
+    "estado_eeuu": "CO"
+  },
+  {
+    "archivo": "raw/resstock/CO/318605-0.parquet",
+    "fuente": "https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2025/resstock_amy2018_release_1/timeseries_individual_buildings/by_state/upgrade=0/state=CO/318605-0.parquet",
+    "fecha_utc": "2026-11-17T22:25:49+00:00",
+    "estado": "descargado",
+    "bytes": 6299347,
+    "filas": 35040,
+    "sha256": "91d83aaf115f562885b561fcee547bb262ac7ece3430ab24a6f82e75e8265995",
+    "segundos": 3.94,
+    "bldg_id": 318605,
+    "estado_eeuu": "CO"
+  },
+  {
+    "archivo": "raw/resstock/CO/322730-0.parquet",
+    "fuente": "https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2025/resstock_amy2018_release_1/timeseries_individual_buildings/by_state/upgrade=0/state=CO/322730-0.parquet",
+    "fecha_utc": "2026-11-17T22:25:49+00:00",
+    "estado": "descargado",
+    "bytes": 7042415,
+    "filas": 35040,
+    "sha256": "fc3e11150ce8d3669f05023875c558d6a839e018c6a832e5228a55ae8a88d7d8",
+    "segundos": 4.409,
+    "bldg_id": 322730,
+    "estado_eeuu": "CO"
+  },
+  {
+    "archivo": "raw/resstock/CO/50886-0.parquet",
+    "fuente": "https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2025/resstock_amy2018_release_1/timeseries_individual_buildings/by_state/upgrade=0/state=CO/50886-0.parquet",
+    "fecha_utc": "2026-11-17T22:25:53+00:00",
+    "estado": "descargado",
+    "bytes": 7013201,
+    "filas": 35040,
+    "sha256": "b1b6779edb4d0f3425720e43b37b7470a214c569e9dde65d0267ea5d138ad5ec",
+    "segundos": 4.232,
+    "bldg_id": 50886,
+    "estado_eeuu": "CO"
+  },
+  {
+    "archivo": "raw/resstock/NY/45000-0.parquet",
+    "fuente": "https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2025/resstock_amy2018_release_1/timeseries_individual_buildings/by_state/upgrade=0/state=NY/45000-0.parquet",
+    "fecha_utc": "2026-11-17T22:25:53+00:00",
+    "estado": "descargado",
+    "bytes": 6353858,
+    "filas": 35040,
+    "sha256": "b587452d70d2f9ca6c07b7f06c78ca8f71d1ddcef38e43865cb2a03d23c44672",
+    "segundos": 4.219,
+    "bldg_id": 45000,
+    "estado_eeuu": "NY"
+  },
+  {
+    "archivo": "raw/resstock/NY/528848-0.parquet",
+    "fuente": "https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2025/resstock_amy2018_release_1/timeseries_individual_buildings/by_state/upgrade=0/state=NY/528848-0.parquet",
+    "fecha_utc": "2026-11-17T22:25:53+00:00",
+    "estado": "descargado",
+    "bytes": 6827621,
+    "filas": 35040,
+    "sha256": "6c8cffbdd5175cd91aa98782a330cbfa3d2b5d2d1912e255fa653306ab90d1e0",
+    "segundos": 4.321,
+    "bldg_id": 528848,
+    "estado_eeuu": "NY"
+  },
+  {
+    "archivo": "raw/resstock/NY/60178-0.parquet",
+    "fuente": "https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2025/resstock_amy2018_release_1/timeseries_individual_buildings/by_state/upgrade=0/state=NY/60178-0.parquet",
+    "fecha_utc": "2026-11-17T22:25:53+00:00",
+    "estado": "descargado",
+    "bytes": 6183947,
+    "filas": 35040,
+    "sha256": "b09bfa6974ac8064bc3fc5aa1109576ffe8cc6b087aa629f759a971ae5ad57ab",
+    "segundos": 4.132,
+    "bldg_id": 60178,
+    "estado_eeuu": "NY"
+  },
+  {
+    "archivo": "raw/resstock/NY/424561-0.parquet",
+    "fuente": "https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2025/resstock_amy2018_release_1/timeseries_individual_buildings/by_state/upgrade=0/state=NY/424561-0.parquet",
+    "fecha_utc": "2026-11-17T22:25:57+00:00",
+    "estado": "descargado",
+    "bytes": 5378721,
+    "filas": 35040,
+    "sha256": "afa77c7879b2a6bfffc73ae851e79a28db4b66520ebc9c69a51d819430335231",
+    "segundos": 3.686,
+    "bldg_id": 424561,
+    "estado_eeuu": "NY"
+  },
+  {
+    "archivo": "raw/resstock/NY/310076-0.parquet",
+    "fuente": "https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2025/resstock_amy2018_release_1/timeseries_individual_buildings/by_state/upgrade=0/state=NY/310076-0.parquet",
+    "fecha_utc": "2026-11-17T22:25:57+00:00",
+    "estado": "descargado",
+    "bytes": 6184477,
+    "filas": 35040,
+    "sha256": "80acf85faf551963dc406c45d4370ffb06b51a2b0ce44f4fd0f26a55aa7499dd",
+    "segundos": 3.568,
+    "bldg_id": 310076,
+    "estado_eeuu": "NY"
+  },
+  {
+    "archivo": "datos/resstock_perfiles_piloto.parquet",
+    "fuente": "https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2025/resstock_amy2018_release_1/metadata_and_annual_results/national/full/parquet/upgrade0.parquet",
+    "fecha_utc": "2026-11-17T22:25:57+00:00",
+    "estado": "derivado",
+    "bytes": 1976684,
+    "filas": 350400,
+    "sha256": "87b5d725858a5726b3c191df1251c63c30e4abcd484fefd41aefa2b7cd34975b",
+    "origen": "archivos individuales listados en el manifiesto"
+  },
+  {
+    "archivo": "raw/resstock/co_single_family_detached.csv",
+    "fuente": "https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2025/resstock_amy2018_release_1/timeseries_aggregates/by_state/upgrade=0/state=CO/up00-co-single-family_detached.csv",
+    "fecha_utc": "2026-11-17T22:26:01+00:00",
+    "estado": "descargado",
+    "bytes": 31004915,
+    "filas": 35040,
+    "sha256": "7f07296a7a94a1fd1606c2266959bd2f118eadf9d0b1891cf8a96c49cb9b0132",
+    "segundos": 4.373
+  },
+  {
+    "archivo": "datos/demo_colorado_2018_verificacion.csv",
+    "fuente": "https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2025/resstock_amy2018_release_1/timeseries_aggregates/by_state/upgrade=0/state=CO/up00-co-single-family_detached.csv",
+    "fecha_utc": "2026-11-17T22:26:01+00:00",
+    "estado": "derivado",
+    "bytes": 579,
+    "filas": 12,
+    "sha256": "a2509408d2eba973887d3a18c1cf9e18c089b89e79c993959cff092b2e37f8d0",
+    "fuente_eia": "https://www.eia.gov/electricity/data/eia861m/xls/sales_revenue.xlsx"
+  }
+]

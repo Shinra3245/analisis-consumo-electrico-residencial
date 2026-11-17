@@ -61,6 +61,7 @@ Las casillas se actualizan con evidencia verificable. Ya se descargaron y analiz
 - [Tareas para la revisión de avance del 17 de noviembre](docs/plan-avance-17-noviembre.md)
 - [Validación inicial de fuentes](docs/validacion-inicial-fuentes.md)
 - [Resultados de la primera muestra](docs/resultados-muestra-inicial.md)
+- [Piloto de perfiles y revisión local con Spark](docs/ejecucion-piloto-datos.md)
 - [Contenido resumido por diapositiva en JSON](docs/contenido-presentacion-avance.json)
 - [Versión legible del contenido de presentación](docs/presentacion-avance-17-noviembre.md)
 - [PowerPoint borrador anterior, pendiente de aplicar el estilo final](presentaciones/Avance_Big_Data_17_noviembre_2026.pptx)

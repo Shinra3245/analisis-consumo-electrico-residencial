@@ -1,0 +1,2 @@
+# Conservar los bytes del corte de datos que verifica el manifiesto.
+data/processed/piloto-datos/** -text whitespace=cr-at-eol
