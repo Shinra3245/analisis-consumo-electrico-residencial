@@ -34,6 +34,19 @@ Cada fila cita fuentes oficiales en el documento de decisión; aquí solo el res
 
 Las tablas EIA, la muestra climática y cuatro artefactos derivados ResStock están integrados con procedencia y hashes en [`datos/`](../datos/README.md). EIA se reobtuvo desde el XLSX oficial y se reprodujo byte a byte con [`scripts/preparar_eia.py`](../scripts/preparar_eia.py); el XLSX no se conserva en el repo. Para el contrato técnico por fuente, ver [`contrato-datos-v1.md`](contrato-datos-v1.md).
 
+## Campos de interés y análisis posterior
+
+| Fuente/archivo | Campos | Significado y uso |
+|---|---|---|
+| ResStock individual (`resstock_perfiles_piloto.parquet`) | `bldg_id`, `timestamp_fin_local`, `electricidad_kwh` | ID del modelo, fin del intervalo de 15 minutos y energía modelada en kWh. El timestamp almacenado no incluye offset; la documentación de la fuente indica EST fijo. Mantener esa semántica y no convertirlo a UTC sin una regla explícita. |
+| ResStock selección (`resstock_seleccion_propuesta.csv`) | `bldg_id`, `estado`, `tipo_vivienda`, `condado_codigo`, `peso_viviendas`, `upgrade`, `url` | Candidatos y metadatos para seleccionar perfiles. `condado_codigo` se conserva como texto de origen; algunos valores son nombres descriptivos, no un identificador GIS uniforme. |
+| EIA (`eia_residencial_mensual.csv`) | `periodo`, `estado`, `sector`, `estado_dato`, `ventas_mwh` | Mes, estado, sector residencial, condición `Final`/`Preliminary` y ventas agregadas en MWh. Conservar el estado del dato. |
+| Open-Meteo (`clima_open_meteo_muestra.csv`) | `punto_id`, coordenadas, `timestamp_utc`, `temperatura_c`, `modelo` | Temperatura horaria en dos puntos; no representa todo Colorado ni está unida a ResStock. |
+
+Como propuesta de evaluación temporal para EIA, se puede reservar 2018–2023 para ajuste, 2024 para validación y 2025 para prueba final, manteniendo enero–agosto de 2026 como preliminar. Es una división recomendada, no un entrenamiento o evaluación ya ejecutados. Para detalles de lectura con Spark, consultar la [guía del piloto](ejecucion-piloto-datos.md). La [nota de viabilidad de 10,000 perfiles](viabilidad-resstock-10000.md) distingue las cifras reportadas del piloto de la proyección de escala.
+
+La cifra de 87.16% es descriptiva y se recibió como resultado del artefacto de Colorado del ZIP de Mares; no se recalculó aquí desde el agregado ResStock crudo, que no venía en el ZIP. Compara dos coberturas distintas y no debe presentarse como precisión o validación del modelo.
+
 Texto de atribución ResStock: «Data includes information from the ResStock™ dataset developed by the National Renewable Energy Laboratory (NREL) with funding from the U.S. Department of Energy (DOE).» Open-Meteo y C3S: ver decisión.
 
 ## Verificación pendiente

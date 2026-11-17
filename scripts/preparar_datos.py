@@ -415,7 +415,7 @@ def check_demo(args, eia, records):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=Path("salida"))
+    parser.add_argument("--output", type=Path, default=Path("data/raw/reproduccion-piloto-datos"))
     parser.add_argument("--states", nargs="+", type=str.upper, choices=sorted(STATES),
                         default=sorted(STATES), metavar="ESTADO")
     parser.add_argument("--pilot-states", nargs="+", type=str.upper, choices=sorted(STATES),
