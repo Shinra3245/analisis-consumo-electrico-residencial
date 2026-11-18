@@ -7,9 +7,9 @@ Este plan convierte en trabajo ejecutable los cinco pendientes de integración y
 ### Estado de partida
 
 - El pipeline local PySpark de Silver/Gold está integrado y ejecutado con 21/21 reglas aprobadas. Produce 10 perfiles ResStock y series EIA/clima con manifiesto de hashes.
-- El prototipo web existe, pero todavía no carga como fuente de datos las salidas de ese pipeline.
+- El dashboard local de seis vistas consume cinco tablas Gold JSON versionadas y verifica esquema, filas, bytes y SHA-256 contra `manifest.json`.
 - La rama de pipeline anterior del PR #4 se cerró porque su agregado Colorado/EIA no es reproducible desde los archivos versionados. La razón 87.16% no debe presentarse como precisión ni como resultado recalculado.
-- La propuesta Gold define las seis vistas, pero patrones horarios locales, anomalías y pronósticos aún no tienen todas sus tablas Gold generadas.
+- El exportador genera patrones horarios locales para el piloto de 10 perfiles; las vistas de pronóstico y anomalías continúan sin tablas Gold ni cifras.
 - No hay infraestructura AWS desplegada. La región y el presupuesto máximo siguen sin decisión documentada.
 - Hay 10 perfiles efectivamente procesados. La lista de 10,000 IDs es una selección candidata, no una descarga de 10,000 perfiles.
 
@@ -19,10 +19,10 @@ Este plan convierte en trabajo ejecutable los cinco pendientes de integración y
 |---|---|---|---|
 | **P0 — Urgente, puerta de decisión** | Acordar presupuesto, región, responsable de cuenta y permisos AWS. Confirmar que la cuenta puede crear S3, EMR y Kinesis dentro del límite aprobado. | Decisión explícita del titular/equipo; estimación de costos. | Bloqueado hasta registrar los valores aprobados; no crear recursos facturables antes. |
 | **P0 — Urgente, trabajo local paralelo** | Recuperar o reconstruir de forma autorizada la fuente de la comparación Colorado/EIA 2018 y hacerla reproducible. | Archivo agregado original y procedencia; o fuente autorizada equivalente. | No reproducible todavía; la salida entregada está en el repositorio, pero su agregado ResStock de origen no. |
-| **P1 — Desbloquea patrones y vistas** | Normalizar timestamps ResStock a UTC y hora local IANA, preservar el timestamp fuente, y generar Gold por periodo/hora local. | Mapeo validado de perfil a estado/zona; contrato de tiempo. | Pendiente. |
-| **P1 — Visible y demostrable** | Conectar el dashboard al Gold actual y completar las seis vistas incrementalmente con lenguaje visual isométrico y jerarquía clara. | Pipeline local; adaptador de datos JSON/Parquet; dirección visual abajo. | Pendiente. |
+| **P1 — Desbloquea patrones y vistas** | Normalizar timestamps ResStock a UTC y hora local IANA, preservar el timestamp fuente, y generar Gold por periodo/hora local. | Mapeo de los 10 perfiles piloto a estado/zona; contrato de tiempo. | **Completado para el piloto:** exportador genera 6,730 filas locales y preserva offsets DST y periodos parciales; no implica escala de 10,000 perfiles. |
+| **P1 — Visible y demostrable** | Conectar el dashboard al Gold actual y completar las seis vistas incrementalmente con lenguaje visual isométrico y jerarquía clara. | Pipeline local; adaptador de datos JSON/Parquet; dirección visual abajo. | **Completado como dashboard local v1:** cinco tablas cargan desde JSON/manifiesto; Resumen, Patrones, Clima y Flujo/Calidad presentan datos. Estimaciones y Anomalías muestran espera sin cifras mientras no haya Gold evaluado. |
 | **P2 — Escalamiento** | Descargar y procesar 10,000 perfiles por lotes con procedencia y controles. | Revisión de licencia/redistribución, capacidad local/nube y estimación de almacenamiento/costo. | Pendiente; no equivale a usar los 10,000 IDs candidatos. |
-| **P2 — Analítica avanzada** | Implementar y evaluar pronósticos mensuales y detección de anomalías. | Datos versionados; división temporal de evaluación; reglas y etiquetas para anomalías. | Pendiente. |
+| **P2 — Analítica avanzada** | Implementar y evaluar pronósticos mensuales y detección de anomalías. | Datos versionados; división temporal de evaluación; reglas y etiquetas para anomalías. | Pendiente; las vistas existen pero no muestran resultados sin backtest o evaluación. |
 | **P2 — Despliegue objetivo** | Migrar procesamiento a EMR, replay por Kinesis, datos en S3 y publicación del tablero. | P0 aprobado; ejecución local reproducible; límites de costo y seguridad. | Pendiente; no desplegar antes de superar P0. |
 
 P0 de la comparación, P1 de dashboard y P1 de hora local pueden trabajarse en paralelo siempre que cada salida respete el contrato y se mantengan separadas las poblaciones y zonas horarias.

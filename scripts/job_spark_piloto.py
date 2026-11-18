@@ -2,7 +2,7 @@
 """Job PySpark reproducible para procesamiento local de datos de consumo residencial.
 
 Lee los artefactos piloto locales (ResStock Parquet, EIA CSV, Clima CSV) con
-esquemas explícitos, aplica 20 controles de calidad formales según docs/contrato-datos-v1.md,
+esquemas explícitos, aplica 21 controles de calidad formales según docs/contrato-datos-v1.md,
 bloquea la publicación si hay reglas fallidas, escribe tablas Silver y Gold con
 nombres canónicos y asignación mensual corregida (12 meses 2018), preservando
 la separación semántica de fuentes, y publica atómicamente el árbol completo
@@ -51,7 +51,21 @@ def parse_arguments() -> argparse.Namespace:
         default="PilotoConsumoResidencialSilverGold",
         help="Nombre de la aplicación Spark.",
     )
-    return parser.parse_args()
+    parser.add_argument(
+        "--export-tablero",
+        type=str,
+        default=None,
+        help="Directorio opcional para exportar los datos JSON del frontend (ej. tablero/data/v1).",
+    )
+    parser.add_argument(
+        "--overwrite-tablero",
+        action="store_true",
+        help="Permite reemplazar la exportación JSON existente; requiere --export-tablero.",
+    )
+    args = parser.parse_args()
+    if args.overwrite_tablero and not args.export_tablero:
+        parser.error("--overwrite-tablero requiere --export-tablero.")
+    return args
 
 
 def validate_paths(input_dir: str, output_dir: str) -> Tuple[str, str]:
@@ -1227,6 +1241,43 @@ def main() -> int:
             table_row_counts,
             real_output,
         )
+
+        if args.export_tablero:
+            print(f"Exportando capas JSON para el frontend en: {args.export_tablero}")
+            import subprocess
+            gen_script = os.path.join(os.path.dirname(__file__), "generar_datos_tablero.py")
+            python_candidates = [
+                sys.executable,
+                shutil.which("python3"),
+                "/usr/bin/python3",
+            ]
+            selected_python = None
+            for cand in python_candidates:
+                if not cand or not os.path.exists(cand):
+                    continue
+                try:
+                    res = subprocess.run(
+                        [cand, "-c", "import pandas, pyarrow"],
+                        capture_output=True,
+                    )
+                    if res.returncode == 0:
+                        selected_python = cand
+                        break
+                except Exception:
+                    continue
+            if not selected_python:
+                raise RuntimeError("No se encontró un intérprete Python con pandas y pyarrow instalados.")
+            export_command = [
+                selected_python,
+                gen_script,
+                "--input",
+                real_input,
+                "--output",
+                args.export_tablero,
+            ]
+            if args.overwrite_tablero:
+                export_command.append("--overwrite")
+            subprocess.run(export_command, check=True)
 
         print("=" * 70)
         print("Ejecución finalizada exitosamente.")

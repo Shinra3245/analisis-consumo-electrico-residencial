@@ -1,0 +1,125 @@
+{
+  "manifest_version": "1.0",
+  "schema_version": "1.0",
+  "generated_at_utc": "2026-11-18T05:40:57.105845+00:00",
+  "generator_script": "scripts/generar_datos_tablero.py",
+  "data_status": "VALID_WITH_WARNINGS",
+  "coverage_summary": {
+    "eia": "2018-01 through 2026-08 (51 jurisdictions: 50 states + DC), monthly residential utility sales",
+    "resstock": "AMY 2018, 10 pilot profiles (5 Colorado, 5 New York), 15-minute intervals (35,040 per bldg)",
+    "climate": "2018-01-01 to 2018-01-07, 2 point locations in Colorado (Denver, Grand Junction), ERA5-Land hourly"
+  },
+  "methodology_separation": {
+    "resstock_modelled": "10 physical building energy simulation models (AMY 2018). Pilot exploratory sample; does not represent national totals. Timestamps converted explicitly from fixed EST to UTC and local IANA time zones.",
+    "eia_sales": "Aggregated official utility sales from Form EIA-861M for 51 jurisdictions. Completely distinct population and scope from ResStock.",
+    "climate_reanalysis": "ERA5-Land reanalysis for 2 point locations in CO; preserved decoupled without spatial or temporal join to consumption.",
+    "colorado_eia_comparison_metric": {
+      "reported_ratio_pct": 87.16,
+      "status": "not_reproduced",
+      "blocker": "The raw ResStock Colorado aggregate dataset (timeseries_aggregates) is absent from origin/main. Per project governance and data integrity rules, no synthetic substitute is created, and the 87.16% figure is documented as an unverified external descriptive ratio, not an independently reproduced precision metric."
+    }
+  },
+  "source_inventory": [
+    {
+      "file": "resstock_perfiles_piloto.parquet",
+      "source_dataset_id": "resstock_2025r1_amy2018_upgrade0_pilot",
+      "bytes": 1976684,
+      "sha256": "87b5d725858a5726b3c191df1251c63c30e4abcd484fefd41aefa2b7cd34975b",
+      "source_url": "https://data.openei.org/submissions/4520",
+      "license": "CC BY 4.0; academic research use, preserve disclaimer and attribution",
+      "transform": "10 selected individual profiles concatenated and columns renamed to bldg_id/timestamp_fin_local/electricidad_kwh; source Parquet files absent from delivered archive."
+    },
+    {
+      "file": "resstock_seleccion_propuesta.csv",
+      "source_dataset_id": "resstock_2025r1_selection_index",
+      "bytes": 2812952,
+      "sha256": "caaf96067883d6a7c2b79010647614e66bd631f6d30aab38190015a4a2a8f826",
+      "source_url": "https://data.openei.org/submissions/4520",
+      "license": "CC BY 4.0; academic research use, preserve disclaimer and attribution",
+      "transform": "Stratified candidate selection of 10,000 IDs/URLs; candidates are not downloaded profiles."
+    },
+    {
+      "file": "eia_residencial_mensual.csv",
+      "source_dataset_id": "eia861m_sales_monthly",
+      "bytes": 171187,
+      "sha256": "dff80ba19688732949ef340046e1257eab4bb1e206b0480162b7ed61fba9f93a",
+      "source_url": "https://www.eia.gov/electricity/data/eia861m/xls/sales_revenue.xlsx",
+      "license": "U.S. EIA public reuse policy; cite source and publication date",
+      "transform": "Filter years 2018-2026, residential sector, normalize to CSV; exact replay of XLSX SHA-256 c7963ad7c9bd2020cc7472f100a9c5330a4dff97a62be95407137a14b9c4044e"
+    },
+    {
+      "file": "clima_open_meteo_muestra.csv",
+      "source_dataset_id": "openmeteo_era5land_hourly",
+      "bytes": 29891,
+      "sha256": "c73e7c14b7c1d6c5b72ef158b35b061fb2c6da213798c99993aee398503f10a6",
+      "source_url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "license": "CC BY 4.0; free API use non-commercial under Open-Meteo Terms",
+      "transform": "Two Colorado locations, 2018-01-01 through 2018-01-07, hourly UTC, temperature_2m in Celsius; normalized JSON response to CSV. Raw JSON absent from delivered archive."
+    }
+  ],
+  "qc_rules": {
+    "total_rules": 21,
+    "passed_rules": 21,
+    "failed_rules": 0,
+    "status": "VALID_WITH_WARNINGS",
+    "warnings": [
+      "Muestra meteorológica preservada en capa desacoplada sin join espacial ni temporal con perfiles de consumo.",
+      "El manifiesto de integración no registra la hora UTC exacta de descarga original de las fuentes.",
+      "El agregado crudo ResStock Colorado 2018 para la comparación 87.16% está ausente en origin/main; la métrica queda catalogada como no reproducida."
+    ]
+  },
+  "tables": {
+    "gold_eia_monthly": {
+      "file": "gold_eia_monthly.json",
+      "rows": 5304,
+      "bytes": 601763,
+      "sha256": "af48f3b56264759b5f261c088125e3545c40e012015b228ed7307b9fc01da825",
+      "primary_key": [
+        "period",
+        "state_code"
+      ]
+    },
+    "gold_resstock_monthly": {
+      "file": "gold_resstock_monthly.json",
+      "rows": 120,
+      "bytes": 20187,
+      "sha256": "9ad49b84ca04544d298316f6ab680afc6af2938ae89d26538398b735e94d5a10",
+      "primary_key": [
+        "bldg_id",
+        "source_period"
+      ]
+    },
+    "gold_resstock_pattern": {
+      "file": "gold_resstock_pattern.json",
+      "rows": 6730,
+      "bytes": 2965848,
+      "sha256": "b020c7030e0de6b8289f134c138cb812777980387bc3a45ca29bc8e43e08def1",
+      "primary_key": [
+        "bldg_id",
+        "period_local",
+        "day_type",
+        "hour_local",
+        "utc_offset_minutes"
+      ]
+    },
+    "gold_resstock_profile_summary": {
+      "file": "gold_resstock_profile_summary.json",
+      "rows": 10,
+      "bytes": 3042,
+      "sha256": "c06c40b4f2e34e35cc0f1fc9c7d2eff8f4bd6e803e9755988ebbf485d41bca12",
+      "primary_key": [
+        "bldg_id"
+      ]
+    },
+    "gold_climate": {
+      "file": "gold_climate.json",
+      "rows": 336,
+      "bytes": 99993,
+      "sha256": "ab57a0bd00ad539ec8bb036b31de78d92d5e1fc56a2a3510deef90b606f02556",
+      "primary_key": [
+        "point_id",
+        "timestamp_utc"
+      ]
+    }
+  }
+}
