@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Consumo eléctrico residencial en Colorado</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v5.5M12 7.8v.1" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  </svg>
+
+  <div class="container">
+    <header id="inicio">
+      <div class="header-top">
+        <p class="project-meta">Versión preliminar · Colorado, 2018</p>
+        <ul class="tags-bar" aria-label="Tipo de cada fuente">
+          <li class="tag-badge tag-modeled"><span class="tag-dot" aria-hidden="true"></span> perfil modelado</li>
+          <li class="tag-badge tag-eia"><span class="tag-dot" aria-hidden="true"></span> estadística EIA</li>
+          <li class="tag-badge tag-exploratory"><span class="tag-dot" aria-hidden="true"></span> comparación orientativa</li>
+        </ul>
+      </div>
+      <h1>Consumo eléctrico residencial en Colorado</h1>
+      <p class="subtitle">
+        Comparación entre el consumo de un perfil modelado de viviendas unifamiliares y las ventas oficiales de electricidad del sector residencial del estado.
+      </p>
+      <section class="project-overview" aria-labelledby="project-overview-title">
+        <div>
+          <h2 id="project-overview-title">Sobre el proyecto</h2>
+          <p>El proyecto busca combinar perfiles de vivienda, estadísticas oficiales de electricidad y datos meteorológicos para analizar patrones de consumo residencial por región.</p>
+        </div>
+        <ul class="project-goals" aria-label="Objetivos del proyecto">
+          <li>Analizar patrones</li>
+          <li>Detectar cambios inusuales</li>
+          <li>Estimar la evolución del consumo</li>
+        </ul>
+      </section>
+    </header>
+
+    <nav class="page-nav" aria-label="Secciones de la página">
+      <a href="#datos">1. Datos</a>
+      <a href="#objetivo">2. Para qué</a>
+      <a href="#resultados">3. Resultados</a>
+      <a href="#calidad">4. Calidad de los datos</a>
+    </nav>
+
+    <main id="contenido">
+    <section id="datos" aria-labelledby="t-datos">
+      <h2 class="section-title" id="t-datos"><span class="step">1</span> Qué datos se obtuvieron y de dónde</h2>
+      <div class="grid-2col">
+        <div class="metric-card color-resstock">
+          <div class="metric-header">
+            <h3 class="metric-label">ResStock</h3>
+            <span class="metric-badge">Perfil modelado</span>
+          </div>
+          <div class="metric-value">5,869 <span class="unit">modelos</span></div>
+          <div class="metric-subtext">Modelo de vivienda unifamiliar aislada en Colorado, 2018. Los 5,869 modelos ponderados representan cerca de 1.49 millones de viviendas.</div>
+        </div>
+        <div class="metric-card color-eia">
+          <div class="metric-header">
+            <h3 class="metric-label">EIA-861M</h3>
+            <span class="metric-badge">Estadística EIA</span>
+          </div>
+          <div class="metric-value">12 <span class="unit">meses</span></div>
+          <div class="metric-subtext">Ventas mensuales de electricidad de todo el sector residencial de Colorado, 2018.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="objetivo" aria-labelledby="t-objetivo">
+      <h2 class="section-title" id="t-objetivo"><span class="step">2</span> Para qué</h2>
+      <p class="section-desc lead">Comparar la escala del perfil modelado con el total residencial estatal, para saber qué tan cerca están ambos órdenes de magnitud.</p>
+    </section>
+
+    <section id="resultados" aria-labelledby="t-resultados">
+      <h2 class="section-title" id="t-resultados"><span class="step">3</span> Qué arroja</h2>
+      <p class="section-desc">Consumo eléctrico anual de 2018.</p>
+
+      <div class="metrics-grid kpi-3">
+        <div class="metric-card color-resstock">
+          <div class="metric-header">
+            <h3 class="metric-label">ResStock</h3>
+            <span class="metric-badge">Perfil modelado</span>
+          </div>
+          <div class="metric-value">16.81M <span class="unit">MWh</span></div>
+          <div class="metric-subtext">Viviendas unifamiliares separadas modeladas.</div>
+        </div>
+        <div class="metric-card color-eia">
+          <div class="metric-header">
+            <h3 class="metric-label">EIA</h3>
+            <span class="metric-badge">Estadística EIA</span>
+          </div>
+          <div class="metric-value">19.29M <span class="unit">MWh</span></div>
+          <div class="metric-subtext">Ventas de todo el sector residencial.</div>
+        </div>
+        <div class="metric-card color-ratio">
+          <div class="metric-header">
+            <h3 class="metric-label">Relación anual</h3>
+            <span class="metric-badge">Comparación orientativa</span>
+          </div>
+          <div class="metric-value">87.16%</div>
+          <div class="metric-subtext">16.81M ÷ 19.29M.</div>
+        </div>
+      </div>
+
+      <p class="note" role="note">
+        <svg class="note-icon" aria-hidden="true"><use href="#i-info"/></svg>
+        <span><strong>Cómo leer el 87.16%:</strong> ResStock cubre solo viviendas unifamiliares modeladas y EIA contempla todas las residencias. Por eso esta relación compara escalas; no mide error ni la participación real de ese tipo de vivienda.</span>
+      </p>
+
+      <div class="comparison-section">
+        <h3 class="block-title">Comparación mensual</h3>
+        <p class="section-desc">La relación mensual ResStock/EIA va de 68.31% en agosto a 114.85% en febrero.</p>
+
+        <div class="toolbar">
+          <div class="view-tabs" role="group" aria-label="Tipo de gráfica">
+            <button type="button" class="tab-btn active" data-view="lines" aria-pressed="true">Líneas Temporales</button>
+            <button type="button" class="tab-btn" data-view="bars" aria-pressed="false">Barras Agrupadas</button>
+            <button type="button" class="tab-btn" data-view="ratio" aria-pressed="false">Relación mensual (%)</button>
+          </div>
+
+          <ul class="chart-legend" aria-label="Leyenda de la gráfica">
+            <li class="legend-item">
+              <span class="legend-swatch swatch-resstock" aria-hidden="true"></span>
+              <span>ResStock · perfil de viviendas unifamiliares modelado · línea continua y círculos</span>
+            </li>
+            <li class="legend-item">
+              <span class="legend-swatch swatch-eia" aria-hidden="true"></span>
+              <span>EIA · ventas del sector residencial completo · línea discontinua y cuadrados</span>
+            </li>
+            <li class="legend-item" id="legend-ratio" hidden>
+              <span class="legend-swatch swatch-ratio" aria-hidden="true"></span>
+              <span>Relación ResStock / EIA (%)</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="filter-bar">
+          <div class="filter-group" role="group" aria-label="Filtrar por temporada">
+            <span class="filter-label" aria-hidden="true">Filtrar por temporada:</span>
+            <button type="button" class="chip-btn active" data-season="all" aria-pressed="true">Todos los meses</button>
+            <button type="button" class="chip-btn" data-season="Invierno" aria-pressed="false">Invierno</button>
+            <button type="button" class="chip-btn" data-season="Primavera" aria-pressed="false">Primavera</button>
+            <button type="button" class="chip-btn" data-season="Verano" aria-pressed="false">Verano</button>
+            <button type="button" class="chip-btn" data-season="Otoño" aria-pressed="false">Otoño</button>
+          </div>
+          <div class="filter-summary" id="filter-summary" role="status" aria-live="polite">
+            Mostrando: <strong>12 meses (Año completo)</strong> | Relación anual: <strong>87.16%</strong>
+          </div>
+        </div>
+
+        <p class="chart-guide" id="chart-guide" role="status" aria-live="polite"><strong>Cómo leer la gráfica:</strong> El eje horizontal muestra los meses y el vertical, el consumo mensual en MWh. Cada punto compara el perfil de ResStock con las ventas EIA.</p>
+        <p class="hint">Selecciona un mes con clic, toque, o con Tab y Enter sobre la gráfica (flechas ←/→ para moverte entre meses). La tabla inferior hace lo mismo.</p>
+
+        <div class="chart-container">
+          <div id="chart-svg-container"></div>
+          <div class="chart-tooltip" id="chart-tooltip" role="presentation"></div>
+        </div>
+
+        <div class="month-inspector" id="month-inspector" aria-live="polite">
+          <!-- Generado dinámicamente por app.js -->
+        </div>
+
+        <h3 class="table-title">Datos mensuales (MWh)</h3>
+        <div class="table-guide" aria-label="Cómo leer la tabla">
+          <p><strong>Filas:</strong> cada fila corresponde a un mes; la fila “Total anual” suma los 12 meses. La temporada agrupa meses para el filtro superior.</p>
+          <dl class="column-key">
+            <div><dt>ResStock (MWh)</dt><dd>Consumo mensual modelado para viviendas unifamiliares aisladas.</dd></div>
+            <div><dt>EIA (MWh)</dt><dd>Ventas mensuales de electricidad de todo el sector residencial.</dd></div>
+            <div><dt>Relación ResStock/EIA</dt><dd>ResStock dividido entre EIA y expresado en porcentaje; compara escalas de coberturas distintas.</dd></div>
+            <div><dt>Diferencia (MWh)</dt><dd>ResStock menos EIA. Positivo: número mayor en ResStock; negativo: número menor.</dd></div>
+          </dl>
+        </div>
+        <div class="table-wrapper" tabindex="0" role="region" aria-label="Tabla de datos mensuales, desplazable horizontalmente">
+          <table>
+            <caption class="sr-only">Consumo mensual 2018 en MWh: ResStock frente a ventas residenciales EIA de Colorado, con relación entre ambas fuentes y diferencia.</caption>
+            <thead>
+              <tr>
+                <th scope="col">Mes / Temporada</th>
+                <th scope="col" class="text-right">ResStock (MWh)</th>
+                <th scope="col" class="text-right">EIA (MWh)</th>
+                <th scope="col" class="text-center">Relación ResStock/EIA</th>
+                <th scope="col" class="text-right">Diferencia (MWh)</th>
+              </tr>
+            </thead>
+            <tbody id="data-tbody"></tbody>
+            <tfoot id="data-tfoot"></tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="calidad" aria-labelledby="t-calidad">
+      <div class="controls-card">
+        <h2 class="section-title" id="t-calidad"><span class="step">4</span> Calidad de los datos</h2>
+        <p class="section-desc">Revisión básica del perfil ResStock.</p>
+        <div class="controls-grid">
+          <div class="control-item">
+            <h3 class="control-status">
+              <span class="status-icon status-ok"><svg aria-hidden="true"><use href="#i-check"/></svg></span>
+              <span>Año completo</span>
+            </h3>
+            <p><strong>35,040 intervalos de 15 minutos</strong>, sin saltos ni repetidos.</p>
+          </div>
+          <div class="control-item">
+            <h3 class="control-status">
+              <span class="status-icon status-ok"><svg aria-hidden="true"><use href="#i-check"/></svg></span>
+              <span>Sin datos faltantes</span>
+            </h3>
+            <p><strong>0 valores faltantes</strong> en el perfil ni en los 12 meses de EIA.</p>
+          </div>
+          <div class="control-item">
+            <h3 class="control-status">
+              <span class="status-icon status-ok"><svg aria-hidden="true"><use href="#i-check"/></svg></span>
+              <span>Sin valores negativos</span>
+            </h3>
+            <p><strong>0 valores negativos</strong> en el consumo total.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -7,7 +7,7 @@ Este archivo establece cómo registrar avances y decisiones. El plan de desarrol
 | Fecha | Hito o decisión | Responsable(s) | Evidencia/enlace | Estado |
 |---|---|---|---|---|
 | 2026-10-19 | Propuesta V2 preparada para revisión docente | Equipo | Documento de propuesta local | Completado |
-| Pendiente | Aprobación docente | Equipo | Confirmación del profesor | Completado, sin observaciones |
+| Fecha no registrada | Aprobación de la propuesta V2 | Equipo | Confirmación del profesor | Completado, sin observaciones |
 | 2026-11-16 | Repositorio público y documentación inicial | Omar | README y documentos base | Completado |
 | 2026-11-16 | Plan inicial de desarrollo, fechas y responsables | Equipo | [Plan de desarrollo](plan-de-desarrollo.md) | Propuesto para coordinación del equipo |
 | 2026-11-16 | Plan de preparación para revisión del 17 de noviembre | Equipo | [Plan de avance](plan-avance-17-noviembre.md) | Propuesto para ejecutar hoy |
@@ -17,7 +17,7 @@ Este archivo establece cómo registrar avances y decisiones. El plan de desarrol
 | 2026-11-16 | Primera muestra empírica y validación reproducible | Equipo | [Resultados](resultados-muestra-inicial.md), [script](../scripts/analizar_muestra_inicial.py) | Completado localmente; agregado ResStock, EIA mensual y Open-Meteo; fuentes originales excluidas de Git |
 | 2026-11-16 | Contenido resumido de presentación por diapositiva | Equipo | [JSON editable](contenido-presentacion-avance.json), [versión legible](presentacion-avance-17-noviembre.md) | Contenido actualizado; falta aplicar el estilo visual que entregará el usuario. El PowerPoint/PDF anterior quedan como borradores |
 | 2026-11-17 | Consolidación de artefactos, gobernanza y guía técnica del piloto | Equipo; insumos de Brian García Mares | [Catálogo](catalogo-datos-final.md), [contrato](contrato-datos-v1.md), [decisión de publicación](decision-publicacion-datos.md), [guía Spark](ejecucion-piloto-datos.md), [viabilidad](viabilidad-resstock-10000.md) | Integrado a `main` mediante PR #2 (merge `fc02f2f3`); una sola copia de datos, hashes cotejados, reproducción EIA y límites de evidencia documentados |
-| 2026-11-17 | Diseño AWS por etapas y trazabilidad curso/propuesta | Equipo | [Arquitectura AWS por etapas](arquitectura-aws-por-etapas.md), [arquitectura lógica](arquitectura-propuesta.md) | Diseño documental; sin recursos AWS creados ni presupuesto aprobado |
+| 2026-11-18 | Primer despliegue del demostrador en Learner Lab | Equipo | [Demo S3](despliegue-s3-demo.md), [viabilidad](viabilidad-learner-lab.md) | Bucket privado, web estática y artefactos Gold cargados; URL prefirmada temporal verificada; EMR Serverless denegado y Kinesis/CloudFront pendientes |
 
 ## Actualización de avances
 

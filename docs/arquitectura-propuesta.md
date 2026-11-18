@@ -22,7 +22,7 @@ La propuesta considera Amazon S3 para archivos y resultados, Amazon Kinesis Data
 - Tecnología del tablero y mecanismo para consultar agregados.
 - Configuración de AWS, controles de acceso y presupuesto de pruebas.
 
-El diseño AWS por etapas, la estrategia de seguridad, costos y puertas de despliegue están detallados en [Arquitectura AWS por etapas](arquitectura-aws-por-etapas.md). Es un plan documental: todavía no se han creado recursos cloud ni se ha aprobado un presupuesto.
+La ejecución del Learner Lab y la estrategia de costo/seguridad están registradas en [Arquitectura AWS por etapas](arquitectura-aws-por-etapas.md), [viabilidad del Learner Lab](viabilidad-learner-lab.md) y [despliegue S3 de la demo](despliegue-s3-demo.md). Ya existe un bucket privado con la demo y salidas Gold; EMR Serverless está denegado y Kinesis/CloudFront no están desplegados.
 
 ## Principios operativos
 
