@@ -1,27 +1,26 @@
 # Plan de desarrollo del proyecto
 
-## Base académica y calendario
+## Base académica y requisitos
 
-El documento del curso `Proyecto-Final.pdf` indica periodo agosto-diciembre de 2026, proyecto final con valor de 50 puntos, equipos de cuatro, revisión de avance el martes 17 de noviembre y presentación final el 30 de noviembre o el 1 de diciembre. Solicita subir a Google Classroom código, base de datos y documentación. La propuesta tiene fecha de entrega del 15 de octubre. El profesor aprobó la segunda versión sin observaciones pendientes, según la confirmación comunicada por el equipo.
+El documento del curso `Proyecto-Final.pdf` establece un equipo de cuatro, un proyecto final con valor de 50 puntos, y subir a Google Classroom el código, la base de datos y la documentación. También prohíbe el plagio. El profesor aprobó la segunda versión sin observaciones pendientes, según la confirmación comunicada por el equipo.
 
-La plantilla `Big Data Project Proposal Template.pdf` contiene 12 secciones: resumen ejecutivo, objetivos SMART, justificación, alcance, requisitos, arquitectura, fuentes/metodología, cronograma, equipo, riesgos, métricas y conclusión. Incluye ejemplos de fases de 24 semanas y metas técnicas ilustrativas; no son fechas ni umbrales obligatorios del curso. La guía de proyecto disponible no presenta una rúbrica detallada con ponderaciones por apartado. Si el profesor comparte una rúbrica o instrucciones adicionales, este plan debe actualizarse.
+La plantilla `Big Data Project Proposal Template.pdf` contiene secciones para objetivos, justificación, alcance, requisitos, arquitectura, fuentes/metodología, equipo, riesgos y métricas. Incluye ejemplos de fases y metas técnicas ilustrativas; no son requisitos adicionales del curso. La guía disponible no presenta una rúbrica detallada con ponderaciones por apartado. Si el profesor comparte otros criterios, se agregan a la matriz de aceptación. El trabajo se ordena por requisitos, dependencias y evidencias, no por fechas de entrega.
 
-## Calendario de entrega
+## Secuencia de implementación por requisitos
 
-| Fecha | Hito | Resultado verificable |
+| Fase | Trabajo | Evidencia para avanzar |
 |---|---|---|
-| 16 nov 2026 | Preparar revisión de avance | Demo ejecutable con datos disponibles, arquitectura, estado real, riesgos y siguientes pasos. No atribuir a la revisión requisitos que no aparecen en la guía. |
-| 17 nov 2026 | Exposición de avance en clase | Presentar el progreso real y respaldarlo con código, datos y documentación; registrar comentarios y acciones. |
-| 18–20 nov 2026 | Consolidar fuentes y flujo inicial | Inventario validado, descarga reproducible, esquema y controles de calidad iniciales. |
-| 21–24 nov 2026 | Procesamiento y análisis | Transformaciones reproducibles, indicadores descriptivos y primer método de anomalías con evaluación. |
-| 25–27 nov 2026 | Estimaciones y tablero | Comparación con línea base, métricas, visualizaciones integradas y pruebas de extremo a extremo. |
-| 28–29 nov 2026 | Congelar y preparar entrega | Correcciones, documentación final, instrucciones de ejecución, respaldo y ensayo de exposición. |
-| 30 nov o 1 dic 2026 | Presentación final | Demostración, resultados, límites, arquitectura, contribución de integrantes y preguntas. Confirmar con el profesor qué fecha corresponde al equipo. |
-| Según indicación del curso | Carga en Google Classroom | Código, base de datos o artefactos de datos permitidos, y documentación. Confirmar formato, ubicación y hora límite. |
+| Requisitos y alcance | Trazar la propuesta V2 con requisitos del curso; marcar qué está implementado, pendiente o condicionado. | Matriz de trazabilidad, criterios de aceptación y decisiones explícitas. |
+| Fuentes y contratos | Verificar procedencia, licencias, cobertura, unidades, esquemas y zonas horarias. | Catálogo, manifiestos, contratos y muestra medida. |
+| Preparación local | Implementar extracción reproducible, controles y transformaciones sobre una muestra. | Conteos/hash cotejados, reporte de calidad y salidas repetibles. |
+| Cloud foundation | Acordar cuenta, acceso, región y presupuesto; preparar S3/IAM/observabilidad privada. | Estimación aprobada, permisos mínimos y evidencia de configuración segura. |
+| Procesamiento distribuido | Llevar los mismos jobs a Spark/EMR para batch y al replay acotado con Kinesis. | Salidas cotejadas con local, métricas de carga, costo y cierre de recursos. |
+| Analítica y tablero | Evaluar anomalías y estimaciones; conectar los resultados Gold a las vistas. | Métricas reproducibles, filtros conectados a datos y explicación de cobertura/unidades. |
+| Aceptación y entrega | Ejecutar recorridos E2E, revisar accesos/costos y preparar código, datos permitidos y documentación. | Runbook, diagrama implementado, evidencias y paquete Classroom completo. |
 
-Este calendario es una propuesta intensiva construida con las fechas disponibles, no un calendario oficial del profesor. El equipo debe reducir alcance antes que presentar funciones sin validar. Primero se comprobará acceso, licencia, tamaño y esquema de ResStock, EIA y Open-Meteo; si una fuente no está disponible a tiempo, se documentará y se ajustará el análisis conservando la distinción entre datos modelados y oficiales.
+Cada fase comienza cuando sus dependencias están comprobadas. Si alguna fuente o componente no es viable, se registra la limitación y se propone un ajuste de alcance antes de presentar resultados como completos.
 
-La primera implementación seguirá la [decisión inicial de alcance del MVP](decision-alcance-mvp.md): empezar por agregados de ResStock y muestras oficiales/climáticas acotadas, y ampliar solo con inventario, licencia, tamaño y pruebas medidos. Esto organiza el orden de trabajo sin reemplazar los objetivos de la propuesta aprobada.
+La implementación seguirá la [decisión inicial de alcance del MVP](decision-alcance-mvp.md): empezar por muestras verificables y ampliar solo con inventario, licencia, tamaño y pruebas medidos. Esto organiza el orden de trabajo sin reemplazar los objetivos de la propuesta aprobada.
 
 ## División inicial por integrante
 
@@ -44,7 +43,7 @@ La asignación organiza responsabilidades principales; los cuatro integrantes de
 
 ## Priorización
 
-### Imprescindible para una entrega académica defendible
+### Requisitos esenciales para completar el proyecto
 
 1. Confirmar que se pueden obtener y usar las fuentes seleccionadas; dejar un plan alternativo si falla alguna.
 2. Crear extracción o preparación reproducible y documentar linaje, unidades, fechas y cobertura.
@@ -71,9 +70,8 @@ La asignación organiza responsabilidades principales; los cuatro integrantes de
 - La documentación de Classroom incluye código, datos autorizados o esquema/instrucciones para obtenerlos, y resultados reproducibles.
 - La presentación explica alcance, arquitectura, contribuciones, evidencia, riesgos y trabajo pendiente sin inventar resultados.
 
-## Ritmo de coordinación
+## Coordinación e integración
 
-- Reunión breve diaria durante la semana de cierre: progreso, evidencia, bloqueo y siguiente entrega.
-- Actualizar [`seguimiento.md`](seguimiento.md) al cerrar cada bloque; registrar decisiones y comentarios de la revisión del 17 de noviembre.
+- Revisar avances por fase: progreso, evidencia, bloqueo y siguiente dependencia.
+- Actualizar [`seguimiento.md`](seguimiento.md) al cerrar cada bloque y registrar decisiones/evidencias.
 - Trabajar mediante ramas y pull requests pequeños. Definición de terminado: integrado en `main`, documentación actualizada y comprobación reproducible anotada.
-- Revisar fecha, hora, modalidad y formato de presentación/carga directamente con el profesor, ya que la guía solo ofrece el 30 de noviembre y el 1 de diciembre sin asignar equipo.

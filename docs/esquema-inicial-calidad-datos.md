@@ -139,3 +139,7 @@ Flujo metodológico propuesto para inspeccionar la primera muestra autorizada qu
 Después de redactar este esquema conceptual se inspeccionó un archivo agregado de ResStock (Colorado, `upgrade=0`, vivienda unifamiliar separada). Para **ese archivo** se confirmaron 96 columnas; campos `in.state`, `in.geometry_building_type_recs`, `timestamp`, `models_used`, `units_represented` y `out.electricity.total.energy_consumption..kwh`; intervalo de 15 minutos; timestamps en EST que marcan el cierre del intervalo; energía en kWh; y agregado ponderado. El archivo tuvo 35,040 intervalos únicos consecutivos, sin nulos ni valores negativos en el campo de energía total.
 
 Estos hallazgos empíricos aplican solo al archivo observado; no convierten todos los campos y reglas candidatos de este esquema en contrato general. Consulte [`resultados-muestra-inicial.md`](resultados-muestra-inicial.md) para procedencia, hashes, contraste mensual exploratorio con EIA y pendientes de alineación climática.
+
+## 8. Contrato técnico de los artefactos inspeccionados
+
+El Parquet piloto individual de Brian también se inspeccionó como estructura y datos, sin ejecutar su script. Para los campos, tipos, llaves y controles confirmados por fuente, consulte [`contrato-datos-v1.md`](contrato-datos-v1.md). Ese contrato conserva pendientes de enriquecimiento geográfico/peso y de autorización de redistribución; no convierte los campos conceptuales de esta propuesta en un pipeline implementado.

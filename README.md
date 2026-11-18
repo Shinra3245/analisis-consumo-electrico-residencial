@@ -27,7 +27,7 @@ La propuesta contempla iniciar el análisis detallado con al menos 10,000 perfil
 
 ## Arquitectura propuesta
 
-La propuesta plantea Amazon S3 para archivos y resultados, Amazon Kinesis Data Streams para recibir registros y Apache Spark en Amazon EMR para procesarlos. El tablero consumirá resultados agregados. La elección final y configuración se documentarán antes de activar servicios; las pruebas en nube serán acotadas y tendrán presupuesto definido.
+La arquitectura objetivo plantea Amazon S3 para archivos y resultados, Amazon Kinesis Data Streams para recibir registros y Apache Spark en Amazon EMR para procesarlos. En el Learner Lab temporal ya se habilitó un bucket S3 privado para la página y los artefactos Gold del piloto. EMR Serverless no permitió iniciar la configuración por permisos; Kinesis y CloudFront no se desplegaron. El procesamiento validado se ejecutó localmente con Spark.
 
 ## Estado
 
@@ -36,11 +36,16 @@ La propuesta plantea Amazon S3 para archivos y resultados, Amazon Kinesis Data S
 - [x] Repositorio público y documentación inicial.
 - [x] Primer avance documental: validación preliminar de fuentes y esquema conceptual (16 de noviembre de 2026; con pendientes explícitos).
 - [x] Primera muestra empírica reproducible: agregado ResStock de Colorado, 12 meses residenciales EIA y consulta climática horaria (16 de noviembre de 2026).
+- [x] Tabla residencial EIA reproducida byte a byte desde el XLSX oficial con transformación versionada.
+- [x] Piloto Parquet de 10 perfiles inspeccionado; contrato de datos v1 documenta columnas y controles observados.
+- [x] Muestra climática Open-Meteo integrada con licencia y atribución documentadas.
+- [x] Selección de 10,000 IDs candidatos y Parquet piloto de 10 perfiles ResStock integrados bajo CC BY 4.0 con atribución y disclaimer.
 - [ ] Validación de disponibilidad, licencias, formatos y cobertura de las fuentes.
-- [ ] Diseño técnico y configuración del entorno.
+- [ ] Confirmar que el XLSX EIA no contenga material de terceros antes de copiar el archivo completo al repositorio.
+- [x] Diseño técnico y configuración inicial del entorno local y de S3 privado.
 - [ ] Implementación, evaluación y documentación de resultados.
 
-Las casillas se actualizan con evidencia verificable. Ya se descargaron y analizaron tres muestras acotadas; no se descargó el conjunto completo ni se desplegó la arquitectura en nube.
+Las casillas se actualizan con evidencia verificable. Se analizaron muestras acotadas; no se descargó el conjunto completo ni se completó la arquitectura cloud propuesta. La guía de demostración resume qué funciona y qué falta.
 
 ## Equipo
 
@@ -58,19 +63,34 @@ Las casillas se actualizan con evidencia verificable. Ya se descargaron y analiz
 - [Arquitectura propuesta](docs/arquitectura-propuesta.md)
 - [Criterios de trabajo y registro de avances](docs/seguimiento.md)
 - [Plan de desarrollo y reparto por integrante](docs/plan-de-desarrollo.md)
+- [Plan de ejecución integral para alcanzar 90%](docs/plan-ejecucion-integral-90.md)
+- [División detallada de tareas por integrante, incluyendo AWS/nube](docs/division-tareas-integrantes-90.md)
 - [Tareas para la revisión de avance del 17 de noviembre](docs/plan-avance-17-noviembre.md)
 - [Validación inicial de fuentes](docs/validacion-inicial-fuentes.md)
 - [Resultados de la primera muestra](docs/resultados-muestra-inicial.md)
 - [Contenido resumido por diapositiva en JSON](docs/contenido-presentacion-avance.json)
 - [Versión legible del contenido de presentación](docs/presentacion-avance-17-noviembre.md)
-- [PowerPoint borrador anterior, pendiente de aplicar el estilo final](presentaciones/Avance_Big_Data_17_noviembre_2026.pptx)
-- [PDF borrador anterior](presentaciones/Avance_Big_Data_17_noviembre_2026.pdf)
+- [Presentación PDF compuesta directamente desde las ocho imágenes](presentaciones/Avance_Big_Data_17_noviembre_2026.pdf)
+- [Imágenes PNG de las ocho diapositivas](presentaciones/diapositivas/)
+- [Fondos originales generados para cada diapositiva](presentaciones/arte_generado/)
+- [Evidencia visual: gráfica mensual real](presentaciones/evidencia/grafica-resstock-eia.png)
+- [Script de composición PNG y PDF](scripts/armar_presentacion_imagenes.py)
+- [PowerPoint editable de una versión visual anterior](presentaciones/Avance_Big_Data_17_noviembre_2026.pptx)
 - [Esquema conceptual y calidad inicial de datos](docs/esquema-inicial-calidad-datos.md)
+- [Catálogo actualizado de datos](docs/catalogo-datos-final.md)
+- [Decisión de publicación y licencias](docs/decision-publicacion-datos.md)
+- [Contrato de datos v1](docs/contrato-datos-v1.md)
+- [CSV derivados y procedimiento de reproducción](datos/README.md)
+- [Extractor reproducible EIA-861M](scripts/preparar_eia.py)
 - [Decisión inicial de alcance y MVP](docs/decision-alcance-mvp.md)
+- [Guía breve para mostrar el avance al profesor: fuentes, AWS y web](docs/guia-demostracion-profesor.md)
+- [Job local PySpark Silver/Gold](docs/ejecucion-job-spark-local.md)
+- [Despliegue de demo y resultados derivados en S3 privado](docs/despliegue-s3-demo.md)
+- [Viabilidad observada del AWS Academy Learner Lab](docs/viabilidad-learner-lab.md)
 
 El plan de desarrollo es una propuesta de organización basada en la guía disponible; se actualizará si el profesor comparte una rúbrica detallada o confirma fechas y requisitos adicionales.
 
-La muestra y sus resultados son exploratorios: no acreditan que la plataforma final, la detección de anomalías ni el modelo de estimación estén implementados.
+La muestra y sus resultados son exploratorios. El job Spark local produjo Silver/Gold con 21 controles de calidad aprobados; la demo web actual aún no consume esas tablas Gold y las anomalías y estimaciones todavía no están implementadas. El despliegue en AWS se limita a S3 privado con el HTML y los artefactos Gold del piloto. EMR Serverless fue denegado por permisos en Learner Lab; Kinesis y CloudFront no están desplegados. Consultar el estado y los pasos pendientes en la [guía para mostrar el avance](docs/guia-demostracion-profesor.md).
 
 ## Repositorio
 
