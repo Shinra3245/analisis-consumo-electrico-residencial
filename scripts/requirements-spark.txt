@@ -1,0 +1,2 @@
+# Versión ejecutada y validada en el pipeline local; requiere Java 17+.
+pyspark==4.0.1
