@@ -67,6 +67,7 @@ Las casillas se actualizan con evidencia verificable. Ya se descargaron y analiz
 - [PDF borrador anterior](presentaciones/Avance_Big_Data_17_noviembre_2026.pdf)
 - [Esquema conceptual y calidad inicial de datos](docs/esquema-inicial-calidad-datos.md)
 - [Decisión inicial de alcance y MVP](docs/decision-alcance-mvp.md)
+- [Especificación del tablero y dirección visual isométrica](docs/especificacion-tablero.md)
 - [Plan urgente de la siguiente etapa: dashboard, AWS, escala y analítica](docs/plan-urgente-siguiente-etapa.md)
 
 El plan de desarrollo es una propuesta de organización basada en la guía disponible; se actualizará si el profesor comparte una rúbrica detallada o confirma fechas y requisitos adicionales.

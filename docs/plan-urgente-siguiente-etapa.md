@@ -20,7 +20,7 @@ Este plan convierte en trabajo ejecutable los cinco pendientes de integración y
 | **P0 — Urgente, puerta de decisión** | Acordar presupuesto, región, responsable de cuenta y permisos AWS. Confirmar que la cuenta puede crear S3, EMR y Kinesis dentro del límite aprobado. | Decisión explícita del titular/equipo; estimación de costos. | Bloqueado hasta registrar los valores aprobados; no crear recursos facturables antes. |
 | **P0 — Urgente, trabajo local paralelo** | Recuperar o reconstruir de forma autorizada la fuente de la comparación Colorado/EIA 2018 y hacerla reproducible. | Archivo agregado original y procedencia; o fuente autorizada equivalente. | No reproducible todavía; la salida entregada está en el repositorio, pero su agregado ResStock de origen no. |
 | **P1 — Desbloquea patrones y vistas** | Normalizar timestamps ResStock a UTC y hora local IANA, preservar el timestamp fuente, y generar Gold por periodo/hora local. | Mapeo validado de perfil a estado/zona; contrato de tiempo. | Pendiente. |
-| **P1 — Visible y demostrable** | Conectar el dashboard al Gold actual y completar las seis vistas incrementalmente. | Pipeline local; adaptador de datos JSON/Parquet y contrato aprobado. | Pendiente. |
+| **P1 — Visible y demostrable** | Conectar el dashboard al Gold actual y completar las seis vistas incrementalmente con lenguaje visual isométrico y jerarquía clara. | Pipeline local; adaptador de datos JSON/Parquet; dirección visual abajo. | Pendiente. |
 | **P2 — Escalamiento** | Descargar y procesar 10,000 perfiles por lotes con procedencia y controles. | Revisión de licencia/redistribución, capacidad local/nube y estimación de almacenamiento/costo. | Pendiente; no equivale a usar los 10,000 IDs candidatos. |
 | **P2 — Analítica avanzada** | Implementar y evaluar pronósticos mensuales y detección de anomalías. | Datos versionados; división temporal de evaluación; reglas y etiquetas para anomalías. | Pendiente. |
 | **P2 — Despliegue objetivo** | Migrar procesamiento a EMR, replay por Kinesis, datos en S3 y publicación del tablero. | P0 aprobado; ejecución local reproducible; límites de costo y seguridad. | Pendiente; no desplegar antes de superar P0. |
@@ -69,24 +69,39 @@ Cada fila conserva el timestamp fuente y los valores UTC/local; los periodos y h
 
 ## Bloque 3 — Conectar el dashboard de seis vistas
 
+### Dirección visual aprobada para diseñar
+
+La referencia es el [reel isométrico de **Code Boss**](https://www.facebook.com/share/v/19w4Hzb211/): una interfaz residencial clara que usa una vivienda isométrica como elemento visual principal, acompañada de navegación lateral, tarjetas y transiciones. Adaptaremos ese lenguaje visual al análisis eléctrico:
+
+- Usar una ilustración isométrica conceptual de una vivienda/modelo como visual principal de **Resumen** y **Patrones**, con estilo limpio, claro y legible. No presentarla como plano exacto ni como una vivienda observada.
+- Si se selecciona estado o tipo de vivienda, la etiqueta y el contexto del visual pueden reflejar esos metadatos; destacar energía y patrones con los campos reales disponibles (kWh por perfil, periodo, hora local cuando esté calculada, tipo de vivienda, estado y procedencia).
+- Mantener tarjetas claras, jerarquía fuerte entre pregunta, resultado principal, unidad, periodo y fuente; usar color consistente para ResStock modelado, EIA oficial, clima y estados `Final`/`Preliminary`.
+- Usar transiciones breves para navegación, selección de filtros y cambio de periodo/serie. No animar las cifras como si fueran una transmisión en vivo; respetar `prefers-reduced-motion`.
+- Aplicar la misma tipografía, superficies, espaciado y estados accesibles a las seis vistas. El motivo isométrico es más prominente en Resumen/Patrones; Clima, Estimaciones, Anomalías y Flujo/Calidad priorizan sus gráficas y tablas reales.
+- **No añadir termostatos, interruptores, escenas de luces ni controles por habitación.** El conjunto de datos no describe consumo por cuarto. La ilustración no debe sugerir que esos datos existen.
+
 ### Trabajo requerido
 
-1. Implementar un adaptador que lea los Parquet/JSON Gold y su manifiesto; validar versión de esquema, columnas, hashes y estado de calidad al cargar.
-2. Integrar primero datos reales disponibles en **Resumen**, **Patrones** (tras Bloque 2) y **Flujo/Calidad**.
-3. Integrar **Clima** como serie separada por punto mientras no exista unión geográfica/temporal aprobada.
-4. Añadir **Estimaciones** solo cuando exista un backtest Gold; mostrar entrenamiento, evaluación, unidad y estado `Final`/`Preliminary`.
-5. Añadir **Anomalías** solo cuando existan salidas evaluadas; marcar claramente los datos/eventos sintéticos y mostrar métricas junto a su conjunto de evaluación.
-6. Conectar filtros al origen correspondiente; deshabilitar filtros que no aplican, con explicación. Validar escritorio, móvil, teclado, accesibilidad básica y consola del navegador.
+1. Preparar un wireframe y mapa campo→elemento visual para las seis vistas, marcando qué datos alimentan cada tarjeta, etiqueta, gráfico o estado.
+2. Construir el shell de navegación y sistema visual: rail lateral, cabecera, superficies/tarjetas claras, tipografía, tokens de color, estados y transiciones discretas.
+3. Diseñar la ilustración isométrica como visual conceptual ligado solo al estado/tipo de perfil realmente disponible; identificarla como ilustración, no como modelo de habitación o plano arquitectónico.
+4. Implementar un adaptador que lea los Parquet/JSON Gold y su manifiesto; validar versión de esquema, columnas, hashes y estado de calidad al cargar.
+5. Integrar primero datos reales disponibles en **Resumen**, **Patrones** (tras Bloque 2) y **Flujo/Calidad**.
+6. Integrar **Clima** como serie separada por punto mientras no exista unión geográfica/temporal aprobada.
+7. Añadir **Estimaciones** solo cuando exista un backtest Gold; mostrar entrenamiento, evaluación, unidad y estado `Final`/`Preliminary`.
+8. Añadir **Anomalías** solo cuando existan salidas evaluadas; marcar claramente los datos/eventos sintéticos y mostrar métricas junto a su conjunto de evaluación.
+9. Conectar filtros al origen correspondiente; deshabilitar filtros que no aplican, con explicación. Validar escritorio, móvil, teclado, contraste, `prefers-reduced-motion` y consola del navegador.
 
 ### Entregables
 
 - Dashboard local que carga datos desde el pipeline, no desde valores copiados en el HTML.
+- Wireframe y mapa campo→elemento; componente isométrico conceptual y sistema visual común para las seis vistas.
 - Esquema de archivos consumidos y configuración de ruta base.
 - Evidencia de cada vista, filtro y estado: carga, vacío, error y preliminar.
 
 ### Criterio de aceptación
 
-Los valores visibles coinciden con las tablas Gold y el manifiesto; al cambiar estado, periodo o perfil cambian tanto cifras como gráficas. Ninguna vista presenta como resultado real una tabla pendiente o una métrica no calculada.
+Los valores visibles coinciden con las tablas Gold y el manifiesto; al cambiar estado, periodo o perfil cambian tanto cifras como gráficas. La ilustración isométrica no implica lecturas por habitación y no sustituye a la gráfica ni a su procedencia. Ninguna vista presenta como resultado real una tabla pendiente o una métrica no calculada.
 
 ## Bloque 4 — Escalar ResStock a 10,000 perfiles
 

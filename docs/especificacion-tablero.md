@@ -17,6 +17,18 @@
 | Estimaciones | ¿Cuánto consumo residencial se esperaría y qué error tuvo el método en meses ya conocidos? |
 | Flujo/Calidad | ¿De dónde viene cada cifra, qué cobertura tiene y qué controles pasó? |
 
+## Dirección visual para la siguiente iteración
+
+Se adopta como referencia visual el [reel isométrico de **Code Boss**](https://www.facebook.com/share/v/19w4Hzb211/) compartido por el equipo: vivienda ilustrada en perspectiva como foco visual, navegación lateral, tarjetas claras, jerarquía marcada y transiciones suaves. La vivienda se usará como ilustración conceptual, sobre todo en Resumen y Patrones; cada vista conservará sus gráficas y tablas como representación de los datos.
+
+- Enlazar la selección visual solo con metadatos existentes, como estado, tipo de vivienda y perfil; mostrar kWh, periodo, hora local y procedencia solo cuando estén disponibles en Gold.
+- No representar planos reales, habitaciones, termostatos, interruptores ni consumo por cuarto: las fuentes actuales no contienen esas variables.
+- Diferenciar claramente ResStock modelado, ventas EIA, clima y estados `Final`/`Preliminary` mediante color, texto, unidad y etiqueta de fuente; no depender solo del color.
+- Animar de forma breve navegación, selección y cambio de periodo/serie; no simular telemetría viva. Respetar `prefers-reduced-motion`.
+- Mantener superficies claras, contraste suficiente, textos legibles y controles accesibles en escritorio y móvil.
+
+Esta dirección define trabajo pendiente de diseño e implementación; no afirma que el tablero ya tenga estos elementos.
+
 ## 2. Reglas de lectura (lo que el tablero NO afirma)
 
 1. **La razón 87.16 % no es "precisión".** Compara el total modelado de ResStock (solo unifamiliar aislada de Colorado, 2018) con las ventas residenciales EIA de todo el estado: poblaciones y definiciones distintas. Se rotula "razón descriptiva".
