@@ -2,3 +2,12 @@
 /data/raw/
 __pycache__/
 *.py[cod]
+/.venv/
+/data/bronze/
+
+/data/silver/
+/data/quality/
+
+/data/gold/
+
+/data/exports/
