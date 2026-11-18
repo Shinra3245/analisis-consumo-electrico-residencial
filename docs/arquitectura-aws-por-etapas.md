@@ -15,8 +15,8 @@ flowchart LR
   SRC[ResStock, EIA y Open-Meteo] --> ING[Adquisición versionada y manifiesto]
   ING --> S3RAW[S3 privado: raw]
   S3RAW --> EMRB[EMR Serverless: Spark batch]
-  EMRB --> S3CUR[S3: bronze / silver / gold]
-  S3CUR --> SITE[S3: sitio y JSON Gold publicados]
+  EMRB --> S3CUR[S3 privado: bronze / silver / gold/v1]
+  S3CUR --> SITE[S3 privado: sitio y exportaciones JSON aprobadas]
   SITE --> CF[CloudFront con OAC]
   CF --> WEB[Tablero estático]
   S3CUR --> PROD[Productor acotado de replay histórico]
@@ -34,17 +34,18 @@ flowchart LR
 
 | Componente | Diseño propuesto | Límite del demostrador |
 |---|---|---|
-| S3 | Un bucket dedicado al proyecto, privado, con prefijos `raw/`, `bronze/`, `silver/`, `gold/`, `checkpoints/` y `site/`. Manifiestos con fuente, fecha, hash, esquema y cambios. | Subir solo una muestra seleccionada y datos derivados autorizados. Archivos de entrada inmutables con nombres/versiones que incluyan su hash; no sobrescribir silenciosamente. |
-| Spark batch en EMR Serverless | Un job de corta duración lee la muestra desde S3, valida el contrato y produce Parquet Gold/JSON para el tablero. Mismo código se desarrolla primero en local. | Configurar máximo de trabajadores, vCPU, memoria y almacenamiento temporal. Una ejecución pequeña, medición, parada y revisión antes de ampliar. |
+| S3 | Un bucket dedicado al proyecto, privado, con prefijos `raw/`, `bronze/`, `silver/`, `gold/v1/`, `checkpoints/` y `site/data/v1/`. Gold guarda Parquet canónico; el sitio contiene solo exportaciones JSON aprobadas. Manifiestos registran fuente, fecha, hash, esquema y versión del código. | Subir solo una muestra seleccionada y derivados autorizados. Habilitar versionado; no sobrescribir datos de entrada ni salidas de una publicación ya emitida. |
+| Spark batch en EMR Serverless | Un job de corta duración lee la muestra desde S3, valida el contrato y produce Silver/Gold Parquet en `gold/v1/`; genera además JSON versionado para el tablero en `site/data/v1/`. El mismo código se desarrolla primero en local. | Configurar máximo de trabajadores, vCPU, memoria y almacenamiento temporal. Una ejecución pequeña, medición, parada y revisión antes de ampliar. |
 | Replay con Kinesis | Productor de prueba lee un segmento histórico ya validado y envía eventos con `replay_id`, `event_time` original, `ingested_at_utc`, `sequence`, fuente y `is_replay=true`. | Límite de eventos y duración configurables; comenzar con una prueba pequeña. El evento de fin del lote debe permitir detener el consumidor Spark; no dejar un stream infinito activo. |
 | Spark Structured Streaming | Job EMR Serverless consume Kinesis, aplica el esquema y controles, y escribe resultados idempotentes a S3 con checkpoint específico del `replay_id`. | Una reproducción acotada; cancelar/parar tras recibir el marcador de fin y verificar el resultado antes de limpiar el checkpoint. |
-| Tablero | Conservar la web estática existente y sustituir datos embebidos por un `manifest.json` y JSON Gold publicados. CloudFront entrega página y resultados. | Publicar exclusivamente un prefijo `site/` y resultados Gold revisados; nunca exponer `raw/`, `bronze/`, `silver/` ni checkpoints. |
+| Tablero | Conservar la web estática existente y sustituir datos embebidos por `site/data/v1/manifest.json` y exportaciones JSON con nombre basado en SHA-256. CloudFront entrega la página y únicamente esos JSON. | Publicar exclusivamente `site/` revisado; Gold en `gold/v1/` queda privado y no se sirve directamente. Nunca exponer `raw/`, `bronze/`, `silver/` ni checkpoints. |
 | Observabilidad | CloudWatch Logs para jobs, métricas de filas leídas/escritas, rechazadas, eventos de Kinesis y duración. Etiquetas `project`, `environment`, `owner` y `expires_at` donde el servicio las soporte. | Retención corta explícita para logs de prueba; registrar estimación y costo observado por ejecución. |
 
 ## 3. Seguridad y publicación
 
-- Mantener **S3 Block Public Access** habilitado. Para la página pública, usar CloudFront con Origin Access Control (OAC), un origen S3 REST (no endpoint de website estático) y política del bucket limitada a la distribución y a `site/*` y al prefijo Gold aprobado. AWS recomienda OAC para servir una web desde S3 sin hacer público el bucket y conservar HTTPS. [Guía AWS de control de acceso S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-management.html) · [Guía de OAC de CloudFront](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html)
-- Cifrado S3 administrado por AWS, transporte HTTPS, bucket dedicado y roles separados: productor con permiso de escritura solo en el stream, rol Spark con lectura de entradas/escritura de salida, y CloudFront con lectura solo de contenido público aprobado.
+- Mantener **S3 Block Public Access** habilitado. Para la página, usar CloudFront con Origin Access Control (OAC), un origen S3 REST (no endpoint de website estático) y una política de bucket limitada a esa distribución y a `site/*`. No dar a CloudFront acceso a `gold/v1/`: Gold permanece privado y se publica solo mediante exportaciones explícitamente aprobadas. AWS recomienda OAC para servir una web desde S3 sin hacer público el bucket y conservar HTTPS. [Guía AWS de control de acceso S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-management.html) · [Guía de OAC de CloudFront](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html)
+- Cifrado S3 administrado por AWS, transporte HTTPS, bucket dedicado y roles separados: productor con permiso de escritura solo en el stream, rol Spark con lectura de entradas/escritura de capas y exportaciones, y CloudFront con lectura solo de `site/*`.
+- **Publicación y caché:** escribir exportaciones JSON inmutables con SHA-256 en el nombre y `Cache-Control: public, max-age=31536000, immutable`. Publicar `site/data/v1/manifest.json` al final, con `Cache-Control: no-cache, max-age=0, must-revalidate`. Configurar CloudFront con TTL mínimo 0 y respeto de los encabezados de origen. Después de publicar el manifiesto, invalidar `/site/data/v1/manifest.json`; las exportaciones de nombre inmutable no requieren invalidación. No reemplazar objetos Gold de una publicación existente.
 - Usar MFA en la cuenta raíz y no crear llaves raíz. No guardar credenciales, archivos `.env`, tokens ni claves AWS en Git, datos o capturas.
 - La cuenta personal será administrada por su titular; los demás integrantes recibirán solo el acceso de proyecto necesario. Antes de cargar datos, seguir [`decision-publicacion-datos.md`](decision-publicacion-datos.md) y respetar atribuciones/licencias.
 - La aplicación no necesita backend para este alcance. No añadir API Gateway, Lambda, base de datos administrada, QuickSight o WAF sin una necesidad demostrada y costo revisado.
@@ -61,12 +62,12 @@ No hay un monto máximo autorizado aún. Antes de crear servicios, el equipo deb
 
 | Servicio | Variables que se deben estimar |
 |---|---|
-| S3 | GB-mes por prefijo/clase, PUT/GET/LIST, tamaño/particiones, salidas y transferencias. |
+| S3 | GB-mes por prefijo/clase, PUT/GET/LIST, tamaño/particiones, salidas y transferencias; incluir versionado y retención de versiones previas. |
 | EMR Serverless | vCPU-segundos, memoria GB-segundo, almacenamiento temporal y duración de cada job; incluir el minuto mínimo de cobro y el tiempo hasta detener trabajadores. |
 | Kinesis Data Streams | Modo provisionado u on-demand, shards/horas o datos de entrada/salida, retención y duración del stream. Kinesis Data Streams no está actualmente en Free Tier. |
 | VPC | Endpoints necesarios por zona, tráfico; comparar con cualquier alternativa de NAT antes de crearla. |
 | CloudWatch | Volumen y retención de logs, métricas y alarmas. |
-| CloudFront | Solicitudes y transferencia saliente estimadas para la exposición. |
+| CloudFront | Solicitudes y transferencia saliente estimadas para la exposición; contar invalidaciones del manifiesto y confirmar que las exportaciones inmutables aprovechan la caché de largo plazo. |
 
 El costo de EMR Serverless depende de vCPU, memoria y almacenamiento consumidos por los workers; se factura desde que están listos, por segundo con mínimo de un minuto, además de los servicios asociados. [Precios oficiales de EMR](https://aws.amazon.com/emr/pricing/) Kinesis factura según modo/capacidad y uso; no se asumirá que una prueba pequeña es gratuita. [Precios de Kinesis Data Streams](https://aws.amazon.com/kinesis/data-streams/pricing/)
 
@@ -80,7 +81,7 @@ Antes del primer despliegue deben quedar anotados: titular de facturación, mont
 |---|---|---|
 | 0. Congelar contratos localmente | Confirmar IDs/campos/unidades/huso de las muestras; correr transformaciones pequeñas localmente; separar resultados validados de la selección candidata. | Schema v1, reporte de calidad y comandos locales reproducibles. Sin recurso AWS. |
 | 1. Preparar cuenta y presupuesto | Confirmar titular, MFA, acceso mínimo, región, cuotas, endpoints, estimación y umbral numérico. Crear alertas de costo. | Lista de recursos/costos aprobados y captura de presupuesto; no compartir credenciales. |
-| 2. S3 privado y publicación web | Crear bucket dedicado, Block Public Access, cifrado, roles/policies; CloudFront OAC para el sitio y Gold aprobado. | Acceso directo al bucket denegado; web servida por HTTPS; datos internos inaccesibles públicamente. |
+| 2. S3 privado y publicación web | Crear bucket dedicado, Block Public Access, versionado, cifrado y roles/policies; CloudFront OAC lee `site/` solamente; establecer `gold/v1/`, `site/data/v1/`, metadatos de caché y publicación de manifiesto al final. | Acceso directo al bucket denegado; web servida por HTTPS; datos Gold/raw/Silver inaccesibles públicamente; manifiesto actualizado tras publicar; exportaciones inmutables servidas desde caché. |
 | 3. Lote Spark en EMR | Subir muestra acotada, ejecutar un job con límite de workers, escribir Gold particionado y métrica de ejecución. | Conteos/hash/resultados cotejados con local; runtime/costo observados; workers detenidos. |
 | 4. Replay acotado | Crear stream, enviar lote pequeño identificado como replay, ejecutar Spark streaming con VPC/endpoints/checkpoint y marcador de fin. | N eventos enviados/recibidos/procesados, duplicados/rechazos, tiempo, costo y stream/job/checkpoint cerrados. |
 | 5. Tablero E2E y entrega | Cambiar la web para leer manifest/Gold reales, probar estados, filtros, despliegue y copia local de respaldo; reunir código, artefactos permitidos y documentos para Classroom. | Ruta demostrable local y cloud, URL/fecha de datos, diagrama implementado y checklist de limpieza cerrado. |
