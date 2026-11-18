@@ -1,0 +1,121 @@
+bldg_id,month,kwh_month,state_code,housing_type
+45000,1,368.5384,NY,Mobile Home
+45000,2,329.0097,NY,Mobile Home
+45000,3,324.5151,NY,Mobile Home
+45000,4,333.8519,NY,Mobile Home
+45000,5,407.8823,NY,Mobile Home
+45000,6,418.5478,NY,Mobile Home
+45000,7,515.6131,NY,Mobile Home
+45000,8,483.0691,NY,Mobile Home
+45000,9,419.3655,NY,Mobile Home
+45000,10,342.0041,NY,Mobile Home
+45000,11,314.8608,NY,Mobile Home
+45000,12,346.0323,NY,Mobile Home
+50886,1,8455.6174,CO,Single-Family Detached
+50886,2,6742.4994,CO,Single-Family Detached
+50886,3,5238.6404,CO,Single-Family Detached
+50886,4,3371.5622,CO,Single-Family Detached
+50886,5,1552.4648,CO,Single-Family Detached
+50886,6,672.4473,CO,Single-Family Detached
+50886,7,531.5625,CO,Single-Family Detached
+50886,8,558.9273,CO,Single-Family Detached
+50886,9,840.4616,CO,Single-Family Detached
+50886,10,3317.2729,CO,Single-Family Detached
+50886,11,6383.8551,CO,Single-Family Detached
+50886,12,8939.7054,CO,Single-Family Detached
+60178,1,270.5503,NY,Multi-Family with 5+ Units
+60178,2,251.1918,NY,Multi-Family with 5+ Units
+60178,3,255.6931,NY,Multi-Family with 5+ Units
+60178,4,223.3033,NY,Multi-Family with 5+ Units
+60178,5,286.6713,NY,Multi-Family with 5+ Units
+60178,6,283.5245,NY,Multi-Family with 5+ Units
+60178,7,334.8076,NY,Multi-Family with 5+ Units
+60178,8,335.7147,NY,Multi-Family with 5+ Units
+60178,9,291.3470,NY,Multi-Family with 5+ Units
+60178,10,248.6739,NY,Multi-Family with 5+ Units
+60178,11,233.3908,NY,Multi-Family with 5+ Units
+60178,12,249.0230,NY,Multi-Family with 5+ Units
+259599,1,859.8164,CO,Mobile Home
+259599,2,722.9972,CO,Mobile Home
+259599,3,671.2398,CO,Mobile Home
+259599,4,683.6988,CO,Mobile Home
+259599,5,651.0359,CO,Mobile Home
+259599,6,650.8754,CO,Mobile Home
+259599,7,614.8974,CO,Mobile Home
+259599,8,606.2518,CO,Mobile Home
+259599,9,591.9561,CO,Mobile Home
+259599,10,670.2379,CO,Mobile Home
+259599,11,684.8896,CO,Mobile Home
+259599,12,775.7987,CO,Mobile Home
+310076,1,235.2803,NY,Single-Family Detached
+310076,2,193.9046,NY,Single-Family Detached
+310076,3,240.5857,NY,Single-Family Detached
+310076,4,223.7437,NY,Single-Family Detached
+310076,5,340.8329,NY,Single-Family Detached
+310076,6,373.3795,NY,Single-Family Detached
+310076,7,520.9609,NY,Single-Family Detached
+310076,8,485.5544,NY,Single-Family Detached
+310076,9,359.0508,NY,Single-Family Detached
+310076,10,253.7132,NY,Single-Family Detached
+310076,11,230.1455,NY,Single-Family Detached
+310076,12,231.5343,NY,Single-Family Detached
+318605,1,614.2772,CO,Multi-Family with 5+ Units
+318605,2,508.4175,CO,Multi-Family with 5+ Units
+318605,3,445.0338,CO,Multi-Family with 5+ Units
+318605,4,439.8380,CO,Multi-Family with 5+ Units
+318605,5,434.1025,CO,Multi-Family with 5+ Units
+318605,6,408.5353,CO,Multi-Family with 5+ Units
+318605,7,466.9680,CO,Multi-Family with 5+ Units
+318605,8,483.3098,CO,Multi-Family with 5+ Units
+318605,9,453.6081,CO,Multi-Family with 5+ Units
+318605,10,471.2400,CO,Multi-Family with 5+ Units
+318605,11,465.8961,CO,Multi-Family with 5+ Units
+318605,12,565.5883,CO,Multi-Family with 5+ Units
+322730,1,4370.6016,CO,Single-Family Attached
+322730,2,4619.9948,CO,Single-Family Attached
+322730,3,2583.6384,CO,Single-Family Attached
+322730,4,1996.9955,CO,Single-Family Attached
+322730,5,1202.3477,CO,Single-Family Attached
+322730,6,1228.5304,CO,Single-Family Attached
+322730,7,1389.2613,CO,Single-Family Attached
+322730,8,1241.5007,CO,Single-Family Attached
+322730,9,1097.9897,CO,Single-Family Attached
+322730,10,2007.4174,CO,Single-Family Attached
+322730,11,3063.9710,CO,Single-Family Attached
+322730,12,4315.3411,CO,Single-Family Attached
+424561,1,283.4099,NY,Single-Family Attached
+424561,2,255.9003,NY,Single-Family Attached
+424561,3,287.1602,NY,Single-Family Attached
+424561,4,273.3164,NY,Single-Family Attached
+424561,5,380.2131,NY,Single-Family Attached
+424561,6,414.7816,NY,Single-Family Attached
+424561,7,711.4727,NY,Single-Family Attached
+424561,8,619.2656,NY,Single-Family Attached
+424561,9,419.1669,NY,Single-Family Attached
+424561,10,269.9146,NY,Single-Family Attached
+424561,11,258.6034,NY,Single-Family Attached
+424561,12,283.4114,NY,Single-Family Attached
+464397,1,1991.9390,CO,Multi-Family with 2 - 4 Units
+464397,2,1832.6551,CO,Multi-Family with 2 - 4 Units
+464397,3,1330.8814,CO,Multi-Family with 2 - 4 Units
+464397,4,1116.3894,CO,Multi-Family with 2 - 4 Units
+464397,5,788.9000,CO,Multi-Family with 2 - 4 Units
+464397,6,703.9400,CO,Multi-Family with 2 - 4 Units
+464397,7,763.6063,CO,Multi-Family with 2 - 4 Units
+464397,8,717.4237,CO,Multi-Family with 2 - 4 Units
+464397,9,713.8778,CO,Multi-Family with 2 - 4 Units
+464397,10,1045.7703,CO,Multi-Family with 2 - 4 Units
+464397,11,1491.6333,CO,Multi-Family with 2 - 4 Units
+464397,12,1965.7077,CO,Multi-Family with 2 - 4 Units
+528848,1,472.9714,NY,Multi-Family with 2 - 4 Units
+528848,2,410.6665,NY,Multi-Family with 2 - 4 Units
+528848,3,417.8640,NY,Multi-Family with 2 - 4 Units
+528848,4,397.7242,NY,Multi-Family with 2 - 4 Units
+528848,5,448.6756,NY,Multi-Family with 2 - 4 Units
+528848,6,616.7927,NY,Multi-Family with 2 - 4 Units
+528848,7,900.0052,NY,Multi-Family with 2 - 4 Units
+528848,8,949.7299,NY,Multi-Family with 2 - 4 Units
+528848,9,674.5979,NY,Multi-Family with 2 - 4 Units
+528848,10,462.3844,NY,Multi-Family with 2 - 4 Units
+528848,11,404.0099,NY,Multi-Family with 2 - 4 Units
+528848,12,446.0227,NY,Multi-Family with 2 - 4 Units

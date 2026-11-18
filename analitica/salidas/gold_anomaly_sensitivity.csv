@@ -1,0 +1,7 @@
+min_run_hours,category,n_events,n_detected,recall,n_alerts,n_true_alerts,precision,f1
+1,aumento,40,8,0.2000,124,8,0.0645,0.0976
+1,caida,40,27,0.6750,61,33,0.5410,0.6006
+2,aumento,40,6,0.1500,38,6,0.1579,0.1538
+2,caida,40,24,0.6000,35,26,0.7429,0.6638
+3,aumento,40,6,0.1500,10,6,0.6000,0.2400
+3,caida,40,21,0.5250,23,22,0.9565,0.6779

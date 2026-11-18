@@ -1,0 +1,11 @@
+bldg_id,annual_kwh,mean_hour_kwh,peak_hour_kwh,n_hours,state_code,housing_type,profile_weight
+45000,4603.2901,0.5255,3.7107,8760,NY,Mobile Home,253.9037
+50886,46605.0164,5.3202,27.7387,8760,CO,Single-Family Detached,253.9037
+60178,3263.8912,0.3726,5.1900,8760,NY,Multi-Family with 5+ Units,253.9037
+259599,8183.6950,0.9342,7.4215,8760,CO,Mobile Home,253.9037
+310076,3688.6857,0.4211,1.6135,8760,NY,Single-Family Detached,253.9037
+318605,5756.8146,0.6572,12.7362,8760,CO,Multi-Family with 5+ Units,253.9037
+322730,29117.5897,3.3239,18.5121,8760,CO,Single-Family Attached,253.9037
+424561,4456.6160,0.5087,1.9462,8760,NY,Single-Family Attached,253.9037
+464397,14462.7239,1.6510,8.1612,8760,CO,Multi-Family with 2 - 4 Units,253.9037
+528848,6601.4443,0.7536,2.7903,8760,NY,Multi-Family with 2 - 4 Units,253.9037
