@@ -5,6 +5,7 @@ from pathlib import Path
 
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
+from validar_resstock_registros import validar_registros_resstock
 
 os.environ["PYSPARK_PYTHON"] = sys.executable
 
@@ -31,89 +32,9 @@ try:
 
     print("Registros de entrada:", bronze.count())
 
-    # Convertir las columnas a tipos adecuados
-    datos = bronze.select(
-        F.to_timestamp(
-            F.col("timestamp"),
-            "yyyy-MM-dd HH:mm:ss"
-        ).alias("timestamp_fin"),
+    # Aplicar las reglas reutilizables de validacion
+    datos = validar_registros_resstock(bronze)
 
-        F.col("`in.state`").alias("estado"),
-
-        F.col(
-            "`in.geometry_building_type_recs`"
-        ).alias("tipo_vivienda"),
-
-        F.col("models_used")
-        .cast("long").alias("modelos"),
-
-        F.col("units_represented")
-        .cast("double").alias("viviendas_representadas"),
-
-        F.col(
-            "`out.electricity.total.energy_consumption..kwh`"
-        ).cast("double").alias("consumo_kwh"),
-
-        F.col("_source").alias("fuente"),
-        F.col("_source_file").alias("archivo_origen")
-    )
-
-    # Calcular el inicio del intervalo
-    datos = datos.withColumn(
-        "timestamp_inicio",
-        F.expr("timestamp_fin - INTERVAL 15 MINUTES")
-    )
-
-    # Obtener año y mes del intervalo de consumo
-    datos = (
-        datos
-        .withColumn("anio", F.year("timestamp_inicio"))
-        .withColumn("mes", F.month("timestamp_inicio"))
-    )
-
-    # Validar registros y registrar sus errores
-    datos = datos.withColumn(
-        "errores",
-        F.concat_ws(
-            " | ",
-            F.when(
-                F.col("timestamp_fin").isNull(),
-                "Fecha invalida"
-            ),
-            F.when(
-                F.col("estado").isNull()
-                | (F.col("estado") != "CO"),
-                "Estado invalido"
-            ),
-            F.when(
-                F.col("tipo_vivienda").isNull()
-                | (F.trim(F.col("tipo_vivienda")) == ""),
-                "Tipo de vivienda invalido"
-            ),
-            F.when(
-                F.col("consumo_kwh").isNull()
-                | F.isnan("consumo_kwh")
-                | (F.col("consumo_kwh") < 0),
-                "Consumo invalido"
-            ),
-            F.when(
-                F.col("modelos").isNull()
-                | (F.col("modelos") <= 0),
-                "Modelos invalidos"
-            ),
-            F.when(
-                F.col("viviendas_representadas").isNull()
-                | F.isnan("viviendas_representadas")
-                | (F.col("viviendas_representadas") <= 0),
-                "Viviendas representadas invalidas"
-            ),
-            F.when(
-                F.col("anio").isNotNull()
-                & (F.col("anio") != 2018),
-                "Año fuera de la muestra"
-            )
-        )
-    )
 
     validos = datos.filter(F.col("errores") == "")
     rechazados = datos.filter(F.col("errores") != "")
