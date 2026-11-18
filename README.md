@@ -29,18 +29,28 @@ La propuesta contempla iniciar el análisis detallado con al menos 10,000 perfil
 
 La propuesta plantea Amazon S3 para archivos y resultados, Amazon Kinesis Data Streams para recibir registros y Apache Spark en Amazon EMR para procesarlos. El tablero consumirá resultados agregados. La elección final y configuración se documentarán antes de activar servicios; las pruebas en nube serán acotadas y tendrán presupuesto definido.
 
-## Estado
+## Estado actual
 
-- [x] Propuesta versión 2 elaborada.
-- [x] Aprobación del profesor para continuar sin observaciones pendientes.
-- [x] Repositorio público y documentación inicial.
-- [x] Primer avance documental: validación preliminar de fuentes y esquema conceptual (16 de noviembre de 2026; con pendientes explícitos).
-- [x] Primera muestra empírica reproducible: agregado ResStock de Colorado, 12 meses residenciales EIA y consulta climática horaria (16 de noviembre de 2026).
-- [ ] Validación de disponibilidad, licencias, formatos y cobertura de las fuentes.
-- [ ] Diseño técnico y configuración del entorno.
-- [ ] Implementación, evaluación y documentación de resultados.
+- [x] Propuesta versión 2 aprobada por el profesor.
+- [x] Pipeline local Spark Silver/Gold ejecutado con 21 controles de calidad aprobados.
+- [x] Dashboard local v1 conectado a cinco tablas Gold JSON, con manifiesto y comprobación de SHA-256.
+- [x] Patrones horarios convertidos a hora local para los 10 perfiles piloto de Colorado y Nueva York, con cambios DST y meses parciales identificados.
+- [ ] Estimaciones y anomalías: faltan salidas evaluadas; el dashboard no presenta cifras inventadas.
+- [ ] Escala de 10,000 perfiles: solo se procesaron 10 perfiles; los IDs restantes son candidatos.
+- [ ] AWS/EMR/Kinesis/S3: sin despliegue; primero deben registrarse región y presupuesto aprobados.
+- [ ] Comparación Colorado/EIA: la razón de 87.16% no se pudo reproducir desde el agregado fuente, que no está versionado.
 
-Las casillas se actualizan con evidencia verificable. Ya se descargaron y analizaron tres muestras acotadas; no se descargó el conjunto completo ni se desplegó la arquitectura en nube.
+Los datos integrados son un piloto acotado, no una cobertura completa de Estados Unidos. El clima permanece como serie independiente y no se une al consumo.
+
+## Abrir el dashboard local
+
+Desde la raíz del repositorio, ejecuta:
+
+```bash
+python3 -m http.server 8000 -d tablero
+```
+
+Después abre <http://localhost:8000/>. La interfaz no requiere instalación de paquetes ni conexión a internet; las tablas y el manifiesto ya están en `tablero/data/v1/`.
 
 ## Equipo
 
@@ -69,10 +79,13 @@ Las casillas se actualizan con evidencia verificable. Ya se descargaron y analiz
 - [Decisión inicial de alcance y MVP](docs/decision-alcance-mvp.md)
 - [Especificación del tablero y dirección visual isométrica](docs/especificacion-tablero.md)
 - [Plan urgente de la siguiente etapa: dashboard, AWS, escala y analítica](docs/plan-urgente-siguiente-etapa.md)
+- [Contrato Gold consumido por el dashboard](docs/contrato-dashboard-datos.md)
+- [Ejecución del pipeline y exportación al dashboard](docs/ejecucion-job-spark-local.md)
+- [Guía del dashboard local](tablero/README.md)
 
 El plan de desarrollo es una propuesta de organización basada en la guía disponible; se actualizará si el profesor comparte una rúbrica detallada o confirma fechas y requisitos adicionales.
 
-La muestra y sus resultados son exploratorios: no acreditan que la plataforma final, la detección de anomalías ni el modelo de estimación estén implementados.
+La muestra y sus resultados son exploratorios; las vistas de estimaciones y anomalías aún no contienen resultados analíticos.
 
 ## Repositorio
 

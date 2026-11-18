@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Consumo eléctrico residencial · Tablero</title>
+<meta name="description" content="Tablero exploratorio del proyecto Big Data: ventas EIA, perfiles modelados ResStock y clima, con procedencia visible.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3l12 7v12l-12 7-12-7V10z' fill='%230f8a6d'/%3E%3Cpath d='M16 3l12 7-12 7-12-7z' fill='%2362d2b3'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Saltar al contenido</a>
+<div class="app">
+  <nav class="rail" aria-label="Vistas del tablero" id="rail"></nav>
+  <div class="col">
+    <header class="top">
+      <div>
+        <p class="eyebrow">Big Data · Consumo eléctrico residencial en EE. UU.</p>
+        <h1 id="view-title">Resumen</h1>
+        <p class="lead" id="view-question"></p>
+      </div>
+      <div class="status" id="load-status" role="status" aria-live="polite"></div>
+    </header>
+    <details class="filters" id="filters-wrap" open>
+      <summary>Filtros</summary>
+      <div class="filters-grid" id="filters"></div>
+    </details>
+    <div id="banners"></div>
+    <main id="main" tabindex="-1"></main>
+    <footer class="foot">Exploratorio: ResStock son perfiles modelados (piloto de 10), no mediciones de hogares ni una muestra representativa. Ilustración conceptual, sin datos por habitación.</footer>
+  </div>
+</div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
