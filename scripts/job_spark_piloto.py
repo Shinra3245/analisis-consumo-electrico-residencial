@@ -62,6 +62,15 @@ def parse_arguments() -> argparse.Namespace:
         action="store_true",
         help="Permite reemplazar la exportación JSON existente; requiere --export-tablero.",
     )
+    parser.add_argument(
+        "--allow-legacy-pilot-10",
+        action="store_true",
+        help=(
+            "Acepta un manifiesto sin roster de perfiles tratándolo como piloto "
+            "legado de 10 perfiles (sin IDs verificables). Sin este flag, una "
+            "entrada sin roster se rechaza."
+        ),
+    )
     args = parser.parse_args()
     if args.overwrite_tablero and not args.export_tablero:
         parser.error("--overwrite-tablero requiere --export-tablero.")
@@ -241,8 +250,84 @@ def build_source_inventory(input_dir: str) -> List[Dict[str, Any]]:
     return inventory
 
 
-def execute_resstock_qc(df_resstock, df_metadata) -> Dict[str, Any]:
+INTERVALOS_POR_PERFIL = 35040
+LEGACY_PILOT_PROFILES = 10
+
+
+def load_resstock_roster(input_dir: str, allow_legacy: bool = False) -> Dict[str, Any]:
+    """Determina el roster esperado de perfiles ResStock desde el manifiesto.
+
+    El registro de ``resstock_perfiles_piloto.parquet`` en
+    ``manifiesto-integracion.json`` debe incluir ``profile_roster``:
+    ``{"bldg_ids": [...], "intervals_per_profile": 35040}`` con los IDs
+    efectivamente descargados (no los 10,000 candidatos del índice). Se exige
+    que ``rows == N * 35040``. Sin roster, la entrada se rechaza salvo que se
+    pida explícitamente ``allow_legacy`` (piloto de 10 perfiles sin IDs), que
+    queda marcado como ``legacy_fixed_10_no_ids`` y se reporta como advertencia.
+    """
+    manifest_path = os.path.join(input_dir, "manifiesto-integracion.json")
+    with open(manifest_path, encoding="utf-8") as source_file:
+        source_manifest = json.load(source_file)
+    record = next(
+        (
+            a
+            for a in source_manifest["artifacts"]
+            if a.get("file") == "resstock_perfiles_piloto.parquet"
+        ),
+        None,
+    )
+    if record is None:
+        raise ValueError("El manifiesto integrado no contiene resstock_perfiles_piloto.parquet.")
+
+    roster = record.get("profile_roster")
+    if roster is None:
+        if not allow_legacy:
+            raise ValueError(
+                "El manifiesto no declara profile_roster para resstock_perfiles_piloto.parquet; "
+                "no se puede derivar el número esperado de perfiles. Añada el roster de "
+                "IDs descargados o use --allow-legacy-pilot-10 para el piloto legado."
+            )
+        expected = LEGACY_PILOT_PROFILES
+        if record.get("rows") != expected * INTERVALOS_POR_PERFIL:
+            raise ValueError(
+                "El piloto legado exige rows == 350400 en el manifiesto "
+                f"(declarado: {record.get('rows')})."
+            )
+        return {
+            "source": "legacy_fixed_10_no_ids",
+            "bldg_ids": None,
+            "expected_profiles": expected,
+            "expected_rows": expected * INTERVALOS_POR_PERFIL,
+        }
+
+    if roster.get("intervals_per_profile", INTERVALOS_POR_PERFIL) != INTERVALOS_POR_PERFIL:
+        raise ValueError(f"intervals_per_profile debe ser {INTERVALOS_POR_PERFIL}.")
+    ids = roster.get("bldg_ids")
+    if (
+        not isinstance(ids, list)
+        or not ids
+        or not all(isinstance(i, int) and not isinstance(i, bool) and i > 0 for i in ids)
+    ):
+        raise ValueError("profile_roster.bldg_ids debe ser una lista no vacía de enteros positivos.")
+    if len(set(ids)) != len(ids):
+        raise ValueError("profile_roster.bldg_ids contiene IDs duplicados.")
+    expected_rows = len(ids) * INTERVALOS_POR_PERFIL
+    if record.get("rows") != expected_rows:
+        raise ValueError(
+            f"El manifiesto declara rows={record.get('rows')} pero el roster implica {expected_rows}."
+        )
+    return {
+        "source": "manifest_profile_roster",
+        "bldg_ids": sorted(ids),
+        "expected_profiles": len(ids),
+        "expected_rows": expected_rows,
+    }
+
+
+def execute_resstock_qc(df_resstock, df_metadata, roster: Dict[str, Any]) -> Dict[str, Any]:
     """Ejecuta 7 controles de calidad sobre perfiles y metadatos ResStock."""
+    n_esperado = int(roster["expected_profiles"])
+    filas_esperadas = int(roster["expected_rows"])
     from pyspark.sql import functions as F
     from pyspark.sql.window import Window
 
@@ -346,22 +431,45 @@ def execute_resstock_qc(df_resstock, df_metadata) -> Dict[str, Any]:
     conteo_fallidos_cobertura = sum(
         1 for v in conteo_por_edificio.values() if v != 35040
     )
-    edificios_faltantes = max(0, 10 - len(conteo_por_edificio))
+    ids_presentes = set(conteo_por_edificio)
+    ids_roster = set(roster["bldg_ids"]) if roster["bldg_ids"] is not None else None
+    if ids_roster is not None:
+        ids_faltantes = len(ids_roster - ids_presentes)
+        ids_inesperados = len(ids_presentes - ids_roster)
+    else:
+        ids_faltantes = max(0, n_esperado - len(ids_presentes))
+        ids_inesperados = max(0, len(ids_presentes) - n_esperado)
+    edificios_faltantes = ids_faltantes + ids_inesperados
     cumplida_cobertura = bool(
-        conteo_fallidos_cobertura == 0 and len(conteo_por_edificio) == 10
+        conteo_fallidos_cobertura == 0
+        and len(conteo_por_edificio) == n_esperado
+        and edificios_faltantes == 0
     )
     fallos_cobertura = (
         0 if cumplida_cobertura else max(1, conteo_fallidos_cobertura + edificios_faltantes)
     )
 
-    cumplida_totales = bool(filas_totales == 350400 and edificios_unicos == 10)
-    fallos_totales = 0 if cumplida_totales else max(1, abs(350400 - filas_totales) + abs(10 - edificios_unicos))
+    cumplida_totales = bool(
+        filas_totales == filas_esperadas
+        and edificios_unicos == n_esperado
+        and edificios_faltantes == 0
+    )
+    fallos_totales = (
+        0
+        if cumplida_totales
+        else max(
+            1,
+            abs(filas_esperadas - filas_totales)
+            + abs(n_esperado - edificios_unicos)
+            + edificios_faltantes,
+        )
+    )
 
     # 7 reglas evaluadas
     reglas = [
         {
             "regla": "filas_y_edificios_esperados",
-            "condicion": "filas == 350400 y edificios == 10",
+            "condicion": f"filas == {filas_esperadas} (N*35040) y edificios == {n_esperado}, con IDs iguales al roster cuando existe",
             "cumplida": cumplida_totales,
             "fallos": int(fallos_totales),
         },
@@ -417,8 +525,20 @@ def execute_resstock_qc(df_resstock, df_metadata) -> Dict[str, Any]:
             "minimo": float(stats["min_kwh"]),
             "maximo": float(stats["max_kwh"]),
         },
+        "roster": {
+            "fuente": roster["source"],
+            "perfiles_esperados": n_esperado,
+            "filas_esperadas": filas_esperadas,
+        },
         "reglas": reglas,
-        "advertencias": [],
+        "advertencias": (
+            [
+                "Roster legado sin IDs: se asumen 10 perfiles; no se puede verificar que "
+                "los IDs del Parquet sean los descargados."
+            ]
+            if roster["bldg_ids"] is None
+            else []
+        ),
     }
 
 
@@ -930,6 +1050,9 @@ def build_quality_report_dict(
     else:
         estado_global = "VALID"
 
+    roster = qc_resstock.get("roster", {})
+    resstock_profile_count = roster.get("perfiles_esperados", "no declarado")
+
     return {
         "metadatos_ejecucion": {
             "version_spark": spark_version,
@@ -949,9 +1072,10 @@ def build_quality_report_dict(
         },
         "separacion_metodologica": {
             "resstock_modelado": (
-                "10 perfiles físicos de vivienda individual (AMY 2018). "
-                "Sin state_code ni pesos poblacionales en Parquet piloto. "
-                "Intervalos agregados a 12 meses 2018 por duración efectiva. "
+                f"{resstock_profile_count} perfiles físicos de vivienda individual (AMY 2018). "
+                "Muestra exploratoria con atributos de estado, tipo de vivienda y peso del índice; "
+                "los pesos no convierten esta selección en una muestra representativa. "
+                "Intervalos agregados por duración efectiva al periodo fuente. "
                 "No representan totales estatales ni nacionales."
             ),
             "eia_ventas_mensuales": (
@@ -1107,6 +1231,9 @@ def main() -> int:
     # 1. Validación de rutas seguras y no destructivas (con realpath)
     real_input, real_output = validate_paths(args.input, args.output)
 
+    # Roster esperado: falla antes de iniciar Spark si la entrada no lo declara.
+    resstock_roster = load_resstock_roster(real_input, args.allow_legacy_pilot_10)
+
     # 2. Inicialización de Spark
     spark = build_spark_session(args.app_name, args.master)
     spark_version = spark.version
@@ -1150,7 +1277,7 @@ def main() -> int:
 
         # 6. Ejecución de Controles de Calidad (21 reglas en total)
         print("Ejecutando controles de calidad de datos (21 reglas)...")
-        qc_resstock = execute_resstock_qc(df_resstock, df_metadata)
+        qc_resstock = execute_resstock_qc(df_resstock, df_metadata, resstock_roster)
         qc_eia = execute_eia_qc(df_eia)
         qc_clima = execute_clima_qc(df_clima)
 

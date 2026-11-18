@@ -20,6 +20,13 @@ export const TABLES = {
     columns: ['bldg_id', 'period_local', 'day_type', 'hour_local', 'utc_offset_minutes',
       'is_partial_period', 'median_kwh', 'state_code', 'housing_type', 'time_zone'],
     source: 'resstock',
+    lazy: true,
+  },
+  gold_resstock_pattern_aggregate: {
+    columns: ['state_code', 'housing_type', 'time_zone', 'period_local', 'day_type', 'hour_local', 'utc_offset_minutes',
+      'is_partial_period', 'median_kwh', 'mean_kwh', 'p10_kwh', 'p90_kwh', 'min_kwh', 'max_kwh',
+      'n_obs', 'n_profiles'],
+    source: 'resstock',
   },
   gold_resstock_profile_summary: {
     columns: ['bldg_id', 'source_year', 'annual_kwh', 'mean_hour_kwh', 'peak_hour_kwh',

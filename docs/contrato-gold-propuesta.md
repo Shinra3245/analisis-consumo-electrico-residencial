@@ -73,9 +73,19 @@ PK `(bldg_id, source_period)` · 120 filas para los 10 perfiles. `bldg_id, sourc
 
 ### 2.7 `gold_resstock_pattern`
 PK `(bldg_id, period_local, day_type, hour_local, utc_offset_minutes)`.
-`bldg_id, period_local, day_type (weekday|weekend), hour_local (0-23), utc_offset_minutes, is_partial_period, median_kwh, mean_kwh, p10_kwh, p90_kwh, n_obs, state_code, housing_type, time_zone`. Se calcula desde los intervalos originales después de convertirlos a hora local. Un año de datos etiquetado 2018 en EST fijo puede abarcar partes de diciembre de 2017 y diciembre de 2018 en la hora local de Colorado; esas filas deben marcarse `is_partial_period=true` y no presentarse como meses completos. La cantidad de filas se publicará en el manifiesto después de regenerar el Gold con esta regla. En horas repetidas por horario de verano, `utc_offset_minutes` distingue ambos instantes.
+`bldg_id, period_local, day_type (weekday|weekend), hour_local (0-23), utc_offset_minutes, is_partial_period, median_kwh, mean_kwh, p10_kwh, p90_kwh, n_obs, state_code, housing_type, time_zone, source_version`. Se calcula desde los intervalos originales después de convertirlos a hora local según el FIPS del condado (crosswalk validado NOAA/NWS `c_16ap26`). Un año de datos etiquetado 2018 en EST fijo puede abarcar partes de diciembre de 2017 y diciembre de 2018 en la hora local fuera de Eastern; esas filas se marcan `is_partial_period=true` mediante una regla reproducible de cobertura mensual. Se excluyen horas incompletas (< 4 cuartos de hora de 15 min) para evitar sesgar el consumo en los bordes. En horas repetidas por horario de verano, `utc_offset_minutes` distingue ambos instantes. Conserva la capacidad de inspección individual de edificios específicos mediante carga bajo demanda (lazy-load) en el tablero.
 
-### 2.8 Anomalías (etiquetas sintéticas)
+### 2.8 `gold_resstock_pattern_aggregate`
+PK `(state_code, housing_type, time_zone, period_local, day_type, hour_local, utc_offset_minutes)`.
+`state_code, housing_type, time_zone, period_local, day_type (weekday|weekend), hour_local (0-23), utc_offset_minutes, is_partial_period, mean_kwh, median_kwh, p10_kwh, p90_kwh, min_kwh, max_kwh, n_obs, n_profiles, source_version`.
+Agregado Gold por estrato físico y tiempo local. Diseñado para mantener acotado el volumen consumido por el navegador al escalar la muestra de perfiles ResStock (de 10 a 50 o 10,000 perfiles): su tamaño depende del número de estratos `(estados × tipos_vivienda × zonas_iana × horas × offsets)` y no del número de edificios $N$. Se consume automáticamente en el tablero cuando el filtro es general, mientras que `gold_resstock_pattern` se conserva para la inspección individual vía lazy-load.
+Declara explícitamente:
+- **Estadísticas calculadas:** media, mediana, percentiles 10 y 90, mínimo, máximo, conteo de observaciones horarias completas de 60 min (`n_obs`) y cantidad de modelos físicos participantes (`n_profiles`).
+- **Manejo temporal local por condado:** resolución por county FIPS contra NOAA/NWS `c_16ap26` (SHA-256 `503f9d69...`), bloqueando estrictamente los 9 condados con fronteras divididas (FL Gulf 12045, TX Culberson 48109, ID Idaho 16049, NE Cherry 31031, ND Dunn 38025 / McKenzie 38053 / Sioux 38087, OR Malheur 41045, SD Stanley 46117). `time_zone` se incluye en el grano de la clave primaria para no combinar horas solares distintas en estados multizona (FL, TX).
+- **Control de bordes y completitud:** exclusión de horas con < 4 intervalos para prevenir sesgo por fracción horaria al borde del dataset, y derivación reproducible de `is_partial_period` comparando el rango observado de inicio y fin contra el mes civil local completo.
+- **Advertencia metodológica:** La muestra modelada consiste en simulaciones físicas exploratorias y **NO representa a la población general, a totales censales ni a la facturación agregada de clientes residenciales**.
+
+### 2.9 Anomalías (etiquetas sintéticas)
 
 **`gold_anomaly_metrics`** — PK `(eval_set, category, magnitude)`: `eval_set` (`calibration`=NY, `evaluation`=CO), `category` (`aumento`, `caida`, `faltante`, `aumento+caida`), `magnitude` (`all`, `low`, `mid`, `high`), `n_events, n_detected, recall, n_alerts, n_true_alerts, precision, f1`, parámetros usados (`z_up, ratio_down, min_run_hours`), `method`, `is_synthetic_labels`. Por magnitud solo hay `recall`.
 

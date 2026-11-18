@@ -27,10 +27,51 @@ Ejecución segura desde la raíz del proyecto; `--output` debe ser una carpeta n
 python scripts/job_spark_piloto.py \
   --input datos \
   --output /tmp/salidas-spark-piloto \
-  --master 'local[2]'
+  --master 'local[2]' \
+  --allow-legacy-pilot-10   # necesario mientras el manifiesto no tenga profile_roster
 ```
 
 El job resuelve rutas reales, rechaza solapamientos entre entrada/salida y no sobrescribe una salida no vacía. Antes de procesar, compara el tamaño y SHA-256 de los cuatro archivos de entrada con `datos/manifiesto-integracion.json`.
+
+## Roster de perfiles ResStock y lotes escalables
+
+El QC de ResStock ya no fija 10 perfiles: el número esperado N sale de un **roster explícito** de IDs descargados, y el total esperado es `N × 35,040` filas. Para cada perfil se siguen exigiendo 35,040 intervalos, rango `2018-01-01 00:15` a `2019-01-01 00:00`, paso de 900 s, unicidad `(bldg_id, timestamp)`, valores válidos y metadatos completos y unívocos. Una muestra truncada, con perfiles faltantes o con IDs no listados falla el QC y bloquea la publicación.
+
+**Construcción del roster.** Al preparar un lote, se añade al registro de `resstock_perfiles_piloto.parquet` en `datos/manifiesto-integracion.json` (junto con `rows`, `bytes` y `sha256` actualizados):
+
+```json
+"profile_roster": {"bldg_ids": [1234, 5678], "intervals_per_profile": 35040}
+```
+
+`bldg_ids` son los IDs efectivamente descargados y presentes en el Parquet (no los 10,000 candidatos de `resstock_seleccion_propuesta.csv`). El job exige enteros positivos sin duplicados, `rows == N × 35040`, y que el conjunto de `bldg_id` del Parquet sea idéntico al roster.
+
+**Entrada sin roster.** El manifiesto actual de 10 perfiles no tiene `profile_roster`, así que por defecto se rechaza antes de iniciar Spark. Para procesarlo como **piloto legado** hay que pedirlo explícitamente:
+
+```bash
+python scripts/job_spark_piloto.py --input datos --output /tmp/salidas-spark-piloto \
+  --master 'local[2]' --allow-legacy-pilot-10
+```
+
+El modo legado fija N = 10 y exige `rows == 350400` en el manifiesto, pero no puede verificar los IDs; queda registrado como `legacy_fixed_10_no_ids` en el reporte de calidad (`roster.fuente`) con una advertencia. Los lotes nuevos deben usar roster.
+
+`scripts/preparar_datos.py` escribe el roster junto al registro del Parquet en su `manifiesto.json`. Para crear una entrada autocontenida con los artefactos derivados y `manifiesto-integracion.json`, se usa el empaquetador; no copia los archivos originales ubicados bajo `raw/` y rechaza salidas existentes:
+
+```bash
+python scripts/preparar_entrada_spark.py \
+  --prepared /tmp/resstock-batch50 \
+  --output /tmp/spark-input-resstock-batch50
+```
+
+Después se ejecuta el job contra esa carpeta con el mismo Java/PySpark documentado arriba y sin `--allow-legacy-pilot-10`:
+
+```bash
+JAVA_HOME=/usr/lib/jvm/java-17-temurin-jdk \
+PYSPARK_PYTHON=/tmp/bigdata-spark-venv/bin/python \
+/tmp/bigdata-spark-venv/bin/python scripts/job_spark_piloto.py \
+  --input /tmp/spark-input-resstock-batch50 \
+  --output /tmp/salidas-spark-batch50 \
+  --master 'local[2]'
+```
 
 ## Capas producidas
 

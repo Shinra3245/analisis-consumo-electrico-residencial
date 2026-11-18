@@ -110,8 +110,27 @@ export async function loadAll() {
   const entries = store.manifest ? manifestEntries(store.manifest) : {};
   store.entries = entries;
   await Promise.all(Object.entries(TABLES).map(async ([n, spec]) => {
-    store.tables[n] = await loadTable(n, spec, entries[n], store.manifestStatus === 'ok');
+    if (spec.lazy) {
+      store.tables[n] = { status: 'lazy', message: 'Tabla disponible para carga bajo demanda.', entry: entries[n] };
+    } else {
+      store.tables[n] = await loadTable(n, spec, entries[n], store.manifestStatus === 'ok');
+    }
   }));
+}
+
+export async function ensureTable(name) {
+  if (store.tables[name]?.status === 'ok') return store.tables[name];
+  if (store.tables[name]?.status === 'loading') return store.tables[name].promise;
+  const spec = TABLES[name];
+  if (!spec) return { status: 'error', message: `Tabla ${name} no configurada.` };
+  const entries = store.entries || {};
+  const promise = (async () => {
+    const res = await loadTable(name, spec, entries[name], store.manifestStatus === 'ok');
+    store.tables[name] = res;
+    return res;
+  })();
+  store.tables[name] = { status: 'loading', promise };
+  return promise;
 }
 
 export const rowsOf = (n) => (store.tables[n]?.status === 'ok' ? store.tables[n].rows : null);

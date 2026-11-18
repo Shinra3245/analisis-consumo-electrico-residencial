@@ -8,6 +8,7 @@ exporta los datasets en formato JSON bajo tablero/data/v1/:
   - gold_eia_monthly.json (5,304 filas)
   - gold_resstock_monthly.json (120 filas)
   - gold_resstock_pattern.json (6,730 filas)
+  - gold_resstock_pattern_aggregate.json (6,730 filas en muestra piloto; cota fija por estrato al escalar)
   - gold_resstock_profile_summary.json (10 filas)
   - gold_climate.json (336 filas)
   - manifest.json (manifiesto con hashes, esquema 1.0, QC, linaje y bloqueo 87.16%)
@@ -15,10 +16,14 @@ exporta los datasets en formato JSON bajo tablero/data/v1/:
 Manejo temporal:
   - Timestamps ResStock de origen están en EST fijo (UTC-5), sin DST.
   - Para gold_resstock_monthly: inicio de intervalo derivado restando 15 min a marca de fin.
-  - Para gold_resstock_pattern: se calcula inicio de intervalo, se convierte explícitamente
-    a UTC (+5 horas) y luego a la zona IANA del estado (America/Denver para CO,
-    America/New_York para NY). Se preserva utc_offset_minutes para distinguir horas en DST
-    y se marcan periodos locales parciales (2017-12 y 2018-12 en CO).
+  - Para gold_resstock_pattern y gold_resstock_pattern_aggregate: se calcula inicio de intervalo,
+    se convierte explícitamente a UTC (+5 horas) y luego a la zona IANA del estado
+    (America/Denver para CO, America/New_York para NY). Se preserva utc_offset_minutes
+    para distinguir horas en DST y se marcan periodos locales parciales (2017-12 y 2018-12 en CO).
+  - El agregado por estrato distingue (state_code, housing_type, period_local, day_type,
+    hour_local, utc_offset_minutes) para mantener acotado el volumen en el navegador
+    cuando la muestra N escale hacia 10,000 perfiles, manteniendo a la vez la inspección
+    individual en gold_resstock_pattern.
   - La relación 87.16% Colorado/EIA queda documentada como no reproducida debido a la
     ausencia del agregado crudo en el repositorio, sin inventar datos sustitutos.
 """
@@ -39,13 +44,17 @@ from typing import Any, Dict, List, Tuple
 import pandas as pd
 import pyarrow.parquet as pq
 
-EXPECTED_OUTPUT_FILES = {
+PREVIOUS_EXPECTED_FILES = {
     "gold_eia_monthly.json",
     "gold_resstock_monthly.json",
     "gold_resstock_pattern.json",
     "gold_resstock_profile_summary.json",
     "gold_climate.json",
     "manifest.json",
+}
+
+EXPECTED_OUTPUT_FILES = PREVIOUS_EXPECTED_FILES | {
+    "gold_resstock_pattern_aggregate.json",
 }
 
 
@@ -114,7 +123,7 @@ def validate_paths(input_dir: str, output_dir: str, overwrite: bool) -> Tuple[st
         if (
             manifest.get("schema_version") != "1.0"
             or manifest.get("generator_script") != "scripts/generar_datos_tablero.py"
-            or actual_files != EXPECTED_OUTPUT_FILES
+            or actual_files not in (PREVIOUS_EXPECTED_FILES, EXPECTED_OUTPUT_FILES)
         ):
             raise ValueError(
                 "--overwrite solo reemplaza una exportación v1 reconocida sin archivos adicionales; "
@@ -183,6 +192,24 @@ def verify_input_sources(input_dir: str) -> List[Dict[str, Any]]:
                 f"sha256={actual_sha} (esperado {rec['sha256']})"
             )
 
+        if filename == "resstock_perfiles_piloto.parquet":
+            roster = rec.get("profile_roster")
+            if roster and isinstance(roster, dict) and "bldg_ids" in roster:
+                rs_roster_info = {
+                    "source": "manifest_profile_roster",
+                    "bldg_ids": sorted(roster["bldg_ids"]),
+                    "expected_bldgs": len(roster["bldg_ids"]),
+                    "expected_rows": len(roster["bldg_ids"]) * roster.get("intervals_per_profile", 35040),
+                }
+            else:
+                declared_rows = rec.get("rows", 350400)
+                rs_roster_info = {
+                    "source": "manifest_declared_rows",
+                    "bldg_ids": None,
+                    "expected_bldgs": declared_rows // 35040 if declared_rows else 10,
+                    "expected_rows": declared_rows,
+                }
+
         inventory.append(
             {
                 "file": filename,
@@ -195,7 +222,7 @@ def verify_input_sources(input_dir: str) -> List[Dict[str, Any]]:
             }
         )
 
-    return inventory
+    return inventory, rs_roster_info
 
 
 def run_qc_checks(
@@ -203,6 +230,7 @@ def run_qc_checks(
     df_metadata: pd.DataFrame,
     df_eia: pd.DataFrame,
     df_clima: pd.DataFrame,
+    roster_info: Dict[str, Any] | None = None,
 ) -> Tuple[Dict[str, Any], int, List[str]]:
     """Ejecuta los 21 controles de calidad formales sobre los DataFrames de entrada."""
     rules_results = []
@@ -216,21 +244,32 @@ def run_qc_checks(
     bldgs = df_resstock["bldg_id"].unique()
     n_rows_rs = len(df_resstock)
     n_bldgs_rs = len(bldgs)
-    r1 = bool(n_rows_rs == 350400 and n_bldgs_rs == 10)
+
+    if roster_info is None:
+        roster_info = {}
+    expected_bldgs = roster_info.get("expected_bldgs", n_bldgs_rs)
+    expected_rows = roster_info.get("expected_rows", expected_bldgs * 35040)
+    expected_ids = roster_info.get("bldg_ids")
+
+    ids_match = (set(bldgs) == set(expected_ids)) if expected_ids is not None else True
+    r1 = bool(n_rows_rs == expected_rows and n_bldgs_rs == expected_bldgs and ids_match)
+    r1_cond = f"filas == {expected_rows} (N*35040) y edificios == {expected_bldgs}"
+    if expected_ids is not None:
+        r1_cond += " con IDs coincidentes con profile_roster"
     rules_results.append({
         "fuente": "resstock",
         "regla": "filas_y_edificios_esperados",
-        "condicion": "filas == 350400 y edificios == 10",
+        "condicion": r1_cond,
         "cumplida": r1,
         "fallos": 0 if r1 else 1,
     })
 
     counts_by_bldg = df_resstock.groupby("bldg_id").size().to_dict()
-    r2 = bool(all(c == 35040 for c in counts_by_bldg.values()) and len(counts_by_bldg) == 10)
+    r2 = bool(all(c == 35040 for c in counts_by_bldg.values()) and len(counts_by_bldg) == expected_bldgs)
     rules_results.append({
         "fuente": "resstock",
         "regla": "cobertura_intervalos_anual_por_edificio",
-        "condicion": "cada bldg_id tiene exactamente 35040 intervalos de 15 min (AMY 2018)",
+        "condicion": f"cada bldg_id tiene exactamente 35040 intervalos de 15 min (AMY 2018) y {expected_bldgs} edificios",
         "cumplida": r2,
         "fallos": 0 if r2 else 1,
     })
@@ -286,8 +325,8 @@ def run_qc_checks(
 
     meta_pilot = df_metadata[df_metadata["bldg_id"].isin(bldgs)]
     meta_valid = (
-        len(meta_pilot) == 10
-        and meta_pilot["bldg_id"].nunique() == 10
+        len(meta_pilot) == n_bldgs_rs
+        and meta_pilot["bldg_id"].nunique() == n_bldgs_rs
         and meta_pilot["estado"].str.match(r"^[A-Z]{2}$").all()
         and (meta_pilot["peso_viviendas"] > 0).all()
         and not meta_pilot[["tipo_vivienda", "condado_codigo", "upgrade", "url"]].isna().any().any()
@@ -296,7 +335,7 @@ def run_qc_checks(
     rules_results.append({
         "fuente": "resstock",
         "regla": "metadata_resstock_completa_y_univoca",
-        "condicion": "cada perfil piloto tiene una fila válida en resstock_seleccion_propuesta.csv",
+        "condicion": f"cada uno de los {n_bldgs_rs} perfiles tiene una fila válida en resstock_seleccion_propuesta.csv",
         "cumplida": r7,
         "fallos": 0 if r7 else 1,
     })
@@ -541,56 +580,239 @@ def generate_gold_resstock_profile_summary(df_resstock: pd.DataFrame, df_meta: p
     ].to_dict(orient="records")
 
 
+NOAA_COUNTY_TIMEZONE_VERSION = "NOAA/NWS c_16ap26"
+
+NOAA_SPLIT_COUNTIES = {
+    "12045",  # FL Gulf (C/E split)
+    "16049",  # ID Idaho (P/M split)
+    "31031",  # NE Cherry (M/C split)
+    "38025",  # ND Dunn (M/C split)
+    "38053",  # ND McKenzie (M/C split)
+    "38087",  # ND Sioux (M/C split)
+    "41045",  # OR Malheur (P/M split)
+    "46117",  # SD Stanley (M/C split)
+    "48109",  # TX Culberson (M/C split)
+}
+
+NOAA_COUNTY_ZIP_SOURCE = {
+    "file": "c_16ap26.zip",
+    "version": "c_16ap26 (valid 2026-04-16)",
+    "sha256": "503f9d697a97bdbfd8a7cfe6b3b666801f43392fa220294987a68cac0bd3f03b",
+    "url": "https://www.weather.gov/source/gis/Shapefiles/County/c_16ap26.zip",
+}
+
+# Crosswalk derivado mínimo validado contra NOAA/NWS c_16ap26 (c_16ap26.dbf)
+# para los condados presentes en el lote exploratorio (43 FIPS únicos)
+NOAA_FIPS_CROSSWALK_BATCH = {
+    "06037": ("CA", "Los Angeles", "America/Los_Angeles"),
+    "06053": ("CA", "Monterey", "America/Los_Angeles"),
+    "06067": ("CA", "Sacramento", "America/Los_Angeles"),
+    "06073": ("CA", "San Diego", "America/Los_Angeles"),
+    "08005": ("CO", "Arapahoe", "America/Denver"),
+    "08031": ("CO", "Denver", "America/Denver"),
+    "08041": ("CO", "El Paso", "America/Denver"),
+    "08053": ("CO", "Hinsdale", "America/Denver"),
+    "08107": ("CO", "Routt", "America/Denver"),
+    "12011": ("FL", "Broward", "America/New_York"),
+    "12081": ("FL", "Manatee", "America/New_York"),
+    "12083": ("FL", "Marion", "America/New_York"),
+    "12086": ("FL", "Miami-Dade", "America/New_York"),
+    "12095": ("FL", "Orange", "America/New_York"),
+    "17019": ("IL", "Champaign", "America/Chicago"),
+    "17043": ("IL", "DuPage", "America/Chicago"),
+    "17117": ("IL", "Macoupin", "America/Chicago"),
+    "17157": ("IL", "Randolph", "America/Chicago"),
+    "17199": ("IL", "Williamson", "America/Chicago"),
+    "25023": ("MA", "Plymouth", "America/New_York"),
+    "25027": ("MA", "Worcester", "America/New_York"),
+    "36003": ("NY", "Allegany", "America/New_York"),
+    "36045": ("NY", "Jefferson", "America/New_York"),
+    "36047": ("NY", "Kings", "America/New_York"),
+    "36081": ("NY", "Queens", "America/New_York"),
+    "36111": ("NY", "Ulster", "America/New_York"),
+    "39017": ("OH", "Butler", "America/New_York"),
+    "39035": ("OH", "Cuyahoga", "America/New_York"),
+    "39051": ("OH", "Fulton", "America/New_York"),
+    "39095": ("OH", "Lucas", "America/New_York"),
+    "39153": ("OH", "Summit", "America/New_York"),
+    "42003": ("PA", "Allegheny", "America/New_York"),
+    "42011": ("PA", "Berks", "America/New_York"),
+    "42085": ("PA", "Mercer", "America/New_York"),
+    "42091": ("PA", "Montgomery", "America/New_York"),
+    "42133": ("PA", "York", "America/New_York"),
+    "48029": ("TX", "Bexar", "America/Chicago"),
+    "48113": ("TX", "Dallas", "America/Chicago"),
+    "48201": ("TX", "Harris", "America/Chicago"),
+    "48245": ("TX", "Jefferson", "America/Chicago"),
+    "53011": ("WA", "Clark", "America/Los_Angeles"),
+    "53033": ("WA", "King", "America/Los_Angeles"),
+    "53063": ("WA", "Spokane", "America/Los_Angeles"),
+}
+
+
+def extract_county_fips(condado_codigo: Any) -> str | None:
+    """Extrae el código FIPS de 5 dígitos (state 2d + county 3d) desde el código de condado."""
+    if not isinstance(condado_codigo, str):
+        return None
+    s = condado_codigo.strip()
+    if s.startswith("G") and len(s) >= 8:
+        # Formato GISJOIN censal: G + SS + 0 + CCC + 0
+        state_fips = s[1:3]
+        county_part = s[4:7]
+        if state_fips.isdigit() and county_part.isdigit():
+            return f"{state_fips}{county_part}"
+    elif len(s) == 5 and s.isdigit():
+        return s
+    return None
+
+
+def resolve_county_iana_timezone(county_fips: str | None, state_code: str) -> str:
+    """Resuelve la zona IANA por county FIPS según NOAA/NWS c_16ap26, bloqueando condados divididos.
+
+    Fuente: NOAA/NWS County Boundaries c_16ap26 (válida 16-Apr-2026, SHA-256 503f9d69...)
+    https://www.weather.gov/gis/Counties y https://www.weather.gov/gis/CountyMetadata
+    """
+    if not county_fips or not isinstance(county_fips, str) or len(county_fips) != 5:
+        raise ValueError(
+            f"FIPS inválido o ausente ({county_fips}) para estado {state_code}: "
+            "se requiere metadata de condado para resolver zona horaria NOAA/NWS."
+        )
+
+    if county_fips in NOAA_SPLIT_COUNTIES:
+        raise ValueError(
+            f"FIPS {county_fips} ({state_code}) bloqueado: condado con frontera dividida en dos zonas horarias según NOAA/NWS (c_16ap26)."
+        )
+
+    # Consulta directa al crosswalk validado contra NOAA/NWS c_16ap26
+    entry = NOAA_FIPS_CROSSWALK_BATCH.get(county_fips)
+    if entry:
+        st, cname, tz = entry
+        if st != state_code:
+            raise ValueError(
+                f"Incongruencia entre estado {state_code} y registro NOAA {st} ({cname}) para FIPS {county_fips}."
+            )
+        return tz
+
+    # Si no está en el crosswalk validado del lote, bloquear estrictamente para no inferir por estado
+    raise ValueError(
+        f"FIPS {county_fips} ({state_code}) no presente en el crosswalk validado NOAA/NWS c_16ap26; "
+        "bloqueado por ambigüedad. No se infiere zona horaria estatal."
+    )
+
+
+def check_month_is_partial(series_dt: pd.Series, tz_name: str, period_str: str) -> bool:
+    """Calcula reproduciblemente si un mes local está incompleto en el rango temporal observado.
+
+    Un mes civil local está completo si y solo si abarca desde el primer instante esperado
+    (día 1 a las 00:00:00) hasta el último intervalo esperado (último día a las 23:45:00).
+    """
+    y, m = map(int, period_str.split("-"))
+    month_start = pd.Timestamp(year=y, month=m, day=1, hour=0, minute=0, tz=tz_name)
+    if m == 12:
+        next_month_start = pd.Timestamp(year=y + 1, month=1, day=1, hour=0, minute=0, tz=tz_name)
+    else:
+        next_month_start = pd.Timestamp(year=y, month=m + 1, day=1, hour=0, minute=0, tz=tz_name)
+    expected_last_interval = next_month_start - pd.Timedelta(minutes=15)
+
+    obs_min = series_dt.min()
+    obs_max = series_dt.max()
+    return bool((obs_min > month_start) or (obs_max < expected_last_interval))
+
+
+def prepare_resstock_metadata_timezones(df_meta: pd.DataFrame, expected_bldgs: set[int] | None = None) -> pd.DataFrame:
+    """Resuelve la zona IANA por bldg_id sobre df_meta una sola vez (evitando lookup fila a fila sobre intervalos).
+
+    Falla estrictamente si algún perfil carece de FIPS o resolución de zona, evitando omisiones silenciosas.
+    """
+    meta_cols = ["bldg_id", "estado", "tipo_vivienda", "condado_codigo"]
+    sub_meta = df_meta[[c for c in meta_cols if c in df_meta.columns]].drop_duplicates("bldg_id").copy()
+
+    if expected_bldgs:
+        missing_in_meta = expected_bldgs - set(sub_meta["bldg_id"])
+        if missing_in_meta:
+            raise ValueError(f"Perfiles ausentes en metadatos para resolución de zona horaria: {sorted(missing_in_meta)}")
+        sub_meta = sub_meta[sub_meta["bldg_id"].isin(expected_bldgs)].copy()
+
+    sub_meta["county_fips"] = sub_meta["condado_codigo"].map(extract_county_fips)
+
+    # Validar FIPS ausente
+    missing_fips = sub_meta[sub_meta["county_fips"].isna()]["bldg_id"].tolist()
+    if missing_fips:
+        raise ValueError(f"Perfil(es) sin county_fips en metadatos: {missing_fips}; no se omite silenciosamente.")
+
+    # Resolver zona por perfil sobre df_meta (1 fila por perfil)
+    sub_meta["time_zone"] = sub_meta.apply(
+        lambda r: resolve_county_iana_timezone(r["county_fips"], r["estado"]),
+        axis=1,
+    )
+    sub_meta["source_version"] = NOAA_COUNTY_TIMEZONE_VERSION
+
+    # Validar que todos los perfiles tengan zona válida resuelta
+    unresolved = sub_meta[sub_meta["time_zone"].isna()]["bldg_id"].tolist()
+    if unresolved:
+        raise ValueError(f"Perfil(es) sin resolución válida de zona horaria NOAA: {unresolved}; abortando exportación.")
+
+    return sub_meta[["bldg_id", "estado", "tipo_vivienda", "county_fips", "time_zone", "source_version"]]
+
+
 def generate_gold_resstock_pattern(df_resstock: pd.DataFrame, df_meta: pd.DataFrame) -> List[Dict[str, Any]]:
-    """Genera gold_resstock_pattern con conversión horaria explícita a zonas IANA locales.
+    """Genera gold_resstock_pattern con conversión horaria por condado según NOAA/NWS c_16ap26.
 
     Convierte:
       timestamp_fin_local (EST fijo) -> inicio de intervalo (restando 15 min)
       -> UTC (+5 horas)
-      -> Zona local IANA:
-         CO: America/Denver
-         NY: America/New_York
+      -> Zona local IANA resuelta por condado FIPS vía NOAA/NWS (c_16ap26).
       Preserva utc_offset_minutes para distinguir instantes en transición DST.
-      Marca is_partial_period=True para periodos incompletos (2017-12 y 2018-12 en CO).
+      Marca is_partial_period reproduciblemente por cobertura observada vs civil esperada.
+      Excluye horas con < 4 intervalos de 15 min para evitar sesgar el consumo en bordes.
     """
-    tz_map = {
-        "CO": "America/Denver",
-        "NY": "America/New_York",
-    }
+    unique_bldgs = set(df_resstock["bldg_id"].unique())
+    meta_tz = prepare_resstock_metadata_timezones(df_meta, expected_bldgs=unique_bldgs)
 
-    df = df_resstock.merge(df_meta[["bldg_id", "estado", "tipo_vivienda"]], on="bldg_id")
+    # Merge vectorizado en Cython sobre bldg_id
+    df = df_resstock.merge(meta_tz, on="bldg_id")
+    if len(df["bldg_id"].unique()) != len(unique_bldgs):
+        raise ValueError("Discrepancia en merge de perfiles con metadatos de zona horaria.")
+
     pattern_records = []
 
-    for state_code, tz_name in tz_map.items():
-        sub = df[df["estado"] == state_code].copy()
-        if sub.empty:
-            continue
-
-        # 1. Inicio en EST fijo
-        start_est = sub["timestamp_fin_local"] - pd.Timedelta(minutes=15)
-        # 2. Conversión a UTC
+    for tz_name, tz_sub in df.groupby("time_zone"):
+        start_est = tz_sub["timestamp_fin_local"] - pd.Timedelta(minutes=15)
         start_utc = (start_est + pd.Timedelta(hours=5)).dt.tz_localize("UTC")
-        # 3. Conversión a zona local
         start_local = start_utc.dt.tz_convert(tz_name)
 
-        sub["period_local"] = start_local.dt.strftime("%Y-%m")
-        sub["date_local"] = start_local.dt.strftime("%Y-%m-%d")
-        sub["hour_local"] = start_local.dt.hour
-        sub["day_type"] = start_local.dt.dayofweek.map(lambda d: "weekend" if d >= 5 else "weekday")
+        tz_sub = tz_sub.copy()
+        tz_sub["start_local"] = start_local
+        tz_sub["period_local"] = start_local.dt.strftime("%Y-%m")
+        tz_sub["date_local"] = start_local.dt.strftime("%Y-%m-%d")
+        tz_sub["hour_local"] = start_local.dt.hour
+        tz_sub["day_type"] = start_local.dt.dayofweek.map(lambda d: "weekend" if d >= 5 else "weekday")
 
-        offset_sec = (start_local.dt.tz_localize(None) - start_local.dt.tz_convert("UTC").dt.tz_localize(None)).dt.total_seconds()
-        sub["utc_offset_minutes"] = (offset_sec // 60).astype(int)
+        offset_sec = (
+            start_local.dt.tz_localize(None) - start_local.dt.tz_convert("UTC").dt.tz_localize(None)
+        ).dt.total_seconds()
+        tz_sub["utc_offset_minutes"] = (offset_sec // 60).astype(int)
 
-        # 4. Agregación a nivel horario (sumando intervalos dentro de cada hora local)
-        hourly = sub.groupby(
-            ["bldg_id", "estado", "tipo_vivienda", "period_local", "date_local", "day_type", "hour_local", "utc_offset_minutes"]
+        # Regla reproducible de meses parciales por cobertura real observada
+        partial_map = {
+            p: check_month_is_partial(sub_p["start_local"], tz_name, p)
+            for p, sub_p in tz_sub.groupby("period_local")
+        }
+
+        hourly = tz_sub.groupby(
+            ["bldg_id", "estado", "tipo_vivienda", "period_local", "date_local", "day_type", "hour_local", "utc_offset_minutes", "time_zone", "source_version"]
         ).agg(
-            kwh=("electricidad_kwh", "sum")
+            kwh=("electricidad_kwh", "sum"),
+            n_intervals=("electricidad_kwh", "count"),
         ).reset_index()
 
-        # 5. Agregación del patrón por perfil, mes local, tipo de día, hora y desplazamiento
+        # Excluir horas incompletas (< 4 intervalos de 15 min) para evitar sesgos en media y percentiles
+        hourly = hourly[hourly["n_intervals"] == 4].copy()
+
+        hourly["is_partial_period"] = hourly["period_local"].map(partial_map)
+
         pat = hourly.groupby(
-            ["bldg_id", "estado", "tipo_vivienda", "period_local", "day_type", "hour_local", "utc_offset_minutes"]
+            ["bldg_id", "estado", "tipo_vivienda", "period_local", "day_type", "hour_local", "utc_offset_minutes", "time_zone", "source_version", "is_partial_period"]
         ).agg(
             median_kwh=("kwh", "median"),
             mean_kwh=("kwh", "mean"),
@@ -603,15 +825,8 @@ def generate_gold_resstock_pattern(df_resstock: pd.DataFrame, df_meta: pd.DataFr
         pat["mean_kwh"] = pat["mean_kwh"].round(4)
         pat["p10_kwh"] = pat["p10_kwh"].round(4)
         pat["p90_kwh"] = pat["p90_kwh"].round(4)
-        pat["time_zone"] = tz_name
         pat["state_code"] = pat["estado"]
         pat["housing_type"] = pat["tipo_vivienda"]
-
-        # En Colorado, la cobertura de AMY 2018 abarca partes de 2017-12 y 2018-12
-        if state_code == "CO":
-            pat["is_partial_period"] = pat["period_local"].isin(["2017-12", "2018-12"])
-        else:
-            pat["is_partial_period"] = False
 
         cols = [
             "bldg_id",
@@ -628,12 +843,145 @@ def generate_gold_resstock_pattern(df_resstock: pd.DataFrame, df_meta: pd.DataFr
             "state_code",
             "housing_type",
             "time_zone",
+            "source_version",
         ]
         pattern_records.extend(pat[cols].to_dict(orient="records"))
 
-    # Ordenar por bldg_id, period_local, day_type, hour_local, utc_offset_minutes
     pattern_records.sort(key=lambda r: (r["bldg_id"], r["period_local"], r["day_type"], r["hour_local"], r["utc_offset_minutes"]))
     return pattern_records
+
+
+def generate_gold_resstock_pattern_aggregate(
+    df_resstock: pd.DataFrame, df_meta: pd.DataFrame
+) -> List[Dict[str, Any]]:
+    """Genera gold_resstock_pattern_aggregate con grano por estrato y tiempo local NOAA/NWS.
+
+    Dimensiones / Grano de la clave primaria:
+      (state_code, housing_type, time_zone, period_local, day_type, hour_local, utc_offset_minutes)
+
+    Mantiene acotado el volumen consumido por el navegador al escalar la muestra N,
+    evitando enviar filas por edificio cuando el usuario analiza patrones agregados.
+
+    Estadísticas calculadas por celda:
+      - mean_kwh: media de consumo horario en kWh
+      - median_kwh: mediana de consumo horario en kWh
+      - p10_kwh: percentil 10 de consumo horario en kWh
+      - p90_kwh: percentil 90 de consumo horario en kWh
+      - min_kwh: consumo mínimo horario observado en la celda
+      - max_kwh: consumo máximo horario observado en la celda
+      - n_obs: cantidad de observaciones horarias completas agrupadas
+      - n_profiles: cantidad de modelos de simulación únicos que aportan a la celda
+
+    Manejo temporal por condado:
+      - Resuelto por county FIPS vía NOAA/NWS c_16ap26.
+      - Bloqueo estricto de condados fronterizos divididos (como Gulf, FL y Culberson, TX).
+      - time_zone distingue granularmente zonas dentro de estados multidivisionales (FL, TX).
+      - utc_offset_minutes distingue horas durante transiciones DST.
+      - is_partial_period identifica meses locales incompletos por cobertura reproducible.
+      - Excluye horas con < 4 intervalos de 15 min para evitar distorsiones en consumo horario.
+
+    Advertencia metodológica obligatoria:
+      La muestra modelada ResStock es física y exploratoria; no representa a la
+      población residencial general, totales censales ni facturación de clientes.
+    """
+    unique_bldgs = set(df_resstock["bldg_id"].unique())
+    meta_tz = prepare_resstock_metadata_timezones(df_meta, expected_bldgs=unique_bldgs)
+
+    df = df_resstock.merge(meta_tz, on="bldg_id")
+    if len(df["bldg_id"].unique()) != len(unique_bldgs):
+        raise ValueError("Discrepancia en merge de perfiles con metadatos de zona horaria.")
+
+    agg_records = []
+
+    for tz_name, tz_sub in df.groupby("time_zone"):
+        start_est = tz_sub["timestamp_fin_local"] - pd.Timedelta(minutes=15)
+        start_utc = (start_est + pd.Timedelta(hours=5)).dt.tz_localize("UTC")
+        start_local = start_utc.dt.tz_convert(tz_name)
+
+        tz_sub = tz_sub.copy()
+        tz_sub["start_local"] = start_local
+        tz_sub["period_local"] = start_local.dt.strftime("%Y-%m")
+        tz_sub["date_local"] = start_local.dt.strftime("%Y-%m-%d")
+        tz_sub["hour_local"] = start_local.dt.hour
+        tz_sub["day_type"] = start_local.dt.dayofweek.map(lambda d: "weekend" if d >= 5 else "weekday")
+
+        offset_sec = (
+            start_local.dt.tz_localize(None) - start_local.dt.tz_convert("UTC").dt.tz_localize(None)
+        ).dt.total_seconds()
+        tz_sub["utc_offset_minutes"] = (offset_sec // 60).astype(int)
+
+        partial_map = {
+            p: check_month_is_partial(sub_p["start_local"], tz_name, p)
+            for p, sub_p in tz_sub.groupby("period_local")
+        }
+
+        hourly = tz_sub.groupby(
+            ["bldg_id", "estado", "tipo_vivienda", "period_local", "date_local", "day_type", "hour_local", "utc_offset_minutes", "time_zone", "source_version"]
+        ).agg(
+            kwh=("electricidad_kwh", "sum"),
+            n_intervals=("electricidad_kwh", "count"),
+        ).reset_index()
+
+        # Excluir horas incompletas (< 4 cuartos de hora de 15 min)
+        hourly = hourly[hourly["n_intervals"] == 4].copy()
+
+        hourly["is_partial_period"] = hourly["period_local"].map(partial_map)
+
+        agg = hourly.groupby(
+            ["estado", "tipo_vivienda", "time_zone", "period_local", "day_type", "hour_local", "utc_offset_minutes", "source_version", "is_partial_period"]
+        ).agg(
+            mean_kwh=("kwh", "mean"),
+            median_kwh=("kwh", "median"),
+            p10_kwh=("kwh", lambda s: s.quantile(0.10)),
+            p90_kwh=("kwh", lambda s: s.quantile(0.90)),
+            min_kwh=("kwh", "min"),
+            max_kwh=("kwh", "max"),
+            n_obs=("kwh", "count"),
+            n_profiles=("bldg_id", "nunique"),
+        ).reset_index()
+
+        agg["mean_kwh"] = agg["mean_kwh"].round(4)
+        agg["median_kwh"] = agg["median_kwh"].round(4)
+        agg["p10_kwh"] = agg["p10_kwh"].round(4)
+        agg["p90_kwh"] = agg["p90_kwh"].round(4)
+        agg["min_kwh"] = agg["min_kwh"].round(4)
+        agg["max_kwh"] = agg["max_kwh"].round(4)
+        agg["state_code"] = agg["estado"]
+        agg["housing_type"] = agg["tipo_vivienda"]
+
+        cols = [
+            "state_code",
+            "housing_type",
+            "time_zone",
+            "period_local",
+            "day_type",
+            "hour_local",
+            "utc_offset_minutes",
+            "is_partial_period",
+            "mean_kwh",
+            "median_kwh",
+            "p10_kwh",
+            "p90_kwh",
+            "min_kwh",
+            "max_kwh",
+            "n_obs",
+            "n_profiles",
+            "source_version",
+        ]
+        agg_records.extend(agg[cols].to_dict(orient="records"))
+
+    agg_records.sort(
+        key=lambda r: (
+            r["state_code"],
+            r["housing_type"],
+            r["time_zone"],
+            r["period_local"],
+            r["day_type"],
+            r["hour_local"],
+            r["utc_offset_minutes"],
+        )
+    )
+    return agg_records
 
 
 def generate_gold_climate(df_clima: pd.DataFrame) -> List[Dict[str, Any]]:
@@ -713,13 +1061,15 @@ def main() -> int:
     records_rs_monthly = generate_gold_resstock_monthly(df_resstock, df_meta)
     records_rs_summary = generate_gold_resstock_profile_summary(df_resstock, df_meta)
     records_rs_pattern = generate_gold_resstock_pattern(df_resstock, df_meta)
+    records_rs_pattern_agg = generate_gold_resstock_pattern_aggregate(df_resstock, df_meta)
     records_climate = generate_gold_climate(df_clima)
 
-    print(f"  - gold_eia_monthly:              {len(records_eia)} filas")
-    print(f"  - gold_resstock_monthly:         {len(records_rs_monthly)} filas")
-    print(f"  - gold_resstock_profile_summary: {len(records_rs_summary)} filas")
-    print(f"  - gold_resstock_pattern:         {len(records_rs_pattern)} filas")
-    print(f"  - gold_climate:                  {len(records_climate)} filas")
+    print(f"  - gold_eia_monthly:                 {len(records_eia)} filas")
+    print(f"  - gold_resstock_monthly:            {len(records_rs_monthly)} filas")
+    print(f"  - gold_resstock_profile_summary:    {len(records_rs_summary)} filas")
+    print(f"  - gold_resstock_pattern:            {len(records_rs_pattern)} filas")
+    print(f"  - gold_resstock_pattern_aggregate:  {len(records_rs_pattern_agg)} filas")
+    print(f"  - gold_climate:                     {len(records_climate)} filas")
 
     # 5. Escritura atómica a carpeta de salida mediante staging
     parent_dir = os.path.dirname(real_output)
@@ -728,12 +1078,17 @@ def main() -> int:
     staging_dir = tempfile.mkdtemp(prefix=".tablero_v1_staging_", dir=parent_dir)
     now_utc_str = datetime.now(timezone.utc).isoformat()
 
+    n_bldgs = len(df_resstock["bldg_id"].unique())
+    states_list = sorted(df_meta[df_meta["bldg_id"].isin(df_resstock["bldg_id"].unique())]["estado"].unique())
+    states_str = ", ".join(states_list)
+
     try:
         tables_meta = {}
         payloads = {
             "gold_eia_monthly": (records_eia, "gold_eia_monthly.json", ["period", "state_code"]),
             "gold_resstock_monthly": (records_rs_monthly, "gold_resstock_monthly.json", ["bldg_id", "source_period"]),
             "gold_resstock_pattern": (records_rs_pattern, "gold_resstock_pattern.json", ["bldg_id", "period_local", "day_type", "hour_local", "utc_offset_minutes"]),
+            "gold_resstock_pattern_aggregate": (records_rs_pattern_agg, "gold_resstock_pattern_aggregate.json", ["state_code", "housing_type", "time_zone", "period_local", "day_type", "hour_local", "utc_offset_minutes"]),
             "gold_resstock_profile_summary": (records_rs_summary, "gold_resstock_profile_summary.json", ["bldg_id"]),
             "gold_climate": (records_climate, "gold_climate.json", ["point_id", "timestamp_utc"]),
         }
@@ -758,14 +1113,38 @@ def main() -> int:
             "data_status": qc_dict["status"],
             "coverage_summary": {
                 "eia": "2018-01 through 2026-08 (51 jurisdictions: 50 states + DC), monthly residential utility sales",
-                "resstock": "AMY 2018, 10 pilot profiles (5 Colorado, 5 New York), 15-minute intervals (35,040 per bldg)",
+                "resstock": f"AMY 2018, {n_bldgs} profiles ({states_str}), 15-minute intervals (35,040 per bldg); individual patterns and stratum-level aggregate patterns",
                 "climate": "2018-01-01 to 2018-01-07, 2 point locations in Colorado (Denver, Grand Junction), ERA5-Land hourly"
             },
             "methodology_separation": {
                 "resstock_modelled": (
-                    "10 physical building energy simulation models (AMY 2018). Pilot exploratory sample; "
-                    "does not represent national totals. Timestamps converted explicitly from fixed EST to UTC and local IANA time zones."
+                    f"{n_bldgs} physical building energy simulation models (AMY 2018). Exploratory sample across {len(states_list)} states ({states_str}); "
+                    "does not represent national totals. Timestamps converted explicitly from fixed EST to UTC and local IANA time zones by county (NOAA/NWS c_16ap26)."
                 ),
+                "resstock_pattern_aggregate": {
+                    "grain": "(state_code, housing_type, time_zone, period_local, day_type, hour_local, utc_offset_minutes)",
+                    "metrics_calculated": [
+                        "mean_kwh",
+                        "median_kwh",
+                        "p10_kwh",
+                        "p90_kwh",
+                        "min_kwh",
+                        "max_kwh",
+                        "n_obs",
+                        "n_profiles",
+                    ],
+                    "temporal_handling": (
+                        "Explicit conversion: fixed EST (-15m to interval start) -> UTC (+5h) -> "
+                        "local IANA zones resolved by county FIPS (NOAA/NWS c_16ap26), preserving utc_offset_minutes, "
+                        "excluding incomplete hours (<4 intervals), and deriving is_partial_period by civil month coverage."
+                    ),
+                    "sample_representativeness": (
+                        "Modeled physical simulation profiles; does NOT represent population, census totals, or utility billing totals."
+                    ),
+                    "scalability_purpose": (
+                        "Keeps browser payload bounded to stratum dimensions as sample size scales, while preserving individual inspection via lazy-load in gold_resstock_pattern."
+                    ),
+                },
                 "eia_sales": (
                     "Aggregated official utility sales from Form EIA-861M for 51 jurisdictions. "
                     "Completely distinct population and scope from ResStock."

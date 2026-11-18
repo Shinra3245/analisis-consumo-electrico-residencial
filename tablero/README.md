@@ -12,7 +12,7 @@ python3 -m http.server 8000 -d tablero
 ## Datos
 
 Lee solo JSON versionados bajo `tablero/data/v1/` (cambiar con `?data=<url-base>/`):
-`manifest.json`, `gold_eia_monthly`, `gold_resstock_monthly`, `gold_resstock_pattern`, `gold_resstock_profile_summary`, `gold_climate`.
+`manifest.json`, `gold_eia_monthly`, `gold_resstock_monthly`, `gold_resstock_pattern`, `gold_resstock_pattern_aggregate`, `gold_resstock_profile_summary`, `gold_climate`.
 
 Para regenerar las tablas desde `datos/`, instala las dependencias del exportador y ejecuta el comando seguro documentado en [`docs/ejecucion-job-spark-local.md`](../docs/ejecucion-job-spark-local.md). La interfaz en sí no requiere paquetes, compilación ni conexión externa.
 

@@ -7,21 +7,21 @@ Este plan convierte en trabajo ejecutable los cinco pendientes de integración y
 ### Estado de partida
 
 - El pipeline local PySpark de Silver/Gold está integrado y ejecutado con 21/21 reglas aprobadas. Produce 10 perfiles ResStock y series EIA/clima con manifiesto de hashes.
-- El dashboard local de seis vistas consume cinco tablas Gold JSON versionadas y verifica esquema, filas, bytes y SHA-256 contra `manifest.json`.
+- El dashboard local de seis vistas consume seis tablas Gold JSON versionadas y verifica esquema, filas, bytes y SHA-256 contra `manifest.json`; los patrones individuales se cargan bajo demanda.
 - La rama de pipeline anterior del PR #4 se cerró porque su agregado Colorado/EIA no es reproducible desde los archivos versionados. La razón 87.16% no debe presentarse como precisión ni como resultado recalculado.
-- El exportador genera patrones horarios locales para el piloto de 10 perfiles; las vistas de pronóstico y anomalías continúan sin tablas Gold ni cifras.
-- No hay infraestructura AWS desplegada. La región y el presupuesto máximo siguen sin decisión documentada.
-- Hay 10 perfiles efectivamente procesados. La lista de 10,000 IDs es una selección candidata, no una descarga de 10,000 perfiles.
+- El pipeline y el exportador ya admiten roster dinámico: se procesaron y exportaron localmente 50 perfiles, incluyendo agregado por estrato y zona horaria local. Las vistas de pronóstico y anomalías continúan sin tablas Gold ni cifras.
+- No hay infraestructura AWS desplegada. Se eligieron `mx-central-1` y USD 50/mes como umbral de planeación y alerta; falta acceso a la cuenta para configurar el Budget y verificar permisos.
+- El repositorio público conserva el piloto de 10 perfiles. Además, existe una corrida local reproducible de 50 perfiles (1,752,000 intervalos), aún fuera de Git; el índice contiene 549,971 candidatos y la selección de 10,000 IDs no equivale a descargas.
 
 ## Orden de ejecución
 
 | Prioridad | Bloque | Dependencias principales | Estado |
 |---|---|---|---|
-| **P0 — Urgente, puerta de decisión** | Acordar presupuesto, región, responsable de cuenta y permisos AWS. Confirmar que la cuenta puede crear S3, EMR y Kinesis dentro del límite aprobado. | Decisión explícita del titular/equipo; estimación de costos. | Bloqueado hasta registrar los valores aprobados; no crear recursos facturables antes. |
+| **P0 — Urgente, habilitar cuenta** | Configurar AWS Budget mensual de USD 50 en `mx-central-1`, verificar alertas y permisos, y estimar una corrida acotada antes de provisionar. El Budget alerta, no es un tope duro. | Acceso del operador a la cuenta, destinatario de alertas y estimación por servicio. | Región y umbral decididos; pendiente configurar y verificar desde la cuenta. Sin recursos facturables hasta entonces. |
 | **P0 — Urgente, trabajo local paralelo** | Recuperar o reconstruir de forma autorizada la fuente de la comparación Colorado/EIA 2018 y hacerla reproducible. | Archivo agregado original y procedencia; o fuente autorizada equivalente. | No reproducible todavía; la salida entregada está en el repositorio, pero su agregado ResStock de origen no. |
-| **P1 — Desbloquea patrones y vistas** | Normalizar timestamps ResStock a UTC y hora local IANA, preservar el timestamp fuente, y generar Gold por periodo/hora local. | Mapeo de los 10 perfiles piloto a estado/zona; contrato de tiempo. | **Completado para el piloto:** exportador genera 6,730 filas locales y preserva offsets DST y periodos parciales; no implica escala de 10,000 perfiles. |
-| **P1 — Visible y demostrable** | Conectar el dashboard al Gold actual y completar las seis vistas incrementalmente con lenguaje visual isométrico y jerarquía clara. | Pipeline local; adaptador de datos JSON/Parquet; dirección visual abajo. | **Completado como dashboard local v1:** cinco tablas cargan desde JSON/manifiesto; Resumen, Patrones, Clima y Flujo/Calidad presentan datos. Estimaciones y Anomalías muestran espera sin cifras mientras no haya Gold evaluado. |
-| **P2 — Escalamiento** | Descargar y procesar 10,000 perfiles por lotes con procedencia y controles. | Revisión de licencia/redistribución, capacidad local/nube y estimación de almacenamiento/costo. | Pendiente; no equivale a usar los 10,000 IDs candidatos. |
+| **P1 — Desbloquea patrones y vistas** | Normalizar timestamps ResStock a UTC y hora local IANA, preservar el timestamp fuente, y generar Gold por periodo/hora local. | Roster de perfiles, metadata de condado NOAA/NWS y contrato de tiempo. | **Completado localmente para 50 perfiles:** 33,650 filas individuales y 33,650 agregadas por estrato/zona; cuatro zonas IANA, offsets DST y periodos parciales identificados. El repositorio público sigue con los 10 perfiles. |
+| **P1 — Visible y demostrable** | Conectar el dashboard al Gold actual y completar las seis vistas incrementalmente con lenguaje visual isométrico y jerarquía clara. | Pipeline local; adaptador de datos JSON/Parquet; dirección visual abajo. | **Completado como dashboard local v1:** seis tablas cargan desde JSON/manifiesto; Resumen, Patrones, Clima y Flujo/Calidad presentan datos. Estimaciones y Anomalías muestran espera sin cifras mientras no haya Gold evaluado. Se verificó además una vista local del lote de 50. |
+| **P2 — Escalamiento** | Ampliar por etapas desde el lote validado de 50 hacia 10,000 solo con evidencia de capacidad, selección y permisos. | Revisión de licencia/redistribución, capacidad local/nube y estimación de almacenamiento/costo. | **Primer lote completado localmente:** 50/50 perfiles y 21/21 reglas Spark y exportador aprobadas. El conjunto ampliado sigue fuera de Git; la meta de 10,000 es trabajo futuro. |
 | **P2 — Analítica avanzada** | Implementar y evaluar pronósticos mensuales y detección de anomalías. | Datos versionados; división temporal de evaluación; reglas y etiquetas para anomalías. | Pendiente; las vistas existen pero no muestran resultados sin backtest o evaluación. |
 | **P2 — Despliegue objetivo** | Migrar procesamiento a EMR, replay por Kinesis, datos en S3 y publicación del tablero. | P0 aprobado; ejecución local reproducible; límites de costo y seguridad. | Pendiente; no desplegar antes de superar P0. |
 
@@ -103,20 +103,21 @@ La referencia es el [reel isométrico de **Code Boss**](https://www.facebook.com
 
 Los valores visibles coinciden con las tablas Gold y el manifiesto; al cambiar estado, periodo o perfil cambian tanto cifras como gráficas. La ilustración isométrica no implica lecturas por habitación y no sustituye a la gráfica ni a su procedencia. Ninguna vista presenta como resultado real una tabla pendiente o una métrica no calculada.
 
-## Bloque 4 — Escalar ResStock a 10,000 perfiles
+## Bloque 4 — Escalar ResStock con incrementos verificables
 
 ### Trabajo requerido
 
 1. Revisar condiciones de uso, atribución y permiso de conservar/publicar perfiles y derivados. No asumir que el uso escolar elimina restricciones.
-2. Definir y versionar selección por estado y tipo de vivienda, incluyendo semilla, cuotas e IDs elegidos.
-3. Descargar por etapas controladas: validar primero un lote pequeño, medir bytes/tiempo/errores y decidir la siguiente escala con evidencia.
+2. Definir y versionar selección por estado y tipo de vivienda, incluyendo semilla, cuotas e IDs elegidos. El índice contiene 549,971 candidatos en 254 estratos y 51 estados; los pesos disponibles no bastan por sí solos para declarar una muestra representativa.
+3. **Completado:** se validó un lote de 50 perfiles que conserva los 10 de CO y NY y agrega 40 entre CA, WA, IL, OH, TX, FL, PA y MA (cinco tipos de vivienda por estado, según los estratos disponibles). La cobertura es exploratoria, no representativa. Se midieron bytes, tiempo, fallos y tamaño de las salidas Gold; revisar `lote-resstock-50.md`.
 4. Registrar por archivo `bldg_id`, estado, tipo, peso, URL de origen, bytes y SHA-256; reintentar fallos sin duplicar registros.
 5. Ejecutar QC de esquema, metadatos, cobertura temporal, unicidad, valores finitos/no negativos y continuidad de 15 minutos.
 6. Procesar los lotes con Spark y comparar la cantidad de perfiles recibidos, aceptados, rechazados y generados en Silver/Gold.
 
 ### Entregables
 
-- Inventario de 10,000 perfiles efectivamente descargados y manifiesto verificable.
+- Lote completado: 50 perfiles y 1,752,000 intervalos (50 × 35,040), con manifiesto verificable, tiempo/volumen medidos y selección documentada en `lote-resstock-50.md`. La meta de 10,000 se mantiene como escalamiento posterior, no como resultado alcanzado.
+- Inventario de perfiles efectivamente descargados (separado de IDs candidatos) y manifiesto verificable.
 - Reporte de QC con cuarentena de perfiles inválidos.
 - Tablas Silver/Gold regenerables y costo/almacenamiento observado.
 
@@ -156,7 +157,7 @@ Antes de provisionar, registrar:
 - Reglas de acceso, MFA, retención y eliminación de recursos de prueba.
 - Decisión de publicación: qué derivados son públicos; datos crudos y capas internas permanecen privados.
 
-Sin esos valores, se continúa el desarrollo local y **no se crean recursos facturables**.
+Hasta tener acceso autorizado, un presupuesto configurado y una estimación por ejecución, se continúa el desarrollo local y **no se crean recursos facturables**.
 
 ### Implementación y entregables
 

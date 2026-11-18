@@ -1,6 +1,6 @@
 # Arquitectura AWS por etapas
 
-**Estado:** diseño técnico para el demostrador académico. No se han creado recursos, no se aprobó presupuesto y no se desplegó esta arquitectura.
+**Estado:** diseño técnico para el demostrador académico. La región seleccionada es `mx-central-1` y el umbral de planeación y alerta es USD 50 por mes. No se han creado recursos ni configurado alertas AWS; esta sesión no tiene acceso a la cuenta. El presupuesto de AWS genera alertas y no es un límite duro de gasto.
 
 ## 1. Qué pide el curso y qué compromete la propuesta
 
@@ -52,13 +52,13 @@ flowchart LR
 
 ## 4. Selección de región y compatibilidad
 
-No fijar la región hasta comparar disponibilidad, cuota y estimación en AWS Pricing Calculator. `mx-central-1` es candidata por cercanía al equipo: la documentación vigente lista EMR Serverless en esa región y exige EMR 7.10.0 o posterior. El conector de Kinesis para Spark se incluye en EMR Serverless 7.1.0 o posterior; para consumir Kinesis se requiere configurar acceso VPC y conectividad al stream. [Regiones y releases mínimos de EMR Serverless](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/endpoints-quotas.html) · [Conector Kinesis de EMR Serverless](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/jobs-spark-streaming-connectors.html)
+La región seleccionada para el demostrador es `mx-central-1`, por cercanía al equipo y disponibilidad documentada de EMR Serverless; se requiere EMR 7.10.0 o posterior. El conector de Kinesis para Spark se incluye en EMR Serverless 7.1.0 o posterior; para consumir Kinesis se requiere configurar acceso VPC y conectividad al stream. [Regiones y releases mínimos de EMR Serverless](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/endpoints-quotas.html) · [Conector Kinesis de EMR Serverless](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/jobs-spark-streaming-connectors.html)
 
-Comparar `mx-central-1` con `us-east-1` usando el mismo escenario. En particular, calcular endpoints VPC, solicitudes/datos S3, Kinesis, EMR, CloudWatch, CloudFront y transferencia. La entrega directa de Kinesis a S3 no está disponible en `mx-central-1` según la [tabla regional de Kinesis Data Streams](https://aws.amazon.com/kinesis/data-streams/pricing/); por eso el flujo propuesto usa Spark como consumidor y escritor S3. La documentación también señala que los jobs EMR Serverless de streaming son de larga duración y no admiten un timeout de ejecución; implementar un marcador de fin y una detención verificada para el replay finito. [Jobs de streaming de EMR Serverless](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/jobs-streaming.html) La tabla regional y disponibilidad deben revisarse de nuevo el día de la prueba.
+Antes del primer despliegue, validar cuotas y estimar el escenario en AWS Pricing Calculator para `mx-central-1`, incluyendo endpoints VPC, solicitudes/datos S3, Kinesis, EMR, CloudWatch, CloudFront y transferencia. La entrega directa de Kinesis a S3 no está disponible en esta región según la [tabla regional de Kinesis Data Streams](https://aws.amazon.com/kinesis/data-streams/pricing/); por eso el flujo usa Spark como consumidor y escritor S3. Los jobs EMR Serverless de streaming son de larga duración y no admiten un timeout de ejecución; implementar un marcador de fin y una detención verificada para el replay finito. [Jobs de streaming de EMR Serverless](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/jobs-streaming.html) Revisar la tabla regional y disponibilidad el día de la prueba.
 
 ## 5. Control de costo y puerta de autorización
 
-No hay un monto máximo autorizado aún. Antes de crear servicios, el equipo debe acordar un presupuesto numérico y documentar una estimación con fecha, región, duración, muestra/bytes, solicitudes y eventos. Usar [AWS Pricing Calculator](https://calculator.aws/) para:
+El umbral mensual elegido para la demostración es **USD 50**. Es un límite operativo para alertas y planeación, no una garantía de que AWS detenga el consumo al llegar a esa cifra. Antes de crear servicios, documentar una estimación con fecha, región, duración, muestra/bytes, solicitudes y eventos, y ajustar el alcance si el costo previsto no cabe. Usar [AWS Pricing Calculator](https://calculator.aws/) para:
 
 | Servicio | Variables que se deben estimar |
 |---|---|
@@ -73,14 +73,14 @@ El costo de EMR Serverless depende de vCPU, memoria y almacenamiento consumidos 
 
 Configurar una alarma de AWS Budgets con umbrales de aviso acordados (por ejemplo, 50/80/100%). Esto **no es un tope duro**: la información de costos puede tener retraso y una notificación puede llegar después de superar el umbral. Complementarla con máximos del job EMR, duración corta, sin capacidad preinicializada, stream creado solo para la prueba, límite de eventos, y verificación manual de terminación/borrado al finalizar. [Retraso y funcionamiento de Budgets](https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-managing-costs.html) · [Acciones de Budgets](https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-controls.html)
 
-Antes del primer despliegue deben quedar anotados: titular de facturación, monto máximo aprobado, servicio/escenario calculado, notificaciones recibidas, responsable de detener recursos y evidencia final de limpieza. Si falta cualquiera de esos datos, continuar localmente.
+Antes del primer despliegue deben quedar anotados: titular de facturación, configuración real de AWS Budgets con alertas a 50/80/100% del umbral mensual, servicio/escenario calculado, destinatario de notificaciones, responsable de detener recursos y evidencia final de limpieza. En esta sesión no se configuraron las alertas porque no hay acceso a la cuenta. Mientras falte presupuesto configurado y validado, continuar localmente y no crear recursos facturables.
 
 ## 6. Etapas de implementación y criterios de salida
 
 | Etapa | Trabajo | Evidencia para pasar |
 |---|---|---|
 | 0. Congelar contratos localmente | Confirmar IDs/campos/unidades/huso de las muestras; correr transformaciones pequeñas localmente; separar resultados validados de la selección candidata. | Schema v1, reporte de calidad y comandos locales reproducibles. Sin recurso AWS. |
-| 1. Preparar cuenta y presupuesto | Confirmar titular, MFA, acceso mínimo, región, cuotas, endpoints, estimación y umbral numérico. Crear alertas de costo. | Lista de recursos/costos aprobados y captura de presupuesto; no compartir credenciales. |
+| 1. Preparar cuenta y presupuesto | En `mx-central-1`, confirmar titular, MFA, acceso mínimo, cuotas y endpoints; calcular el escenario y crear AWS Budget mensual de USD 50 con avisos a 50/80/100%. | Estimación fechada y alerta visible en la cuenta; destinatarios verificados; no compartir credenciales. |
 | 2. S3 privado y publicación web | Crear bucket dedicado, Block Public Access, versionado, cifrado y roles/policies; CloudFront OAC lee `site/` solamente; establecer `gold/v1/`, `site/data/v1/`, metadatos de caché y publicación de manifiesto al final. | Acceso directo al bucket denegado; web servida por HTTPS; datos Gold/raw/Silver inaccesibles públicamente; manifiesto actualizado tras publicar; exportaciones inmutables servidas desde caché. |
 | 3. Lote Spark en EMR | Subir muestra acotada, ejecutar un job con límite de workers, escribir Gold particionado y métrica de ejecución. | Conteos/hash/resultados cotejados con local; runtime/costo observados; workers detenidos. |
 | 4. Replay acotado | Crear stream, enviar lote pequeño identificado como replay, ejecutar Spark streaming con VPC/endpoints/checkpoint y marcador de fin. | N eventos enviados/recibidos/procesados, duplicados/rechazos, tiempo, costo y stream/job/checkpoint cerrados. |
@@ -88,11 +88,10 @@ Antes del primer despliegue deben quedar anotados: titular de facturación, mont
 
 ## 7. Puertas de decisión pendientes
 
-1. Titular de AWS, método de acceso del equipo y quién aprueba el gasto.
-2. Monto máximo concreto para todas las pruebas y gasto máximo por ejecución.
-3. Región elegida después de comparar calculadora, cuotas y endpoint Kinesis.
-4. Número de perfiles/intervalos que se subirán. Los 10 perfiles actuales bastan para la primera prueba; los 10,000 IDs siguen siendo candidatos, no una descarga.
-5. Duración y número máximo de eventos para el replay, además de retención de stream/checkpoint.
-6. Qué artefactos Gold son redistribuibles y pueden ser públicos a través del tablero.
+1. Acceso autorizado a la cuenta AWS, titular de facturación, responsable de alertas y permisos mínimos.
+2. Configurar y verificar el AWS Budget de USD 50/mes en `mx-central-1`; calcular un máximo operativo por ejecución. El Budget alerta, no detiene automáticamente el gasto.
+3. Número de perfiles/intervalos que se subirán. Los 10 actuales son el piloto procesado; el índice de 10,000 IDs es candidato, no una descarga.
+4. Duración y número máximo de eventos para el replay, además de retención de stream/checkpoint.
+5. Qué artefactos Gold son redistribuibles y pueden ser públicos a través del tablero.
 
-Este documento desarrolla el stack aprobado sin declarar despliegue ni costos inexistentes. Las decisiones de cuenta y presupuesto son requisitos previos a la implementación cloud, no pasos que se ejecutan automáticamente.
+Este documento desarrolla el stack aprobado sin declarar despliegue ni costos observados. La región y el umbral mensual ya están decididos; la configuración de la cuenta, alertas, estimación de ejecución y comprobación de permisos siguen pendientes.

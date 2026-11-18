@@ -1,5 +1,5 @@
 import { DATA_BASE, SCHEMA_VERSION, TABLES, PENDING_TABLES } from './config.js';
-import { loadAll, store, rowsOf, statusOf } from './data.js';
+import { loadAll, store, rowsOf, statusOf, ensureTable } from './data.js';
 import { esc, nf, lineChart, barChart, heatmap } from './charts.js';
 import { isoHouse } from './iso.js';
 
@@ -13,7 +13,7 @@ const VIEWS = [
   { id: 'estimaciones', label: 'Estimaciones', icon: ico('<path d="M3 20V8M9 20V4M15 20v-9M21 20V12"/>'), q: '¿Cuánto consumo residencial se esperaría y qué error tuvo el método en meses ya conocidos?', pending: true },
   { id: 'calidad', label: 'Flujo/Calidad', icon: ico('<path d="M5 4h14v6H5zM5 14h14v6H5z"/><path d="M8 7h.01M8 17h.01"/>'), q: '¿De dónde viene cada cifra, qué cobertura tiene y qué controles pasó?' },
 ];
-const state = { view: 'resumen', st: 'CO', from: null, to: null, type: 'ALL', source: 'ALL', gran: 'monthly', prelim: true, profile: null, day: 'weekday' };
+const state = { view: 'resumen', st: 'CO', from: null, to: null, type: 'ALL', source: 'ALL', gran: 'monthly', prelim: true, profile: null, day: 'weekday', tz: null };
 const $ = (s) => document.querySelector(s);
 const SRC = {
   eia: { cls: 'eia', name: 'EIA-861M', kind: 'oficial' },
@@ -59,7 +59,10 @@ const profiles = () => (resSummary() || []).filter((r) => (state.st === 'ALL' ||
   .sort((a, b) => (a.state_code + a.housing_type < b.state_code + b.housing_type ? -1 : 1));
 function currentProfile() {
   const ps = profiles();
-  return ps.find((p) => String(p.bldg_id) === String(state.profile)) || ps[0] || null;
+  if (state.profile && state.profile !== 'ALL') {
+    return ps.find((p) => String(p.bldg_id) === String(state.profile)) || ps[0] || null;
+  }
+  return ps[0] || null;
 }
 const climRows = () => (rowsOf('gold_climate') || []).filter((r) => (state.st === 'ALL' || r.state_code === state.st) && inRange(r.timestamp_utc.slice(0, 7)));
 const periodBounds = () => {
@@ -85,12 +88,16 @@ const pendingTables = (names) => `<ul>${names.map((n) => `<li><code>${n}</code> 
 function statusLabel(n) {
   const s = store.tables[n];
   if (!s) return store.entries?.[n] ? 'listada en el manifiesto; esta versión del tablero aún no la grafica' : 'no entregada todavía';
-  return { ok: 'cargada', pending: 'no entregada todavía', error: s.message }[s.status];
+  if (s.status === 'lazy') return 'bajo demanda (inspección individual)';
+  if (s.status === 'loading') return 'cargando…';
+  return { ok: 'cargada', pending: 'no entregada todavía', error: s.message }[s.status] || s.status;
 }
 /** Estado vacío/err de una o varias tablas requeridas. Devuelve null si todo está disponible. */
 function needTables(names, what) {
   const bad = names.filter((n) => statusOf(n) !== 'ok');
   if (!bad.length) return null;
+  const loading = bad.some((n) => statusOf(n) === 'loading');
+  if (loading) return empty(`Cargando datos de ${what}…`, 'Descargando datos y verificando integridad contra manifiesto.');
   const err = bad.some((n) => statusOf(n) === 'error');
   return empty(err ? `No se pudo cargar los datos de ${what}` : `${what[0].toUpperCase()}${what.slice(1)}: esperando datos`,
     err ? 'Falló la lectura o validación; no se muestran cifras.' : 'El bloque de datos aún no entrega esta tabla; no se muestran cifras de relleno.', pendingTables(bad), err);
@@ -179,7 +186,7 @@ function viewResumen() {
     const tot = co ? [...co.entries()].filter(([p]) => p.startsWith('2018')) : [];
     out.push(card({
       id: 'R2', q: '¿Se pueden comparar ResStock y EIA en Colorado 2018?', accent: 'none',
-      body: `${empty('Razón descriptiva no calculada', 'No existe todavía un agregado ResStock mensual reproducible que permita una comparación válida. La cifra 87.16 % no se publica: no tiene evidencia reproducible y no es precisión.')}
+      body: `${empty('Razón descriptiva no calculada', 'La cifra 87.16 % no se ha reproducido desde su agregado fuente y no se publica como resultado. ResStock contiene perfiles modelados de muestra; EIA informa ventas del sector residencial completo. Son coberturas distintas y la razón no es una medida de precisión.')}
       <div class="tbl-wrap" style="max-height:none"><table class="t"><caption class="sr">Cobertura de cada fuente</caption><thead><tr><th scope="col">Fuente</th><th scope="col">Población</th><th scope="col">Periodo</th><th scope="col">Cobertura</th></tr></thead><tbody>
       <tr><td>${chip('eia', [])}</td><td>Ventas de todo el estado (CO)</td><td>2018</td><td>${tot.length ? `${tot.length} meses · ${nf(tot.reduce((a, [, v]) => a + v.mwh, 0))} MWh` : 'sin datos'}</td></tr>
       <tr><td>${chip('res', [])}</td><td>${(() => { const n = (resSummary() || []).filter((r) => r.state_code === 'CO').length; return n ? `${n} perfiles modelados de CO (no solo unifamiliar aislada)` : 'perfiles piloto no disponibles'; })()}</td><td>2018 (EST fijo)</td><td>Piloto exploratorio; sin ponderación válida</td></tr></tbody></table></div>`,
@@ -196,8 +203,19 @@ const typeCol = (t) => TYPE_COL[t] || '#6b7280';
 
 function viewPatrones() {
   const out = [];
+  const isIndividual = Boolean(state.profile && state.profile !== 'ALL');
   const p = currentProfile();
-  const hero = `<section class="card hero" style="margin-bottom:16px" aria-label="Vivienda ilustrativa"><div class="iso-wrap">${isoHouse(p?.housing_type)}</div><div class="meta"><p class="eyebrow">Ilustración conceptual</p><h2 style="margin:0;font-size:20px">${p ? `${esc(p.housing_type)} · ${esc(p.state_code)}` : 'Vivienda genérica'}</h2><p class="sub">${p ? `Perfil modelado #${esc(p.bldg_id)}. Solo el tipo y el estado se reflejan aquí; las gráficas muestran los datos.` : 'Sin perfil ResStock para este filtro; ilustración genérica.'}</p><div class="chips">${p ? chip('res', ['kWh', 'perfil piloto']) : ''}</div></div></section>`;
+  const heroHt = isIndividual ? p?.housing_type : (state.type !== 'ALL' ? state.type : p?.housing_type);
+  const heroTitle = isIndividual
+    ? `${esc(p?.housing_type || '')} · ${esc(p?.state_code || '')}`
+    : (state.type !== 'ALL' ? `${esc(state.type)} · ${esc(state.st === 'ALL' ? 'Muestra general' : state.st)}` : `Patrones horarios agregados · ${esc(state.st === 'ALL' ? 'Todos los estados' : state.st)}`);
+  const heroSub = isIndividual
+    ? `Inspección individual: perfil modelado #${esc(p?.bldg_id)}. Mostrando datos específicos de este edificio.`
+    : `Agregado Gold de la muestra por estrato físico. Mantiene acotado el volumen en el navegador al escalar la muestra. Selecciona un perfil para inspección individual.`;
+  const heroChip = isIndividual
+    ? (p ? chip('res', ['kWh', 'perfil piloto', 'inspección individual']) : '')
+    : chip('res', ['kWh', 'agregado Gold', 'muestra modelada']);
+  const hero = `<section class="card hero" style="margin-bottom:16px" aria-label="Vivienda ilustrativa"><div class="iso-wrap">${isoHouse(heroHt)}</div><div class="meta"><p class="eyebrow">${isIndividual ? 'Inspección individual de perfil' : 'Ilustración conceptual · Agregado Gold'}</p><h2 style="margin:0;font-size:20px">${heroTitle}</h2><p class="sub">${heroSub}</p><div class="chips">${heroChip}</div></div></section>`;
   out.push(hero);
   if (state.gran === 'monthly') {
     out.push('<div class="grid g2">' + patternP1() + patternP1b() + '</div>' + patternP3());
@@ -269,19 +287,56 @@ function patternP3() {
 }
 
 function patternP2() {
-  const base = { id: 'P2', q: '¿A qué horas y en qué meses consume más un perfil?', accent: 'res' };
-  const e = needTables(['gold_resstock_pattern', 'gold_resstock_profile_summary'], 'patrones horarios');
-  if (e) return card({ ...base, body: e });
+  const isIndividual = Boolean(state.profile && state.profile !== 'ALL');
   const ps = profiles();
-  if (!ps.length) return card({ ...base, body: noResState() });
-  const p = currentProfile();
-  const sel = `<div class="ctl"><label>Perfil <select id="sel-profile">${ps.map((x) => `<option value="${x.bldg_id}" ${String(x.bldg_id) === String(p.bldg_id) ? 'selected' : ''}>#${x.bldg_id} · ${esc(x.housing_type)} · ${esc(x.state_code)}</option>`).join('')}</select></label>
+  if (!ps.length) return card({ id: 'P2', q: 'Patrones horarios ResStock', accent: 'res', body: noResState() });
+
+  const p = isIndividual ? (ps.find((x) => String(x.bldg_id) === String(state.profile)) || ps[0]) : null;
+  const base = {
+    id: 'P2',
+    q: isIndividual
+      ? `¿A qué horas y en qué meses consume más el perfil #${esc(p?.bldg_id)}?`
+      : '¿A qué horas y en qué meses se concentra el consumo agregado de la muestra?',
+    accent: 'res',
+  };
+
+  const tableNeeded = isIndividual ? 'gold_resstock_pattern' : 'gold_resstock_pattern_aggregate';
+  if (isIndividual && statusOf('gold_resstock_pattern') !== 'ok' && statusOf('gold_resstock_pattern') !== 'loading') {
+    ensureTable('gold_resstock_pattern').then(() => render());
+  }
+
+  const e = needTables([tableNeeded, 'gold_resstock_profile_summary'], isIndividual ? 'patrones horarios individuales' : 'patrones horarios agregados');
+  if (e) return card({ ...base, body: e });
+
+  const selProfile = `<div class="ctl"><label>Vista de patrones <select id="sel-profile">
+    <option value="ALL" ${!isIndividual ? 'selected' : ''}>Agregado general de la muestra (Gold)</option>
+    <optgroup label="Inspección individual de perfiles">
+      ${ps.map((x) => `<option value="${x.bldg_id}" ${(isIndividual && String(x.bldg_id) === String(p?.bldg_id)) ? 'selected' : ''}>#${x.bldg_id} · ${esc(x.housing_type)} · ${esc(x.state_code)}</option>`).join('')}
+    </optgroup>
+  </select></label>
     <div class="seg" role="group" aria-label="Tipo de día"><button type="button" data-day="weekday" aria-pressed="${state.day === 'weekday'}">Día laboral</button><button type="button" data-day="weekend" aria-pressed="${state.day === 'weekend'}">Fin de semana</button></div></div>`;
-  const rows = rowsOf('gold_resstock_pattern').filter((r) => String(r.bldg_id) === String(p.bldg_id) && r.day_type === state.day && inRange(r.period_local));
-  if (!rows.length) return card({ ...base, body: sel + empty('Sin patrones para el filtro', `No hay filas de ${state.day === 'weekday' ? 'día laboral' : 'fin de semana'} para este perfil entre ${state.from} y ${state.to}.`) });
-  const tz = rows[0].time_zone;
-  const cells = new Map(), acc = new Map(), periods = [...new Set(rows.map((r) => r.period_local))].sort();
-  for (const r of rows) {
+
+  let rows;
+  if (isIndividual) {
+    rows = (rowsOf('gold_resstock_pattern') || []).filter((r) => String(r.bldg_id) === String(p.bldg_id) && r.day_type === state.day && inRange(r.period_local));
+  } else {
+    rows = (rowsOf('gold_resstock_pattern_aggregate') || []).filter((r) => (state.st === 'ALL' || r.state_code === state.st) && (state.type === 'ALL' || r.housing_type === state.type) && r.day_type === state.day && inRange(r.period_local));
+  }
+
+  if (!rows.length) return card({ ...base, body: selProfile + empty('Sin patrones para el filtro', `No hay filas de ${state.day === 'weekday' ? 'día laboral' : 'fin de semana'} para este filtro entre ${state.from} y ${state.to}.`) });
+
+  const allTzs = [...new Set(rows.map((r) => r.time_zone))];
+  const activeTz = state.tz && allTzs.includes(state.tz) ? state.tz : allTzs[0];
+  const tzRows = isIndividual ? rows : rows.filter((r) => r.time_zone === activeTz);
+
+  const tzSwitcher = (!isIndividual && allTzs.length > 1)
+    ? `<div class="ctl" style="margin-top:6px"><label>Zona horaria <select id="sel-tz">${allTzs.map((z) => `<option value="${esc(z)}" ${z === activeTz ? 'selected' : ''}>${esc(z)}</option>`).join('')}</select></label><span class="sub" style="font-size:12px;color:var(--c-sub)">El agregado distingue zona horaria IANA para no mezclar ciclos solares distintos.</span></div>`
+    : '';
+
+  const sel = selProfile + tzSwitcher;
+  const tz = activeTz;
+  const cells = new Map(), acc = new Map(), periods = [...new Set(tzRows.map((r) => r.period_local))].sort();
+  for (const r of tzRows) {
     const k = `${r.period_local}|${r.hour_local}`, a = acc.get(k) || { s: 0, n: 0, part: false };
     a.s += +r.median_kwh; a.n++; a.part ||= !!r.is_partial_period; acc.set(k, a);
     if (r.is_partial_period) cells.set(`${r.period_local}|partial`, true);
@@ -290,12 +345,32 @@ function patternP2() {
   const nPart = periods.filter((x) => cells.get(`${x}|partial`)).length;
   const hourAvg = Array.from({ length: 24 }, (_, h) => { const v = periods.map((x) => cells.get(`${x}|${h}`)?.v).filter((v) => v != null); return v.length ? v.reduce((a, b) => a + b) / v.length : -1; });
   const pk = hourAvg.indexOf(Math.max(...hourAvg));
-  const aria = `Mapa de calor de la mediana horaria en kWh, hora local ${tz}, ${periods.length} periodos; la hora con mayor mediana promedio es ${String(pk).padStart(2, '0')}:00.`;
+
+  const aria = isIndividual
+    ? `Mapa de calor de la mediana horaria en kWh, hora local ${tz}, ${periods.length} periodos; la hora con mayor mediana promedio es ${String(pk).padStart(2, '0')}:00.`
+    : `Mapa de calor del patrón horario agregado en kWh, hora local ${tz}, ${periods.length} periodos; la hora con mayor consumo promedio es ${String(pk).padStart(2, '0')}:00.`;
+
+  const tableHead = isIndividual
+    ? ['Periodo local', 'Hora local', 'Zona IANA', 'Mediana kWh', 'Parcial', 'Fuente NOAA']
+    : ['Periodo local', 'Hora local', 'Estado', 'Tipo vivienda', 'Zona IANA', 'Mediana kWh', 'Media kWh', 'P10', 'P90', 'Perfiles', 'Parcial', 'Fuente NOAA'];
+
+  const tableRows = isIndividual
+    ? tzRows.map((r) => [r.period_local, r.hour_local, r.time_zone, +r.median_kwh, r.is_partial_period ? 'sí' : 'no', r.source_version || 'NOAA c_16ap26'])
+    : tzRows.map((r) => [r.period_local, r.hour_local, r.state_code, r.housing_type, r.time_zone, +r.median_kwh, +r.mean_kwh, +r.p10_kwh, +r.p90_kwh, r.n_profiles, r.is_partial_period ? 'sí' : 'no', r.source_version || 'NOAA c_16ap26']);
+
+  const chips = isIndividual
+    ? chip('res', ['kWh por hora', `hora local ${tz}`, `#${p.bldg_id}`, 'inspección individual (lazy-load)'])
+    : chip('res', ['kWh por hora', `hora local ${tz}`, 'agregado Gold', `${state.type === 'ALL' ? 'todos los tipos' : state.type}`]);
+
+  const limit = isIndividual
+    ? 'Inspección individual cargada bajo demanda desde <code>gold_resstock_pattern.json</code>. Cambia a «Agregado general de la muestra» para ver el comportamiento consolidado por estrato sin transferir datos edificio por edificio.'
+    : 'Agregado Gold por estrato <code>(state_code, housing_type, time_zone, periodo local, tipo de día, hora local, offset UTC)</code>. Distingue zona IANA por condado (NOAA/NWS c_16ap26) para no mezclar ciclos solares. Estadísticas calculadas sobre horas completas (4 cuartos de hora): mediana, media, p10, p90, min, max y conteo de perfiles. <strong>La muestra modelada no representa a la población general ni a los totales residenciales de facturación.</strong>';
+
   return card({
     ...base,
-    body: sel + slot((w) => heatmap({ width: w, rows: periods, cells, unit: 'kWh/h', aria })) + `<p class="sub"><strong>Hora local · ${esc(tz)}</strong>. ${esc(aria)}${nPart ? ` ◩ ${nPart} periodo(s) parcial(es) con borde punteado: no se comparan como meses completos.` : ''}</p>` + dataTable(['Periodo local', 'Hora local', 'Mediana kWh', 'Parcial'], rows.map((r) => [r.period_local, r.hour_local, +r.median_kwh, r.is_partial_period ? 'sí' : 'no'])),
-    chips: chip('res', ['kWh por hora', `hora local ${tz}`, `#${p.bldg_id}`]),
-    limit: 'Un solo perfil modelado. Las horas repetidas por cambio de horario se promedian en esta vista.',
+    body: sel + slot((w) => heatmap({ width: w, rows: periods, cells, unit: 'kWh/h', aria })) + `<p class="sub"><strong>Hora local · ${esc(tz)}</strong>. ${esc(aria)}${nPart ? ` \u25e9 ${nPart} periodo(s) parcial(es) con borde punteado: no se comparan como meses completos.` : ''}</p>` + dataTable(tableHead, tableRows),
+    chips,
+    limit,
   });
 }
 
@@ -427,7 +502,10 @@ function renderFilters() {
     fld('f-from', 'Periodo: desde', `<div class="row2">${sel('f-from', months.map((m) => [m, m]), state.from, R.period)}</div>`, R.period.on ? `Rango de EIA ${lo}…${hi}; ResStock solo 2018; clima 1–7 ene 2018.` : R.period.why),
     fld('f-to', 'Periodo: hasta', sel('f-to', months.map((m) => [m, m]), state.to, R.period), ''),
     fld('f-type', 'Tipo de vivienda', sel('f-type', [['ALL', 'Todos'], ...types.map((t) => [t, t])], state.type, R.type), typeWhy),
-    fld('f-profile', 'Perfil ResStock', sel('f-profile', ps.length ? ps.map((p) => [p.bldg_id, `#${p.bldg_id} · ${p.housing_type} · ${p.state_code}`]) : [['', 'Sin perfiles']], cp?.bldg_id, R.profile), R.profile.on ? 'Define la ilustración y P2.' : R.profile.why),
+    fld('f-profile', 'Perfil ResStock', sel('f-profile', [
+      ['ALL', 'Agregado general de la muestra (Gold)'],
+      ...ps.map((p) => [p.bldg_id, `#${p.bldg_id} · ${p.housing_type} · ${p.state_code}`])
+    ], state.profile || 'ALL', R.profile), R.profile.on ? 'Agregado general o inspección individual de perfil.' : R.profile.why),
     fld('f-source', 'Fuente', sel('f-source', [['ALL', 'Todas'], ['eia', 'EIA'], ['res', 'ResStock'], ['clim', 'Open-Meteo']].filter(([v]) => state.view !== 'calidad' || v !== 'clim' || true), state.source, R.source), R.source.on ? '' : R.source.why),
     fld('f-gran', 'Granularidad', sel('f-gran', [['monthly', 'Mensual' + (state.view === 'clima' ? ' (no aplica: 7 días)' : ''), state.view === 'clima'], ['hourly', 'Horaria']], state.view === 'clima' ? 'hourly' : state.gran, R.gran), R.gran.on ? (state.view === 'clima' ? 'Solo hay serie horaria.' : 'Mensual: P1, P1b, P3 · Horaria: P2.') : R.gran.why),
     fld('f-prelim', 'Datos preliminares', `<label class="tog"><input type="checkbox" id="f-prelim" ${state.prelim ? 'checked' : ''} ${R.prelim.on ? '' : 'disabled aria-describedby="why-f-prelim"'}> Mostrar preliminares</label>`, R.prelim.on ? 'Solo EIA.' : R.prelim.why),
@@ -454,8 +532,11 @@ function renderRail() {
     + `<div class="legend-src"><b>Fuentes</b>Azul · EIA oficial<br>Verde · ResStock modelado<br>Ámbar · Clima<br>Magenta · Sintético<br>Rayado · Preliminar</div>`;
 }
 function renderStatus() {
-  const n = Object.keys(TABLES).length, ok = Object.keys(TABLES).filter((t) => statusOf(t) === 'ok').length;
-  $('#load-status').innerHTML = store.manifestStatus === 'loading' ? '<span>Cargando datos…</span>' : `<span>Tablas: ${ok}/${n}</span><span>Manifiesto: ${{ ok: 'validado', missing: 'ausente', error: 'con error' }[store.manifestStatus]}</span>`;
+  const n = Object.keys(TABLES).length;
+  const available = Object.entries(store.tables).filter(([name, t]) =>
+    t.status === 'ok' || t.status === 'loading' || (t.status === 'lazy' && Boolean(store.entries?.[name]))
+  ).length;
+  $('#load-status').innerHTML = store.manifestStatus === 'loading' ? '<span>Cargando datos…</span>' : `<span>Tablas disponibles: ${available}/${n}</span><span>Manifiesto: ${{ ok: 'validado', missing: 'ausente', error: 'con error' }[store.manifestStatus]}</span>`;
   const b = [];
   if (store.manifestStatus === 'missing') b.push(`<div class="banner warn" role="status">${esc(store.manifestMessage)}</div>`);
   if (store.manifestStatus === 'error') b.push(`<div class="banner err" role="alert">${esc(store.manifestMessage)}</div>`);
@@ -479,6 +560,7 @@ function render() {
   main.dataset.view = state.view;
   drawCharts();
   main.querySelector('#sel-profile')?.addEventListener('change', (e) => { state.profile = e.target.value; render(); });
+  main.querySelector('#sel-tz')?.addEventListener('change', (e) => { state.tz = e.target.value; render(); });
   main.querySelectorAll('[data-day]').forEach((b) => b.addEventListener('click', () => { state.day = b.dataset.day; render(); }));
 }
 function route() {
