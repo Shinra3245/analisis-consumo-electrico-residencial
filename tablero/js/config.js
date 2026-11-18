@@ -27,6 +27,7 @@ export const TABLES = {
       'is_partial_period', 'median_kwh', 'mean_kwh', 'p10_kwh', 'p90_kwh', 'min_kwh', 'max_kwh',
       'n_obs', 'n_profiles'],
     source: 'resstock',
+    lazy: true,
   },
   gold_resstock_profile_summary: {
     columns: ['bldg_id', 'source_year', 'annual_kwh', 'mean_hour_kwh', 'peak_hour_kwh',
@@ -37,11 +38,20 @@ export const TABLES = {
     columns: ['point_id', 'state_code', 'timestamp_utc', 'temperature_c', 'model'],
     source: 'climate',
   },
-};
-
-// Tablas del contrato que esta versión del tablero aún no grafica.
-export const PENDING_TABLES = {
-  forecast: ['gold_forecast_monthly', 'gold_forecast_annual', 'gold_forecast_metrics'],
-  anomaly: ['gold_anomaly_cases', 'gold_anomaly_case_series', 'gold_anomaly_metrics',
-    'gold_anomaly_sensitivity'],
+  gold_anomaly_candidates: {
+    columns: ['period', 'state_code', 'yoy_change_pct', 'season', 'robust_z', 'partition', 'classification'],
+    source: 'eia',
+  },
+  gold_anomaly_synthetic_eval: {
+    columns: ['injection_pct', 'k_mad', 'tp', 'fn', 'fp', 'tn', 'recall', 'precision', 'false_positive_rate', 'evaluation_scope'],
+    source: 'eia',
+  },
+  gold_forecast_metrics: {
+    columns: ['state_code', 'naive_mae_mwh', 'naive_rmse_mwh', 'naive_smape_pct', 'model_mae_mwh', 'model_rmse_mwh', 'model_smape_pct', 'model_smape_improvement_pct'],
+    source: 'eia',
+  },
+  gold_forecast_series: {
+    columns: ['state_code', 'period', 'actual_mwh', 'naive_mwh', 'model_mwh', 'partition'],
+    source: 'eia',
+  },
 };

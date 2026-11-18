@@ -74,7 +74,7 @@ export function barChart({ width, height = 300, groups, yLabel, aria, yFmt = (v)
 // cells: Map "row|col" -> {v, partial}; rows: periodos; cols: 0..23
 export function heatmap({ width, rows, cells, aria, unit, rowLabel = (r) => r }) {
   const w = Math.max(300, width), lm = 74, rm = 12, tm = 8, cw = (w - lm - rm) / 24, rh = 22;
-  const vals = [...cells.values()].map((c) => c.v);
+  const vals = [...cells.values()].map((c) => c?.v).filter(Number.isFinite);
   const lo = Math.min(...vals), hi = Math.max(...vals);
   const color = (v) => { const t = hi > lo ? (v - lo) / (hi - lo) : 0; return `hsl(168 ${35 + t * 45}% ${95 - t * 68}%)`; };
   let g = '';
