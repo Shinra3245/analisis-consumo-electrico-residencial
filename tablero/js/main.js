@@ -1,4 +1,4 @@
-import { DATA_BASE, SCHEMA_VERSION, TABLES, PENDING_TABLES } from './config.js';
+import { DATA_BASE, SCHEMA_VERSION, TABLES } from './config.js';
 import { loadAll, store, rowsOf, statusOf, ensureTable } from './data.js';
 import { esc, nf, lineChart, barChart, heatmap } from './charts.js';
 import { isoHouse } from './iso.js';
@@ -9,8 +9,8 @@ const VIEWS = [
   { id: 'resumen', label: 'Resumen', icon: ico('<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>'), q: '¿Qué datos hay, de qué fuente y qué tan grande es el consumo residencial?' },
   { id: 'patrones', label: 'Patrones', icon: ico('<path d="M3 17l5-6 4 3 5-8 4 5"/><path d="M3 21h18"/>'), q: '¿Cómo varía el consumo por mes, hora y tipo de vivienda?' },
   { id: 'clima', label: 'Clima', icon: ico('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/>'), q: '¿Qué información climática hay y por qué todavía no se une al consumo?' },
-  { id: 'anomalias', label: 'Anomalías', icon: ico('<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17v.5"/>'), q: '¿Qué es un comportamiento atípico, cómo se detecta y qué tan bien funciona el método?', pending: true },
-  { id: 'estimaciones', label: 'Estimaciones', icon: ico('<path d="M3 20V8M9 20V4M15 20v-9M21 20V12"/>'), q: '¿Cuánto consumo residencial se esperaría y qué error tuvo el método en meses ya conocidos?', pending: true },
+  { id: 'anomalias', label: 'Anomalías', icon: ico('<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17v.5"/>'), q: '¿Qué es un comportamiento atípico, cómo se detecta y qué tan bien funciona el método?' },
+  { id: 'estimaciones', label: 'Estimaciones', icon: ico('<path d="M3 20V8M9 20V4M15 20v-9M21 20V12"/>'), q: '¿Cuánto consumo residencial se esperaría y qué error tuvo el método en meses ya conocidos?' },
   { id: 'calidad', label: 'Flujo/Calidad', icon: ico('<path d="M5 4h14v6H5zM5 14h14v6H5z"/><path d="M8 7h.01M8 17h.01"/>'), q: '¿De dónde viene cada cifra, qué cobertura tiene y qué controles pasó?' },
 ];
 const state = { view: 'resumen', st: 'CO', from: null, to: null, type: 'ALL', source: 'ALL', gran: 'monthly', prelim: true, profile: null, day: 'weekday', tz: null };
@@ -173,9 +173,12 @@ function viewResumen() {
     }
   }
   if (showAll) {
+    const fc = store.manifest?.analytics?.forecast;
     cards.push(card({
       id: 'R1e', q: 'Error del mejor pronóstico (sMAPE)', accent: 'none',
-      body: empty('Pendiente', 'No hay un backtest Gold disponible; esta cifra no se calcula en el tablero.', pendingTables(PENDING_TABLES.forecast.slice(2))),
+      body: fc ? `<div class="big">${nf(fc.median_model_smape_pct, 2)}<span class="unit">%</span></div><p class="sub">Mediana en ${nf(fc.state_count)} estados; gana a la línea base estacional en ${nf(fc.states_model_beats_naive)} estados.</p>` : empty('Pendiente', 'No hay un backtest Gold disponible.'),
+      chips: fc ? chip('eia', ['sMAPE', `${fc.holdout[0]}…${fc.holdout[1]}`, 'backtest']) : '',
+      limit: 'Resultado histórico de evaluación; no es una proyección del consumo futuro.',
     }));
   }
   out.push(`<div class="grid g4">${cards.join('')}</div>`);
@@ -301,8 +304,8 @@ function patternP2() {
   };
 
   const tableNeeded = isIndividual ? 'gold_resstock_pattern' : 'gold_resstock_pattern_aggregate';
-  if (isIndividual && statusOf('gold_resstock_pattern') !== 'ok' && statusOf('gold_resstock_pattern') !== 'loading') {
-    ensureTable('gold_resstock_pattern').then(() => render());
+  if (['lazy', 'pending'].includes(statusOf(tableNeeded))) {
+    ensureTable(tableNeeded).then(() => render());
   }
 
   const e = needTables([tableNeeded, 'gold_resstock_profile_summary'], isIndividual ? 'patrones horarios individuales' : 'patrones horarios agregados');
@@ -411,18 +414,66 @@ function viewClima() {
   return out.join('');
 }
 
-/* ---------- Anomalías / Estimaciones (esperan datos) ---------- */
-function viewPendiente(kind) {
-  const names = PENDING_TABLES[kind];
-  const listed = names.filter((n) => store.entries?.[n]);
-  const intro = listed.length
-    ? empty('Tablas listadas en el manifiesto, visualización pendiente', 'El manifiesto ya las menciona, pero esta versión del tablero todavía no las grafica ni las valida.', pendingTables(names))
-    : empty('Esperando datos', kind === 'anomaly' ? 'Aún no hay salidas evaluadas de detección. No se muestran métricas, casos ni series de ejemplo.' : 'Aún no hay un backtest Gold. No se muestra pronóstico, error ni proyección.', pendingTables(names));
-  if (kind === 'anomaly') {
-    return `<div class="banner syn" role="note">Eventos inyectados de forma sintética para evaluar el método. No son eventos reales.</div>`
-      + card({ id: 'A1–A3', q: 'Casos, disparadores y métricas del método', accent: 'syn', body: intro, chips: '<span class="chip syn"><i></i><b>Sintético</b> · etiquetas inyectadas</span>', limit: 'Las métricas compararán alertas con etiquetas sintéticas y se mostrarán junto a su conjunto de evaluación (calibración NY / evaluación CO).' });
-  }
-  return card({ id: 'E1–E4', q: 'Real vs pronóstico, error por modelo y escenario', accent: 'none', body: intro, limit: 'Cuando existan: backtest con meses ya conocidos (2024–2025), preliminares 2026 aparte y la proyección sep 2026–dic 2027 rotulada como <strong>escenario</strong>.' });
+/* ---------- Anomalías: candidatos estadísticos y prueba sintética ---------- */
+function viewAnomalias() {
+  const err = needTables(['gold_anomaly_candidates', 'gold_anomaly_synthetic_eval'], 'salidas de detección');
+  if (err) return card({ id: 'A1–A3', q: 'Cambios inusuales en EIA mensual', accent: 'syn', body: err });
+  const all = rowsOf('gold_anomaly_candidates');
+  const rows = all.filter((r) => (state.st === 'ALL' || r.state_code === state.st) && inRange(r.period))
+    .sort((a, b) => Math.abs(+b.robust_z) - Math.abs(+a.robust_z));
+  const evals = rowsOf('gold_anomaly_synthetic_eval');
+  const counts = store.manifest?.analytics?.anomaly_counts || {};
+  const table = dataTable(['Periodo', 'Estado', 'Cambio interanual (%)', 'Estación', 'Puntuación robusta', 'Partición', 'Etiqueta'],
+    rows.map((r) => [r.period, r.state_code, +r.yoy_change_pct, r.season, +r.robust_z, r.partition, 'Candidato estadístico']), 60);
+  const metrics = dataTable(['Cambio inyectado', 'Recall', 'Precisión', 'Falsos positivos', 'Casos positivos'],
+    evals.map((r) => [`±${nf(+r.injection_pct)}%`, `${nf(+r.recall * 100, 1)}%`, `${nf(+r.precision * 100, 1)}%`, `${nf(+r.false_positive_rate * 100, 1)}%`, `${r.tp}/${r.tp + r.fn}`]));
+  return `<div class="banner syn" role="note">La evaluación marcada como sintética usa cambios inyectados. Los candidatos observados no están confirmados como eventos reales.</div>`
+    + `<div class="grid g3">${card({ id: 'A1', q: 'Candidatos en datos Final', accent: 'eia', body: `<div class="big">${nf(counts.candidatos_entrenamiento + counts.candidatos_prueba)}<span class="unit">candidatos</span></div><p class="sub">${nf(counts.candidatos_entrenamiento)} en ajuste · ${nf(counts.candidatos_prueba)} en prueba.</p>`, chips: chip('eia', ['51 estados', '2018–2025']), limit: 'Son cambios que superan un umbral estadístico; requieren revisión humana.' })}
+    ${card({ id: 'A2', q: 'Cambios en meses preliminares', accent: 'eia', body: `<div class="big">${nf(counts.candidatos_preliminares_2026)}<span class="unit">candidatos</span></div><p class="sub">Se puntúan aparte y no entran al ajuste.</p>`, chips: preChip('2026, corte enero–agosto'), limit: 'Los valores preliminares de EIA pueden actualizarse.' })}
+    ${card({ id: 'A3', q: 'Sensibilidad en prueba sintética', accent: 'syn', body: metrics, chips: '<span class="chip syn"><i></i><b>Sintético</b> · cambios inyectados</span>', limit: 'La detección es conservadora ante cambios pequeños. Estas métricas no estiman el desempeño ante eventos reales.' })}</div>`
+    + card({ id: 'A4', q: `Candidatos para revisar (${rows.length})`, accent: 'eia', body: table, chips: chip('eia', ['variación interanual', `k = 3.5 MAD`, `${state.from}…${state.to}`]), limit: 'Se compara cada mes con el mismo mes del año anterior; el umbral usa mediana y MAD por estado y estación, ajustado en el periodo de entrenamiento.' });
+}
+
+/* ---------- Estimaciones: backtest temporal, no proyección futura ---------- */
+function viewEstimaciones() {
+  const err = needTables(['gold_forecast_metrics', 'gold_forecast_series'], 'backtest EIA');
+  if (err) return card({ id: 'E1–E4', q: 'Evaluación temporal de una línea base', body: err });
+  const metrics = rowsOf('gold_forecast_metrics');
+  const all = rowsOf('gold_forecast_series');
+  const byState = state.st === 'ALL' ? metrics : metrics.filter((r) => r.state_code === state.st);
+  const picked = state.st === 'ALL' ? all : all.filter((r) => r.state_code === state.st);
+  const periods = [...new Set(picked.map((r) => r.period))].sort();
+  const monthTicks = periods.filter((p) => ['01', '04', '07', '10'].includes(p.slice(5, 7)));
+  const toSeries = (key, name, color, dash) => ({
+    name, color, dash, markers: false,
+    points: periods.map((p, i) => {
+      const rr = picked.filter((r) => r.period === p);
+      const y = rr.length ? rr.reduce((s, r) => s + +r[key], 0) : null;
+      return { x: i, y, tip: `${p} · ${name}: ${nf(y)} MWh` };
+    }),
+  });
+  const chart = slot((w) => lineChart({
+    width: w, height: 330,
+    series: [toSeries('actual_mwh', 'EIA observado', 'var(--eia)'), toSeries('naive_mwh', 'Naive estacional', 'var(--ink-2)', '6 4'), toSeries('model_mwh', 'Log-lineal + mes', 'var(--res)')],
+    xTicks: monthTicks.map((p) => ({ x: periods.indexOf(p), label: p })), xDomain: [0, periods.length - 1],
+    yLabel: 'Ventas EIA (MWh)', xLabel: 'Mes del holdout', aria: 'Backtest mensual de ventas EIA: observado, naive estacional y modelo log-lineal con mes.', zeroBase: false,
+    yFmt: (v) => cmp(v),
+  }));
+  const smapeN = byState.map((r) => +r.naive_smape_pct).sort((a,b) => a-b);
+  const smapeM = byState.map((r) => +r.model_smape_pct).sort((a,b) => a-b);
+  const median = (a) => a.length ? (a.length % 2 ? a[(a.length - 1) / 2] : (a[a.length / 2 - 1] + a[a.length / 2]) / 2) : null;
+  const selectedMetrics = state.st === 'ALL' ? null : byState[0];
+  const modelMetric = selectedMetrics ? +selectedMetrics.model_smape_pct : median(smapeM);
+  const naiveMetric = selectedMetrics ? +selectedMetrics.naive_smape_pct : median(smapeN);
+  const nWins = state.st === 'ALL' ? byState.filter((r) => +r.model_smape_pct < +r.naive_smape_pct).length : Number(modelMetric < naiveMetric);
+  const detail = picked.map((r) => [r.period, +r.actual_mwh, +r.naive_mwh, +r.model_mwh]);
+  const lineTable = dataTable(['Periodo', 'EIA observado (MWh)', 'Naive estacional (MWh)', 'Modelo (MWh)'], detail, 48);
+  const stateLabel = state.st === 'ALL' ? 'suma de 51 jurisdicciones' : state.st;
+  return `<div class="banner warn" role="note">Esto es un backtest sobre meses conocidos, no una proyección futura. Entrenamiento: 2018–2023; evaluación: 2024–2025. Los meses preliminares de 2026 se excluyeron.</div>`
+    + `<div class="grid g3">${card({ id: 'E1', q: 'sMAPE del modelo', accent: 'eia', body: `<div class="big">${nf(modelMetric, 2)}<span class="unit">%</span></div><p class="sub">${state.st === 'ALL' ? 'Mediana entre estados' : `Estado ${state.st}`}</p>`, chips: chip('eia', ['2018–2025', 'periodos separados']), limit: 'Error porcentual simétrico medio en el holdout; menor es mejor.' })}
+    ${card({ id: 'E2', q: 'Comparación con baseline', accent: 'none', body: `<div class="big">${nf(naiveMetric, 2)}<span class="unit">% naive</span></div><p class="sub">El modelo mejora en ${nf(nWins)} de ${nf(byState.length)} estados del filtro.</p>`, chips: chip('eia', ['naive estacional']), limit: 'La baseline repite el último ciclo anual de entrenamiento.' })}
+    ${card({ id: 'E3', q: 'Cobertura del backtest', accent: 'none', body: `<div class="big">24<span class="unit">meses</span></div><p class="sub">${stateLabel} · 2024-01 a 2025-12.</p>`, chips: chip('eia', ['sin preliminares']), limit: 'Un solo corte temporal; los resultados pueden cambiar con otros periodos de evaluación.' })}</div>`
+    + card({ id: 'E4', q: `Ventas observadas y estimadas · ${stateLabel}`, accent: 'eia', body: chart + lineTable, chips: chip('eia', ['MWh', 'backtest']), limit: 'Modelo log-lineal con tendencia y mes estacional, ajustado solo con datos de entrenamiento. No se extrapola a 2026 ni a años futuros.' });
 }
 
 /* ---------- Flujo / Calidad ---------- */
@@ -474,7 +525,16 @@ function viewCalidad() {
 function rules() {
   const v = state.view, on = { on: true }, off = (why) => ({ on: false, why });
   const nothing = (why) => ({ st: off(why), period: off(why), type: off(why), source: off(why), gran: off(why), prelim: off(why), profile: off(why) });
-  if (v === 'anomalias' || v === 'estimaciones') return nothing('Vista en espera de datos: aún no hay salidas que filtrar.');
+  if (v === 'anomalias') {
+    const R = nothing('Los filtros de estado y periodo se aplican a los candidatos EIA.');
+    R.st = on; R.period = on;
+    return R;
+  }
+  if (v === 'estimaciones') {
+    const R = nothing('El backtest conserva su periodo de evaluación 2024–2025; solo cambia el estado.');
+    R.st = on;
+    return R;
+  }
   const R = { st: on, period: on, type: on, source: on, gran: on, prelim: on, profile: on };
   if (v === 'resumen') R.gran = off('El resumen no tiene gráficas con granularidad variable.');
   if (v === 'patrones') { R.source = off('Cada gráfica de Patrones ya está ligada a una fuente.'); R.prelim = off('Solo aplica a P1 (EIA); se ve en la leyenda cuando hay meses preliminares.'); if (state.gran === 'monthly') R.prelim = on; }
@@ -525,7 +585,7 @@ function onFilter(e) {
 }
 
 /* ---------- render ---------- */
-const BUILD = { resumen: viewResumen, patrones: viewPatrones, clima: viewClima, anomalias: () => viewPendiente('anomaly'), estimaciones: () => viewPendiente('forecast'), calidad: viewCalidad };
+const BUILD = { resumen: viewResumen, patrones: viewPatrones, clima: viewClima, anomalias: viewAnomalias, estimaciones: viewEstimaciones, calidad: viewCalidad };
 function renderRail() {
   $('#rail').innerHTML = `<div class="brand"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3l12 7v12l-12 7-12-7V10z" fill="#0f8a6d"/><path d="M16 3l12 7-12 7-12-7z" fill="#62d2b3"/><path d="M16 17v12l12-7V10z" fill="#0b6f58"/></svg><span>Consumo residencial</span></div>`
     + VIEWS.map((x) => `<a href="#${x.id}" ${x.id === state.view ? 'aria-current="page"' : ''}>${x.icon}<span>${x.label}</span>${x.pending ? '<span class="dot" title="Espera datos" role="img" aria-label="espera datos"></span>' : ''}</a>`).join('')
@@ -537,6 +597,9 @@ function renderStatus() {
     t.status === 'ok' || t.status === 'loading' || (t.status === 'lazy' && Boolean(store.entries?.[name]))
   ).length;
   $('#load-status').innerHTML = store.manifestStatus === 'loading' ? '<span>Cargando datos…</span>' : `<span>Tablas disponibles: ${available}/${n}</span><span>Manifiesto: ${{ ok: 'validado', missing: 'ausente', error: 'con error' }[store.manifestStatus]}</span>`;
+  const profileCount = rowsOf('gold_resstock_profile_summary')?.length;
+  const note = $('#project-note');
+  if (note) note.textContent = `Exploratorio: ResStock incluye ${profileCount == null ? 'perfiles modelados' : `${nf(profileCount)} perfiles modelados`} y no representa hogares ni población general. Ilustración conceptual, sin datos por habitación.`;
   const b = [];
   if (store.manifestStatus === 'missing') b.push(`<div class="banner warn" role="status">${esc(store.manifestMessage)}</div>`);
   if (store.manifestStatus === 'error') b.push(`<div class="banner err" role="alert">${esc(store.manifestMessage)}</div>`);

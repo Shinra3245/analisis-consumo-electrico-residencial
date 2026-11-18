@@ -1,7 +1,7 @@
 {
   "manifest_version": "1.0",
   "schema_version": "1.0",
-  "generated_at_utc": "2026-11-18T06:42:27.865953+00:00",
+  "generated_at_utc": "2026-11-18T16:18:32.073427+00:00",
   "generator_script": "scripts/generar_datos_tablero.py",
   "data_status": "VALID_WITH_WARNINGS",
   "coverage_summary": {
@@ -159,6 +159,95 @@
         "point_id",
         "timestamp_utc"
       ]
+    },
+    "gold_anomaly_candidates": {
+      "file": "gold_anomaly_candidates.json",
+      "rows": 43,
+      "bytes": 8035,
+      "sha256": "a04a7e0abafefecc454350a0c1ac0ef9ae73458e312740fa838ee1e2cf4a5f5c",
+      "primary_key": [
+        "state_code",
+        "period",
+        "season"
+      ],
+      "source": "eia",
+      "inputs": [
+        "datos/eia_residencial_mensual.csv",
+        "resumen.json"
+      ]
+    },
+    "gold_anomaly_synthetic_eval": {
+      "file": "gold_anomaly_synthetic_eval.json",
+      "rows": 4,
+      "bytes": 833,
+      "sha256": "b32621ac8929d32effe0f6e3bc1f8e04c557a93bf7c440a8c786c11fea202b47",
+      "primary_key": [
+        "injection_pct"
+      ],
+      "source": "eia",
+      "inputs": [
+        "datos/eia_residencial_mensual.csv",
+        "resumen.json"
+      ]
+    },
+    "gold_forecast_metrics": {
+      "file": "gold_forecast_metrics.json",
+      "rows": 51,
+      "bytes": 14222,
+      "sha256": "cdfa236e53797a3946b6827ef00b9cff01f739cb73bcac36d1436711441f05f1",
+      "primary_key": [
+        "state_code"
+      ],
+      "source": "eia",
+      "inputs": [
+        "datos/eia_residencial_mensual.csv",
+        "resumen.json"
+      ]
+    },
+    "gold_forecast_series": {
+      "file": "gold_forecast_series.json",
+      "rows": 1224,
+      "bytes": 159811,
+      "sha256": "b3d87379f42ddfe34a14f6511de58f8943907684327ff861c2b3f9526acd5319",
+      "primary_key": [
+        "state_code",
+        "period"
+      ],
+      "source": "eia",
+      "inputs": [
+        "datos/eia_residencial_mensual.csv",
+        "resumen.json"
+      ]
+    }
+  },
+  "analytics_status": "VALID_WITH_WARNINGS",
+  "analytics": {
+    "source": "EIA-861M monthly residential sales",
+    "anomaly_method": "per-state year-over-year log change with seasonal median/MAD bounds; k=3.5",
+    "anomaly_real_events_verified": false,
+    "synthetic_metrics_only": true,
+    "anomaly_counts": {
+      "scores_totales": 4284,
+      "candidatos_entrenamiento": 31,
+      "candidatos_prueba": 12,
+      "candidatos_preliminares_2026": 3,
+      "scores_preliminares_2026": 408,
+      "advertencia": "Candidatos estadisticos para revision; no se afirman anomalias reales."
+    },
+    "forecast": {
+      "type": "temporal holdout backtest, not future projection",
+      "training": [
+        "2018-01",
+        "2023-12"
+      ],
+      "holdout": [
+        "2024-01",
+        "2025-12"
+      ],
+      "median_naive_smape_pct": 7.049033755654172,
+      "median_model_smape_pct": 5.706516786538489,
+      "states_model_beats_naive": 46,
+      "state_count": 51
     }
   }
 }

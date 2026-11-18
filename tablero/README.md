@@ -1,32 +1,60 @@
-# Tablero (primera versión)
+# Tablero de consumo eléctrico residencial
 
-Frontend estático sin dependencias ni paso de compilación (HTML + ES modules + SVG). Seis vistas: Resumen, Patrones, Clima, Anomalías, Estimaciones y Flujo/Calidad, según `docs/especificacion-tablero.md`.
+Aplicación web estática, sin dependencias de frontend ni compilación. Sus seis vistas leen las tablas Gold descritas por `manifest.json` y validan esquema, filas, bytes y SHA-256 antes de usar los datos.
 
-## Ejecutar
+## Ejecutar el paquete disponible en el repositorio
 
 ```bash
 python3 -m http.server 8000 -d tablero
-# abrir http://localhost:8000/  (usar localhost/HTTPS: la verificación SHA-256 requiere contexto seguro)
+# abrir http://localhost:8000/
 ```
 
-## Datos
+## Datos integrados
 
-Lee solo JSON versionados bajo `tablero/data/v1/` (cambiar con `?data=<url-base>/`):
-`manifest.json`, `gold_eia_monthly`, `gold_resstock_monthly`, `gold_resstock_pattern`, `gold_resstock_pattern_aggregate`, `gold_resstock_profile_summary`, `gold_climate`.
+El tablero consume EIA mensual, el piloto ResStock, clima horario independiente y cuatro tablas de analítica EIA para anomalías y backtest. Las salidas de anomalías son candidatos estadísticos; su evaluación usa cambios sintéticos. El pronóstico mostrado es un backtest de 2024–2025, no una predicción futura. Ver [`docs/analitica-anomalias-pronostico.md`](../docs/analitica-anomalias-pronostico.md).
 
-Para regenerar las tablas desde `datos/`, instala las dependencias del exportador y ejecuta el comando seguro documentado en [`docs/ejecucion-job-spark-local.md`](../docs/ejecucion-job-spark-local.md). La interfaz en sí no requiere paquetes, compilación ni conexión externa.
+El lote local más reciente usa 50 perfiles ResStock (1,752,000 intervalos). La aplicación muestra la cantidad realmente incluida en el manifiesto; 10,000 perfiles sigue siendo una meta, no un lote procesado. Los datos de ResStock y EIA tienen coberturas diferentes y no se suman ni se interpretan como la misma población. Clima permanece separado del consumo.
 
-- Cada tabla es un arreglo de filas (o `{"rows": [...]}`) con las columnas en inglés `snake_case` de `docs/contrato-gold-propuesta.md` (columnas obligatorias en `js/config.js`). No hay alias.
-- `manifest.json`: `schema_version` = `1.0` y `tables` (arreglo u objeto) con `file`, `rows`, `bytes`, `sha256`. Se verifican filas, bytes y SHA-256; una tabla que no coincide se rechaza con mensaje de error.
-- Con manifiesto presente solo se piden las tablas listadas; las demás aparecen como "esperando datos". Sin manifiesto se intentan leer las tablas sin validarlas (aviso visible).
-- `gold_climate` usa `point_id, state_code, timestamp_utc, temperature_c, model` (§7 de la especificación).
+## Reproducir las tablas de analítica
 
-## Estado
+Ejecutar desde la raíz del repositorio:
 
-| Vista | Estado |
-|---|---|
-| Resumen, Patrones (P1, P1b, P2, P3), Clima (C1, C2), Flujo/Calidad (Q1, Q2) | Funcionan con las tablas anteriores |
-| R2 | Solo cobertura; la razón ResStock/EIA (87.16 %) no se publica sin evidencia reproducible |
-| Anomalías, Estimaciones, Q3, Q4 | Esperan salidas de datos; sin cifras de relleno |
+```bash
+python3 scripts/analitica_anomalias_pronostico.py --salida /tmp/analitica-anomalias
+python3 scripts/exportar_analitica_tablero.py \
+  --base tablero/data/v1 \
+  --analitica /tmp/analitica-anomalias \
+  --salida /tmp/tablero-data-integrado
+```
 
-Filtros sin campo en la fuente se deshabilitan con explicación. Respeta `prefers-reduced-motion`.
+El exportador valida el manifiesto base y crea una carpeta nueva; no sobrescribe la salida existente. Para integrar otra salida Gold, apunta `--base` al directorio que contiene su `manifest.json`. El paquete integrado se sirve así:
+
+```bash
+python3 -m http.server 8000 -d tablero
+# abrir http://localhost:8000/?data=/data/v1-integrada/
+```
+
+Coloca el paquete de datos en `tablero/data/v1-integrada/` antes de servirlo, o sirve una copia de trabajo que contenga esa ruta. No se versionan aquí las salidas ampliadas de 50 perfiles; revisa gobernanza y tamaño antes de publicarlas.
+
+## Empaquetar un archivo HTML autónomo
+
+Para mostrar el tablero desde un objeto privado de S3 con una URL prefirmada (sin depender de que CSS, módulos y JSON sean públicos), se puede generar un solo HTML autocontenido:
+
+```bash
+python3 scripts/empaquetar_tablero_autonomo.py \
+  --web tablero \
+  --datos tablero/data/v1 \
+  --salida /tmp/consumo-residencial-autonomo.html
+```
+
+El empaquetador verifica hashes, bytes y filas de todas las tablas incluidas. El resultado conserva las seis vistas y filtros; todo queda dentro del HTML, por lo que es más pesado que la web modular. Una URL prefirmada es temporal y quien la posea puede leer ese objeto hasta que expire; no equivale a publicar el bucket ni a una dirección permanente. El acceso estable requiere un servicio de distribución autorizado, por ejemplo CloudFront con acceso privado a S3.
+
+## Interpretación
+
+- **Resumen y Patrones:** separan ventas oficiales EIA de perfiles residenciales modelados ResStock. La vista horaria presenta tiempo local IANA y deja identificar periodos parciales.
+- **Clima:** muestra la serie consultada en UTC; no existe unión con consumo en esta versión.
+- **Anomalías:** lista candidatos de variación interanual y mide sensibilidad con inyecciones sintéticas. No confirma eventos reales.
+- **Estimaciones:** compara observado, baseline estacional y modelo log-lineal durante un holdout conocido.
+- **Flujo/Calidad:** consulta cobertura, manifiesto y controles reportados por las fuentes.
+
+Si falta una tabla o no coincide su hash, el tablero muestra el estado y no presenta cifras de esa tabla.

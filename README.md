@@ -32,15 +32,16 @@ La propuesta plantea Amazon S3 para archivos y resultados, Amazon Kinesis Data S
 ## Estado actual
 
 - [x] Propuesta versión 2 aprobada por el profesor.
-- [x] Pipeline local Spark Silver/Gold ejecutado con 21 controles de calidad aprobados.
-- [x] Dashboard local v1 conectado a cinco tablas Gold JSON, con manifiesto y comprobación de SHA-256.
-- [x] Patrones horarios convertidos a hora local para los 10 perfiles piloto de Colorado y Nueva York, con cambios DST y meses parciales identificados.
-- [ ] Estimaciones y anomalías: faltan salidas evaluadas; el dashboard no presenta cifras inventadas.
-- [ ] Escala de 10,000 perfiles: solo se procesaron 10 perfiles; los IDs restantes son candidatos.
-- [ ] AWS/EMR/Kinesis/S3: sin despliegue; primero deben registrarse región y presupuesto aprobados.
-- [ ] Comparación Colorado/EIA: la razón de 87.16% no se pudo reproducir desde el agregado fuente, que no está versionado.
+- [x] Pipeline PySpark local ejecutado con 21 controles de calidad; lote exploratorio ampliado a 50 perfiles, con 1,752,000 intervalos verificados. Sus salidas ampliadas permanecen en `/tmp` y no se versionaron.
+- [x] Tablero web con seis vistas. La versión incluida en el repositorio consume 10 tablas Gold JSON del manifiesto: piloto versionado de 10 perfiles más EIA, clima y analítica de anomalías/backtest. Filas, bytes y SHA-256 verificados.
+- [x] Análisis EIA reproducible: 43 candidatos estadísticos (no eventos confirmados), sensibilidad con inyecciones sintéticas y backtest de 24 meses (2024–2025). El mejor modelo tiene sMAPE mediana 5.71% frente a 7.05% de la baseline en 51 jurisdicciones; gana en 46. No es proyección futura.
+- [x] Patrones horarios del lote local de 50 perfiles convertidos a tiempo local por zona IANA; meses incompletos se identifican. Clima sigue separado y no se une al consumo.
+- [x] HTML autónomo del tablero (8.5 MB) cargado en el prefijo privado `site/` de S3 en `us-east-1`; una URL prefirmada temporal se generó desde la consola. El objeto reúne los datos versionados de 10 perfiles, no el paquete temporal de 50.
+- [ ] Llegar a 10,000 perfiles procesados: los IDs restantes continúan siendo candidatos, no descargas realizadas.
+- [ ] Flujo AWS completo: EMR Serverless rechazó el inicio por falta de permisos; no existe stream Kinesis ni distribución CloudFront. S3 no es público; la URL prefirmada es temporal y no proporciona dominio permanente.
+- [ ] Reproducir la razón Colorado/EIA de 87.16% desde su agregado fuente. No se presenta como precisión ni como resultado validado.
 
-Los datos integrados son un piloto acotado, no una cobertura completa de Estados Unidos. El clima permanece como serie independiente y no se une al consumo.
+Los resultados versionados del tablero corresponden al piloto de 10 perfiles; el lote de 50 se conserva localmente para validación y presentación controlada. ResStock contiene perfiles modelados y EIA ventas agregadas de todo el sector residencial: sus coberturas son distintas. Clima permanece como serie independiente.
 
 ## Abrir el dashboard local
 
@@ -81,11 +82,15 @@ Después abre <http://localhost:8000/>. La interfaz no requiere instalación de 
 - [Plan urgente de la siguiente etapa: dashboard, AWS, escala y analítica](docs/plan-urgente-siguiente-etapa.md)
 - [Contrato Gold consumido por el dashboard](docs/contrato-dashboard-datos.md)
 - [Ejecución del pipeline y exportación al dashboard](docs/ejecucion-job-spark-local.md)
+- [Lote exploratorio ResStock de 50 perfiles](docs/lote-resstock-50.md)
+- [Anomalías y backtest de pronóstico EIA](docs/analitica-anomalias-pronostico.md)
+- [Despliegue temporal en S3 privado](docs/despliegue-temporal-s3.md)
+- [Guía breve para presentar el proyecto](docs/guia-demostracion-profesor.md)
 - [Guía del dashboard local](tablero/README.md)
 
 El plan de desarrollo es una propuesta de organización basada en la guía disponible; se actualizará si el profesor comparte una rúbrica detallada o confirma fechas y requisitos adicionales.
 
-La muestra y sus resultados son exploratorios; las vistas de estimaciones y anomalías aún no contienen resultados analíticos.
+Los candidatos de anomalías y las métricas de backtest son exploratorios y están etiquetados en el tablero; las anomalías no se confirmaron con eventos externos y el backtest no genera una predicción futura.
 
 ## Repositorio
 
