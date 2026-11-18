@@ -311,7 +311,11 @@ def index_stock(args, records):
             selection.append(row)
             if state in args.pilot_states and i < args.pilot_per_stratum:
                 pilot.append(row)
-    for name, rows in (("resstock_cobertura_estratos.csv", coverage), ("resstock_seleccion_propuesta.csv", selection)):
+    for name, rows in (
+        ("resstock_cobertura_estratos.csv", coverage),
+        ("resstock_seleccion_propuesta.csv", selection),
+        ("resstock_seleccion_piloto.csv", pilot),
+    ):
         path = args.output / "datos" / name
         write_csv(path, list(rows[0]), rows)
         records.append(manifest_record(path, args.output, METADATA, "derivado", len(rows)))
@@ -362,8 +366,18 @@ def prepare_profiles(args, pilot, records):
     if valid:
         table = pa.concat_tables(valid)
         pq.write_table(table, path, compression="snappy")
-        records.append(manifest_record(path, args.output, METADATA, "derivado", table.num_rows,
-                                       origen="archivos individuales listados en el manifiesto"))
+        records.append(manifest_record(
+            path,
+            args.output,
+            METADATA,
+            "derivado",
+            table.num_rows,
+            origen="archivos individuales listados en el manifiesto",
+            profile_roster={
+                "bldg_ids": sorted({int(row["bldg_id"]) for row in pilot}),
+                "intervals_per_profile": STOCK_ROWS,
+            },
+        ))
     else:
         path.unlink(missing_ok=True)
     sizes = [row["bytes"] for row in measured if row["estado"] != "fallido"]

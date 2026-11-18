@@ -1,0 +1,3 @@
+# Versiones usadas para generar y verificar tablero/data/v1/.
+pandas==3.0.3
+pyarrow==26.0.1

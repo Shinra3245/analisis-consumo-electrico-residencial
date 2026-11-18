@@ -27,25 +27,31 @@ La propuesta contempla iniciar el análisis detallado con al menos 10,000 perfil
 
 ## Arquitectura propuesta
 
-La arquitectura objetivo plantea Amazon S3 para archivos y resultados, Amazon Kinesis Data Streams para recibir registros y Apache Spark en Amazon EMR para procesarlos. En el Learner Lab temporal ya se habilitó un bucket S3 privado para la página y los artefactos Gold del piloto. EMR Serverless no permitió iniciar la configuración por permisos; Kinesis y CloudFront no se desplegaron. El procesamiento validado se ejecutó localmente con Spark.
+La propuesta plantea Amazon S3 para archivos y resultados, Amazon Kinesis Data Streams para recibir registros y Apache Spark en Amazon EMR para procesarlos. El tablero consumirá resultados agregados. La elección final y configuración se documentarán antes de activar servicios; las pruebas en nube serán acotadas y tendrán presupuesto definido.
 
-## Estado
+## Estado actual
 
-- [x] Propuesta versión 2 elaborada.
-- [x] Aprobación del profesor para continuar sin observaciones pendientes.
-- [x] Repositorio público y documentación inicial.
-- [x] Primer avance documental: validación preliminar de fuentes y esquema conceptual (16 de noviembre de 2026; con pendientes explícitos).
-- [x] Primera muestra empírica reproducible: agregado ResStock de Colorado, 12 meses residenciales EIA y consulta climática horaria (16 de noviembre de 2026).
-- [x] Tabla residencial EIA reproducida byte a byte desde el XLSX oficial con transformación versionada.
-- [x] Piloto Parquet de 10 perfiles inspeccionado; contrato de datos v1 documenta columnas y controles observados.
-- [x] Muestra climática Open-Meteo integrada con licencia y atribución documentadas.
-- [x] Selección de 10,000 IDs candidatos y Parquet piloto de 10 perfiles ResStock integrados bajo CC BY 4.0 con atribución y disclaimer.
-- [ ] Validación de disponibilidad, licencias, formatos y cobertura de las fuentes.
-- [ ] Confirmar que el XLSX EIA no contenga material de terceros antes de copiar el archivo completo al repositorio.
-- [x] Diseño técnico y configuración inicial del entorno local y de S3 privado.
-- [ ] Implementación, evaluación y documentación de resultados.
+- [x] Propuesta versión 2 aprobada por el profesor.
+- [x] Pipeline PySpark local ejecutado con 21 controles de calidad; lote exploratorio ampliado a 50 perfiles, con 1,752,000 intervalos verificados. Sus salidas ampliadas permanecen en `/tmp` y no se versionaron.
+- [x] Tablero web con seis vistas. La versión incluida en el repositorio consume 10 tablas Gold JSON del manifiesto: piloto versionado de 10 perfiles más EIA, clima y analítica de anomalías/backtest. Filas, bytes y SHA-256 verificados.
+- [x] Análisis EIA reproducible: 43 candidatos estadísticos (no eventos confirmados), sensibilidad con inyecciones sintéticas y backtest de 24 meses (2024–2025). El mejor modelo tiene sMAPE mediana 5.71% frente a 7.05% de la baseline en 51 jurisdicciones; gana en 46. No es proyección futura.
+- [x] Patrones horarios del lote local de 50 perfiles convertidos a tiempo local por zona IANA; meses incompletos se identifican. Clima sigue separado y no se une al consumo.
+- [x] HTML autónomo del tablero (8.5 MB) cargado en el prefijo privado `site/` de S3 en `us-east-1`; una URL prefirmada temporal se generó desde la consola. El objeto reúne los datos versionados de 10 perfiles, no el paquete temporal de 50.
+- [ ] Llegar a 10,000 perfiles procesados: los IDs restantes continúan siendo candidatos, no descargas realizadas.
+- [ ] Flujo AWS completo: EMR Serverless rechazó el inicio por falta de permisos; no existe stream Kinesis ni distribución CloudFront. S3 no es público; la URL prefirmada es temporal y no proporciona dominio permanente.
+- [ ] Reproducir la razón Colorado/EIA de 87.16% desde su agregado fuente. No se presenta como precisión ni como resultado validado.
 
-Las casillas se actualizan con evidencia verificable. Se analizaron muestras acotadas; no se descargó el conjunto completo ni se completó la arquitectura cloud propuesta. La guía de demostración resume qué funciona y qué falta.
+Los resultados versionados del tablero corresponden al piloto de 10 perfiles; el lote de 50 se conserva localmente para validación y presentación controlada. ResStock contiene perfiles modelados y EIA ventas agregadas de todo el sector residencial: sus coberturas son distintas. Clima permanece como serie independiente.
+
+## Abrir el dashboard local
+
+Desde la raíz del repositorio, ejecuta:
+
+```bash
+python3 -m http.server 8000 -d tablero
+```
+
+Después abre <http://localhost:8000/>. La interfaz no requiere instalación de paquetes ni conexión a internet; las tablas y el manifiesto ya están en `tablero/data/v1/`.
 
 ## Equipo
 
@@ -63,34 +69,28 @@ Las casillas se actualizan con evidencia verificable. Se analizaron muestras aco
 - [Arquitectura propuesta](docs/arquitectura-propuesta.md)
 - [Criterios de trabajo y registro de avances](docs/seguimiento.md)
 - [Plan de desarrollo y reparto por integrante](docs/plan-de-desarrollo.md)
-- [Plan de ejecución integral para alcanzar 90%](docs/plan-ejecucion-integral-90.md)
-- [División detallada de tareas por integrante, incluyendo AWS/nube](docs/division-tareas-integrantes-90.md)
 - [Tareas para la revisión de avance del 17 de noviembre](docs/plan-avance-17-noviembre.md)
 - [Validación inicial de fuentes](docs/validacion-inicial-fuentes.md)
 - [Resultados de la primera muestra](docs/resultados-muestra-inicial.md)
 - [Contenido resumido por diapositiva en JSON](docs/contenido-presentacion-avance.json)
 - [Versión legible del contenido de presentación](docs/presentacion-avance-17-noviembre.md)
-- [Presentación PDF compuesta directamente desde las ocho imágenes](presentaciones/Avance_Big_Data_17_noviembre_2026.pdf)
-- [Imágenes PNG de las ocho diapositivas](presentaciones/diapositivas/)
-- [Fondos originales generados para cada diapositiva](presentaciones/arte_generado/)
-- [Evidencia visual: gráfica mensual real](presentaciones/evidencia/grafica-resstock-eia.png)
-- [Script de composición PNG y PDF](scripts/armar_presentacion_imagenes.py)
-- [PowerPoint editable de una versión visual anterior](presentaciones/Avance_Big_Data_17_noviembre_2026.pptx)
+- [PowerPoint borrador anterior, pendiente de aplicar el estilo final](presentaciones/Avance_Big_Data_17_noviembre_2026.pptx)
+- [PDF borrador anterior](presentaciones/Avance_Big_Data_17_noviembre_2026.pdf)
 - [Esquema conceptual y calidad inicial de datos](docs/esquema-inicial-calidad-datos.md)
-- [Catálogo actualizado de datos](docs/catalogo-datos-final.md)
-- [Decisión de publicación y licencias](docs/decision-publicacion-datos.md)
-- [Contrato de datos v1](docs/contrato-datos-v1.md)
-- [CSV derivados y procedimiento de reproducción](datos/README.md)
-- [Extractor reproducible EIA-861M](scripts/preparar_eia.py)
 - [Decisión inicial de alcance y MVP](docs/decision-alcance-mvp.md)
-- [Guía breve para mostrar el avance al profesor: fuentes, AWS y web](docs/guia-demostracion-profesor.md)
-- [Job local PySpark Silver/Gold](docs/ejecucion-job-spark-local.md)
-- [Despliegue de demo y resultados derivados en S3 privado](docs/despliegue-s3-demo.md)
-- [Viabilidad observada del AWS Academy Learner Lab](docs/viabilidad-learner-lab.md)
+- [Especificación del tablero y dirección visual isométrica](docs/especificacion-tablero.md)
+- [Plan urgente de la siguiente etapa: dashboard, AWS, escala y analítica](docs/plan-urgente-siguiente-etapa.md)
+- [Contrato Gold consumido por el dashboard](docs/contrato-dashboard-datos.md)
+- [Ejecución del pipeline y exportación al dashboard](docs/ejecucion-job-spark-local.md)
+- [Lote exploratorio ResStock de 50 perfiles](docs/lote-resstock-50.md)
+- [Anomalías y backtest de pronóstico EIA](docs/analitica-anomalias-pronostico.md)
+- [Despliegue temporal en S3 privado](docs/despliegue-temporal-s3.md)
+- [Guía breve para presentar el proyecto](docs/guia-demostracion-profesor.md)
+- [Guía del dashboard local](tablero/README.md)
 
 El plan de desarrollo es una propuesta de organización basada en la guía disponible; se actualizará si el profesor comparte una rúbrica detallada o confirma fechas y requisitos adicionales.
 
-La muestra y sus resultados son exploratorios. El job Spark local produjo Silver/Gold con 21 controles de calidad aprobados; la demo web actual aún no consume esas tablas Gold y las anomalías y estimaciones todavía no están implementadas. El despliegue en AWS se limita a S3 privado con el HTML y los artefactos Gold del piloto. EMR Serverless fue denegado por permisos en Learner Lab; Kinesis y CloudFront no están desplegados. Consultar el estado y los pasos pendientes en la [guía para mostrar el avance](docs/guia-demostracion-profesor.md).
+Los candidatos de anomalías y las métricas de backtest son exploratorios y están etiquetados en el tablero; las anomalías no se confirmaron con eventos externos y el backtest no genera una predicción futura.
 
 ## Repositorio
 

@@ -1,0 +1,842 @@
+[
+  {
+    "bldg_id": 45000,
+    "source_period": "2018-01",
+    "kwh_month": 368.53839111328125,
+    "state_code": "NY",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 45000,
+    "source_period": "2018-02",
+    "kwh_month": 329.00970458984375,
+    "state_code": "NY",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 45000,
+    "source_period": "2018-03",
+    "kwh_month": 324.5150146484375,
+    "state_code": "NY",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 45000,
+    "source_period": "2018-04",
+    "kwh_month": 333.851806640625,
+    "state_code": "NY",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 45000,
+    "source_period": "2018-05",
+    "kwh_month": 407.8822937011719,
+    "state_code": "NY",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 45000,
+    "source_period": "2018-06",
+    "kwh_month": 418.54779052734375,
+    "state_code": "NY",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 45000,
+    "source_period": "2018-07",
+    "kwh_month": 515.6132202148438,
+    "state_code": "NY",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 45000,
+    "source_period": "2018-08",
+    "kwh_month": 483.0690002441406,
+    "state_code": "NY",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 45000,
+    "source_period": "2018-09",
+    "kwh_month": 419.3655090332031,
+    "state_code": "NY",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 45000,
+    "source_period": "2018-10",
+    "kwh_month": 342.00408935546875,
+    "state_code": "NY",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 45000,
+    "source_period": "2018-11",
+    "kwh_month": 314.8608093261719,
+    "state_code": "NY",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 45000,
+    "source_period": "2018-12",
+    "kwh_month": 346.03228759765625,
+    "state_code": "NY",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 50886,
+    "source_period": "2018-01",
+    "kwh_month": 8455.6171875,
+    "state_code": "CO",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 50886,
+    "source_period": "2018-02",
+    "kwh_month": 6742.4990234375,
+    "state_code": "CO",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 50886,
+    "source_period": "2018-03",
+    "kwh_month": 5238.640625,
+    "state_code": "CO",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 50886,
+    "source_period": "2018-04",
+    "kwh_month": 3371.5625,
+    "state_code": "CO",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 50886,
+    "source_period": "2018-05",
+    "kwh_month": 1552.46484375,
+    "state_code": "CO",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 50886,
+    "source_period": "2018-06",
+    "kwh_month": 672.4472045898438,
+    "state_code": "CO",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 50886,
+    "source_period": "2018-07",
+    "kwh_month": 531.5625,
+    "state_code": "CO",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 50886,
+    "source_period": "2018-08",
+    "kwh_month": 558.9273071289062,
+    "state_code": "CO",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 50886,
+    "source_period": "2018-09",
+    "kwh_month": 840.4614868164062,
+    "state_code": "CO",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 50886,
+    "source_period": "2018-10",
+    "kwh_month": 3317.27294921875,
+    "state_code": "CO",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 50886,
+    "source_period": "2018-11",
+    "kwh_month": 6383.85498046875,
+    "state_code": "CO",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 50886,
+    "source_period": "2018-12",
+    "kwh_month": 8939.705078125,
+    "state_code": "CO",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 60178,
+    "source_period": "2018-01",
+    "kwh_month": 270.5502014160156,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 60178,
+    "source_period": "2018-02",
+    "kwh_month": 251.19180297851562,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 60178,
+    "source_period": "2018-03",
+    "kwh_month": 255.69320678710938,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 60178,
+    "source_period": "2018-04",
+    "kwh_month": 223.3032989501953,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 60178,
+    "source_period": "2018-05",
+    "kwh_month": 286.6712951660156,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 60178,
+    "source_period": "2018-06",
+    "kwh_month": 283.5245056152344,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 60178,
+    "source_period": "2018-07",
+    "kwh_month": 334.8075866699219,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 60178,
+    "source_period": "2018-08",
+    "kwh_month": 335.714599609375,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 60178,
+    "source_period": "2018-09",
+    "kwh_month": 291.34698486328125,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 60178,
+    "source_period": "2018-10",
+    "kwh_month": 248.6739044189453,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 60178,
+    "source_period": "2018-11",
+    "kwh_month": 233.3907928466797,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 60178,
+    "source_period": "2018-12",
+    "kwh_month": 249.0229949951172,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 259599,
+    "source_period": "2018-01",
+    "kwh_month": 859.81640625,
+    "state_code": "CO",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 259599,
+    "source_period": "2018-02",
+    "kwh_month": 722.9971923828125,
+    "state_code": "CO",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 259599,
+    "source_period": "2018-03",
+    "kwh_month": 671.2398071289062,
+    "state_code": "CO",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 259599,
+    "source_period": "2018-04",
+    "kwh_month": 683.6987915039062,
+    "state_code": "CO",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 259599,
+    "source_period": "2018-05",
+    "kwh_month": 651.035888671875,
+    "state_code": "CO",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 259599,
+    "source_period": "2018-06",
+    "kwh_month": 650.8754272460938,
+    "state_code": "CO",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 259599,
+    "source_period": "2018-07",
+    "kwh_month": 614.8973999023438,
+    "state_code": "CO",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 259599,
+    "source_period": "2018-08",
+    "kwh_month": 606.2517700195312,
+    "state_code": "CO",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 259599,
+    "source_period": "2018-09",
+    "kwh_month": 591.9559936523438,
+    "state_code": "CO",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 259599,
+    "source_period": "2018-10",
+    "kwh_month": 670.2379150390625,
+    "state_code": "CO",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 259599,
+    "source_period": "2018-11",
+    "kwh_month": 684.8895874023438,
+    "state_code": "CO",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 259599,
+    "source_period": "2018-12",
+    "kwh_month": 775.7987060546875,
+    "state_code": "CO",
+    "housing_type": "Mobile Home"
+  },
+  {
+    "bldg_id": 310076,
+    "source_period": "2018-01",
+    "kwh_month": 235.2801971435547,
+    "state_code": "NY",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 310076,
+    "source_period": "2018-02",
+    "kwh_month": 193.90460205078125,
+    "state_code": "NY",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 310076,
+    "source_period": "2018-03",
+    "kwh_month": 240.585693359375,
+    "state_code": "NY",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 310076,
+    "source_period": "2018-04",
+    "kwh_month": 223.7436981201172,
+    "state_code": "NY",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 310076,
+    "source_period": "2018-05",
+    "kwh_month": 340.8327941894531,
+    "state_code": "NY",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 310076,
+    "source_period": "2018-06",
+    "kwh_month": 373.3794860839844,
+    "state_code": "NY",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 310076,
+    "source_period": "2018-07",
+    "kwh_month": 520.9609985351562,
+    "state_code": "NY",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 310076,
+    "source_period": "2018-08",
+    "kwh_month": 485.5544128417969,
+    "state_code": "NY",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 310076,
+    "source_period": "2018-09",
+    "kwh_month": 359.0508117675781,
+    "state_code": "NY",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 310076,
+    "source_period": "2018-10",
+    "kwh_month": 253.71319580078125,
+    "state_code": "NY",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 310076,
+    "source_period": "2018-11",
+    "kwh_month": 230.14549255371094,
+    "state_code": "NY",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 310076,
+    "source_period": "2018-12",
+    "kwh_month": 231.5343017578125,
+    "state_code": "NY",
+    "housing_type": "Single-Family Detached"
+  },
+  {
+    "bldg_id": 318605,
+    "source_period": "2018-01",
+    "kwh_month": 614.2772216796875,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 318605,
+    "source_period": "2018-02",
+    "kwh_month": 508.4175109863281,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 318605,
+    "source_period": "2018-03",
+    "kwh_month": 445.0338134765625,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 318605,
+    "source_period": "2018-04",
+    "kwh_month": 439.8380126953125,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 318605,
+    "source_period": "2018-05",
+    "kwh_month": 434.1025085449219,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 318605,
+    "source_period": "2018-06",
+    "kwh_month": 408.5353088378906,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 318605,
+    "source_period": "2018-07",
+    "kwh_month": 466.9679870605469,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 318605,
+    "source_period": "2018-08",
+    "kwh_month": 483.309814453125,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 318605,
+    "source_period": "2018-09",
+    "kwh_month": 453.60809326171875,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 318605,
+    "source_period": "2018-10",
+    "kwh_month": 471.239990234375,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 318605,
+    "source_period": "2018-11",
+    "kwh_month": 465.8960876464844,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 318605,
+    "source_period": "2018-12",
+    "kwh_month": 565.5883178710938,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 5+ Units"
+  },
+  {
+    "bldg_id": 322730,
+    "source_period": "2018-01",
+    "kwh_month": 4370.6015625,
+    "state_code": "CO",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 322730,
+    "source_period": "2018-02",
+    "kwh_month": 4619.99462890625,
+    "state_code": "CO",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 322730,
+    "source_period": "2018-03",
+    "kwh_month": 2583.638427734375,
+    "state_code": "CO",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 322730,
+    "source_period": "2018-04",
+    "kwh_month": 1996.995361328125,
+    "state_code": "CO",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 322730,
+    "source_period": "2018-05",
+    "kwh_month": 1202.3477783203125,
+    "state_code": "CO",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 322730,
+    "source_period": "2018-06",
+    "kwh_month": 1228.5303955078125,
+    "state_code": "CO",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 322730,
+    "source_period": "2018-07",
+    "kwh_month": 1389.2613525390625,
+    "state_code": "CO",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 322730,
+    "source_period": "2018-08",
+    "kwh_month": 1241.500732421875,
+    "state_code": "CO",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 322730,
+    "source_period": "2018-09",
+    "kwh_month": 1097.9896240234375,
+    "state_code": "CO",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 322730,
+    "source_period": "2018-10",
+    "kwh_month": 2007.4173583984375,
+    "state_code": "CO",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 322730,
+    "source_period": "2018-11",
+    "kwh_month": 3063.970947265625,
+    "state_code": "CO",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 322730,
+    "source_period": "2018-12",
+    "kwh_month": 4315.34130859375,
+    "state_code": "CO",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 424561,
+    "source_period": "2018-01",
+    "kwh_month": 283.409912109375,
+    "state_code": "NY",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 424561,
+    "source_period": "2018-02",
+    "kwh_month": 255.90040588378906,
+    "state_code": "NY",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 424561,
+    "source_period": "2018-03",
+    "kwh_month": 287.1601867675781,
+    "state_code": "NY",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 424561,
+    "source_period": "2018-04",
+    "kwh_month": 273.31640625,
+    "state_code": "NY",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 424561,
+    "source_period": "2018-05",
+    "kwh_month": 380.2131042480469,
+    "state_code": "NY",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 424561,
+    "source_period": "2018-06",
+    "kwh_month": 414.7815856933594,
+    "state_code": "NY",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 424561,
+    "source_period": "2018-07",
+    "kwh_month": 711.4727172851562,
+    "state_code": "NY",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 424561,
+    "source_period": "2018-08",
+    "kwh_month": 619.265625,
+    "state_code": "NY",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 424561,
+    "source_period": "2018-09",
+    "kwh_month": 419.1669006347656,
+    "state_code": "NY",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 424561,
+    "source_period": "2018-10",
+    "kwh_month": 269.91461181640625,
+    "state_code": "NY",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 424561,
+    "source_period": "2018-11",
+    "kwh_month": 258.6033935546875,
+    "state_code": "NY",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 424561,
+    "source_period": "2018-12",
+    "kwh_month": 283.4114074707031,
+    "state_code": "NY",
+    "housing_type": "Single-Family Attached"
+  },
+  {
+    "bldg_id": 464397,
+    "source_period": "2018-01",
+    "kwh_month": 1991.93896484375,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 464397,
+    "source_period": "2018-02",
+    "kwh_month": 1832.6551513671875,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 464397,
+    "source_period": "2018-03",
+    "kwh_month": 1330.88134765625,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 464397,
+    "source_period": "2018-04",
+    "kwh_month": 1116.389404296875,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 464397,
+    "source_period": "2018-05",
+    "kwh_month": 788.9000244140625,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 464397,
+    "source_period": "2018-06",
+    "kwh_month": 703.9400024414062,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 464397,
+    "source_period": "2018-07",
+    "kwh_month": 763.606201171875,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 464397,
+    "source_period": "2018-08",
+    "kwh_month": 717.4237060546875,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 464397,
+    "source_period": "2018-09",
+    "kwh_month": 713.8778076171875,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 464397,
+    "source_period": "2018-10",
+    "kwh_month": 1045.770263671875,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 464397,
+    "source_period": "2018-11",
+    "kwh_month": 1491.63330078125,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 464397,
+    "source_period": "2018-12",
+    "kwh_month": 1965.707763671875,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 528848,
+    "source_period": "2018-01",
+    "kwh_month": 472.9714050292969,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 528848,
+    "source_period": "2018-02",
+    "kwh_month": 410.66650390625,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 528848,
+    "source_period": "2018-03",
+    "kwh_month": 417.864013671875,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 528848,
+    "source_period": "2018-04",
+    "kwh_month": 397.7242126464844,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 528848,
+    "source_period": "2018-05",
+    "kwh_month": 448.67559814453125,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 528848,
+    "source_period": "2018-06",
+    "kwh_month": 616.792724609375,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 528848,
+    "source_period": "2018-07",
+    "kwh_month": 900.0051879882812,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 528848,
+    "source_period": "2018-08",
+    "kwh_month": 949.7299194335938,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 528848,
+    "source_period": "2018-09",
+    "kwh_month": 674.597900390625,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 528848,
+    "source_period": "2018-10",
+    "kwh_month": 462.3843994140625,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 528848,
+    "source_period": "2018-11",
+    "kwh_month": 404.0097961425781,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  },
+  {
+    "bldg_id": 528848,
+    "source_period": "2018-12",
+    "kwh_month": 446.022705078125,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 2 - 4 Units"
+  }
+]

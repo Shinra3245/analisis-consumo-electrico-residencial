@@ -1,0 +1,112 @@
+[
+  {
+    "bldg_id": 259599,
+    "source_year": 2018,
+    "annual_kwh": 8183.6953125,
+    "mean_hour_kwh": 0.9341999888420105,
+    "peak_hour_kwh": 7.421599864959717,
+    "n_hours": 8760,
+    "state_code": "CO",
+    "housing_type": "Mobile Home",
+    "profile_weight": 253.90367272727272
+  },
+  {
+    "bldg_id": 464397,
+    "source_year": 2018,
+    "annual_kwh": 14462.7236328125,
+    "mean_hour_kwh": 1.6510000228881836,
+    "peak_hour_kwh": 8.161199569702148,
+    "n_hours": 8760,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 2 - 4 Units",
+    "profile_weight": 253.90367272727272
+  },
+  {
+    "bldg_id": 318605,
+    "source_year": 2018,
+    "annual_kwh": 5756.814453125,
+    "mean_hour_kwh": 0.6571999788284302,
+    "peak_hour_kwh": 12.736200332641602,
+    "n_hours": 8760,
+    "state_code": "CO",
+    "housing_type": "Multi-Family with 5+ Units",
+    "profile_weight": 253.90367272727272
+  },
+  {
+    "bldg_id": 322730,
+    "source_year": 2018,
+    "annual_kwh": 29117.58984375,
+    "mean_hour_kwh": 3.323899984359741,
+    "peak_hour_kwh": 18.511999130249023,
+    "n_hours": 8760,
+    "state_code": "CO",
+    "housing_type": "Single-Family Attached",
+    "profile_weight": 253.90367272727272
+  },
+  {
+    "bldg_id": 50886,
+    "source_year": 2018,
+    "annual_kwh": 46605.015625,
+    "mean_hour_kwh": 5.320199966430664,
+    "peak_hour_kwh": 27.73870086669922,
+    "n_hours": 8760,
+    "state_code": "CO",
+    "housing_type": "Single-Family Detached",
+    "profile_weight": 253.90367272727272
+  },
+  {
+    "bldg_id": 45000,
+    "source_year": 2018,
+    "annual_kwh": 4603.2900390625,
+    "mean_hour_kwh": 0.5254999995231628,
+    "peak_hour_kwh": 3.710700035095215,
+    "n_hours": 8760,
+    "state_code": "NY",
+    "housing_type": "Mobile Home",
+    "profile_weight": 253.90367272727272
+  },
+  {
+    "bldg_id": 528848,
+    "source_year": 2018,
+    "annual_kwh": 6601.4443359375,
+    "mean_hour_kwh": 0.753600001335144,
+    "peak_hour_kwh": 2.790299892425537,
+    "n_hours": 8760,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 2 - 4 Units",
+    "profile_weight": 253.90367272727272
+  },
+  {
+    "bldg_id": 60178,
+    "source_year": 2018,
+    "annual_kwh": 3263.89111328125,
+    "mean_hour_kwh": 0.3725999891757965,
+    "peak_hour_kwh": 5.190000057220459,
+    "n_hours": 8760,
+    "state_code": "NY",
+    "housing_type": "Multi-Family with 5+ Units",
+    "profile_weight": 253.90367272727272
+  },
+  {
+    "bldg_id": 424561,
+    "source_year": 2018,
+    "annual_kwh": 4456.6162109375,
+    "mean_hour_kwh": 0.5087000131607056,
+    "peak_hour_kwh": 1.9462000131607056,
+    "n_hours": 8760,
+    "state_code": "NY",
+    "housing_type": "Single-Family Attached",
+    "profile_weight": 253.90367272727272
+  },
+  {
+    "bldg_id": 310076,
+    "source_year": 2018,
+    "annual_kwh": 3688.685546875,
+    "mean_hour_kwh": 0.421099990606308,
+    "peak_hour_kwh": 1.6134999990463257,
+    "n_hours": 8760,
+    "state_code": "NY",
+    "housing_type": "Single-Family Detached",
+    "profile_weight": 253.90367272727272
+  }
+]
