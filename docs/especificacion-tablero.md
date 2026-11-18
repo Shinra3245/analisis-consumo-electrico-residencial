@@ -1,8 +1,8 @@
 # Especificación del tablero
 
 **Responsable:** Diego (analítica y producto) · **Revisión pendiente:** Brian (procedencia y población) y Christian (esquema gold)
-**Estado:** propuesta para revisión del equipo. Describe lo que el tablero mostrará; no implica que esté implementado.
-**Datos de referencia:** `analitica/salidas/` (esquema en [`contrato-gold-propuesta.md`](contrato-gold-propuesta.md)).
+**Estado:** propuesta revisada para acordar alcance y lecturas del tablero antes de conectarlo a Gold. No certifica implementación.
+**Datos de referencia:** la rama remota `ramificacion-emi-analitica` contiene salidas exploratorias en `analitica/salidas/`; no están integradas en `main`. El esquema propuesto está en [`contrato-gold-propuesta.md`](contrato-gold-propuesta.md). El tablero debe consumir la exportación JSON versionada de Gold, no depender de rutas locales de trabajo.
 
 ## 1. Pregunta central
 
@@ -25,7 +25,7 @@
 4. **Los eventos de anomalía son sintéticos.** Demuestran la lógica del método; no son hechos reales de la red eléctrica ni de un hogar.
 5. **El pronóstico se evalúa con meses ya conocidos (backtest).** Los meses de 2026 son preliminares y se muestran aparte. La proyección sep 2026–dic 2027 es un **escenario** sin validación posterior.
 6. **El replay de Kinesis es una reproducción de históricos** con sus fechas originales, no telemetría en vivo.
-7. **Las horas de ResStock están en EST fijo** (la convención del release), no en hora local. Los ejes dicen "hora EST".
+7. **Los timestamps originales de ResStock representan EST fijo (UTC−5), no la hora local de cada estado.** Para el eje de hora del día, se toma el inicio del intervalo (fin menos 15 minutos), se convierte de EST fijo a UTC y luego a la zona IANA del estado. El eje indica la zona local, por ejemplo `Hora local · America/Denver` o `Hora local · America/New_York`. No se cambia solo la etiqueta: la conversión ocurre antes de agrupar por periodo local, día y hora. Los datos horarios conservan el timestamp de origen, UTC, hora local y desplazamiento UTC. Las comparaciones de total mensual ResStock/EIA conservan el calendario fuente del release y se rotulan como comparación de poblaciones distintas; no se recalculan con periodos locales parciales.
 
 ## 3. Filtros globales
 
@@ -49,14 +49,14 @@ Convención: **Datos** = tabla gold · grano · unidad. Todas las gráficas mues
 | ID | Pregunta | Datos | Diseño | Lectura correcta y límite |
 |---|---|---|---|---|
 | R1 | ¿Qué magnitud y cobertura tiene lo que se muestra? | 4 tarjetas: (a) ventas EIA 2025 del estado o suma 51 (`gold_eia_monthly`, MWh, anual); (b) meses finales y preliminares (`cobertura_eia`); (c) perfiles ResStock en piloto = 10; (d) sMAPE del mejor modelo en backtest (`gold_forecast_metrics`) | Tarjetas con valor, unidad, año y chip de fuente | Cada cifra nombra población y periodo. (c) no dice "10,000 perfiles": son 10 descargados |
-| R2 | ¿Cómo se comparan las escalas de ResStock y EIA en Colorado 2018? | `demo_colorado_2018_verificacion` (interino), mensual, MWh | Barras agrupadas por mes (ResStock/EIA) + línea de razón en eje secundario | Rótulo fijo: "razón descriptiva entre poblaciones distintas, no precisión". Fuente interina: aún no recalculada de forma independiente |
+| R2 | ¿Cómo se comparan las escalas de ResStock y EIA en Colorado 2018? | `demo_colorado_2018_verificacion` (interino), calendario publicado del release, mensual, MWh | Barras agrupadas por mes (ResStock/EIA) + línea de razón en eje secundario | Rótulo fijo: "razón descriptiva entre poblaciones distintas, no precisión". Fuente interina: aún no recalculada de forma independiente. Mantener el calendario fuente EST para reproducir esta comparación; no mezclarla con los periodos locales parciales de P2. |
 
 ### 4.2 Patrones
 
 | ID | Pregunta | Datos | Diseño | Lectura correcta y límite |
 |---|---|---|---|---|
 | P1 | ¿Cómo es la estacionalidad residencial del estado y cómo ha cambiado por año? | `gold_eia_monthly`, mensual, MWh | Líneas, eje x = mes (1–12), una línea por año; 2026 punteada y rotulada "preliminar" | Muestra ventas, no consumo medido por hogar. Filtro: estado |
-| P2 | ¿A qué horas y en qué meses consume más un perfil? | `gold_resstock_pattern.median_kwh`, hora × mes, kWh por hora | Mapa de calor; conmutador laboral/fin de semana; selector de perfil | Un perfil modelado. Eje en hora EST. Filtros: estado, tipo de vivienda |
+| P2 | ¿A qué horas y en qué meses consume más un perfil? | `gold_resstock_pattern.median_kwh`, hora local × periodo local, kWh por hora | Mapa de calor; conmutador laboral/fin de semana; selector de perfil | Un perfil modelado. Eje en hora local, con zona visible según el estado. Los periodos locales incompletos se identifican visualmente y no se comparan como meses completos. Filtros: estado, tipo de vivienda |
 | P3 | ¿Cómo difiere el consumo anual entre tipos de vivienda? | `gold_resstock_profile_summary.annual_kwh`, anual, kWh por perfil | Barras agrupadas por estado, color por tipo | Un perfil por tipo y estado: **exploratorio**, no una comparación estadística |
 
 ### 4.3 Clima
@@ -72,9 +72,9 @@ Un aviso fijo en la parte superior: **"Eventos inyectados de forma sintética pa
 
 | ID | Pregunta | Datos | Diseño | Lectura correcta y límite |
 |---|---|---|---|---|
-| A1 | ¿Qué ve el método alrededor de un caso? | `gold_anomaly_case_series`, horaria, kWh (±48 h) | Líneas: observado, línea base, original (antes de inyectar); zonas sombreadas = alerta; selector de caso (5) | El caso "no detectado" y la "alerta sin etiqueta" se muestran igual que los demás |
+| A1 | ¿Qué ve el método alrededor de un caso? | `gold_anomaly_case_series`, horaria, kWh (±48 h), con tiempo de origen, UTC y local | Líneas: observado, línea base, original (antes de inyectar); zonas sombreadas = alerta; selector de caso (5) | El caso "no detectado" y la "alerta sin etiqueta" se muestran igual que los demás. El eje usa hora local del estado y muestra la zona; los datos originales EST se conservan para auditoría. |
 | A2 | ¿Qué disparó cada caso? | `gold_anomaly_cases` | Tabla: observado, referencia, diferencia, métrica disparadora, regla, resultado, etiqueta "sintético" | La alerta sin etiqueta no es un evento confirmado |
-| A3 | ¿Qué tan bien detecta el método? | `gold_anomaly_metrics`, `gold_anomaly_sensitivity` | Tabla/barras de precision, recall y F1 por categoría y conjunto (calibración NY / evaluación CO); recall por magnitud | Se reporta que **aumentos** no generalizan (ver [método](metodo-anomalias.md)). Métricas solo contra etiquetas sintéticas |
+| A3 | ¿Qué tan bien detecta el método? | `gold_anomaly_metrics`, `gold_anomaly_sensitivity` | Tabla/barras de precision, recall y F1 por categoría y conjunto (calibración NY / evaluación CO); recall por magnitud | Las métricas comparan predicciones con etiquetas sintéticas; solo se presentarán tras integrar la documentación metodológica y salidas analíticas correspondientes. |
 
 ### 4.5 Estimaciones
 
@@ -113,7 +113,7 @@ Requisitos transversales: diseño responsive (escritorio y móvil), navegación 
 | Término | Fórmula | Nota |
 |---|---|---|
 | Razón descriptiva | `ResStock_mes_MWh / EIA_mes_MWh × 100` | No es precisión ni error |
-| Hora de un intervalo | `hora_inicio = timestamp_fin_EST − 15 min`, truncada a la hora | Cada hora suma 4 intervalos de 15 min. El mes se asigna por el inicio |
+| Hora de un intervalo | `timestamp_inicio_est = timestamp_fin_est − 15 min`; convertir EST fijo a UTC sumando 5 h y después convertir a la zona IANA del estado | Cada hora local agrega los intervalos que caen en esa hora después de la conversión. `period_local`, `day_type` y `hour_local` se calculan con el inicio local del intervalo. Guardar `utc_offset_minutes` para distinguir horas repetidas por DST. |
 | Línea base | Mediana del perfil por (mes, tipo de día, hora) | Tipo de día: laboral o fin de semana. No modela festivos |
 | Score robusto | `(x − mediana) / max(1.4826 × MAD, piso)` | Piso = 10 % de la mediana horaria del perfil (mín. 0.01 kWh) |
 | Razón vs línea base | `x / mediana` | Se usa para caídas |
@@ -122,19 +122,22 @@ Requisitos transversales: diseño responsive (escritorio y móvil), navegación 
 | Precision / recall / F1 | A nivel de **evento** | Recall = eventos detectados / eventos inyectados; precision = alertas que tocan un evento / alertas |
 | Escenario | Pronóstico sin dato real posterior | Siempre rotulado |
 
-## 7. Lista de variables, filtros y agregados (para Brian)
+## 7. Variables, filtros y agregados para revisar (Brian)
 
-- **EIA:** `period`, `state_code`, `data_status`, `sales_mwh`; cobertura por año/estado con meses finales, preliminares y faltantes. Todos los estados con 2018–2025 completo (96 meses).
-- **ResStock:** `bldg_id`, `state_code`, `housing_type`, `profile_weight`, kWh horario, tamaño de muestra por estado/tipo. **Necesito confirmar:** representatividad del piloto y si habrá más perfiles.
-- **Clima:** `punto_id`, `state_code`, coordenadas solicitadas y de celda, `timestamp_utc`, `temperatura_c`, `modelo`.
-- **Pendientes de decisión (Brian/Christian):** regla de unión geográfica y horaria; conversión EST→hora local; nombres de columna (español vs inglés); si se amplía el número de perfiles.
+- **EIA mensual:** `period`, `state_code`, `data_status`, `sales_mwh`; cobertura por año/estado con meses finales, preliminares y faltantes. En los datos integrados actuales hay 5,304 registros de 51 jurisdicciones, desde 2018-01; las etiquetas Final/Preliminary se conservan.
+- **ResStock:** `bldg_id`, `state_code`, `housing_type`, `profile_weight`, kWh por intervalo/perfil, timestamps fuente/UTC/local, `time_zone`, `utc_offset_minutes` y conteo de perfiles por estado/tipo. El piloto integrado actual contiene 10 perfiles; son una muestra exploratoria, no una estimación representativa.
+- **Clima:** `point_id`, `state_code`, coordenadas consultadas y de celda, `timestamp_utc`, `temperature_c`, `model`. Se presenta separado hasta definir una correspondencia geográfica reproducible; no se calcula relación clima-consumo con la muestra disponible.
+- **Filtros globales:** estado, periodo y fuente cuando existan; tipo de vivienda solo para ResStock; `data_status` solo para EIA/pronósticos; día de semana/fin de semana solo para patrones y anomalías. Cada control fuera de ámbito se deshabilita y explica el motivo.
+- **Recomendación de alcance para Brian:** conservar los 10 perfiles actuales en el primer tablero y etiquetar todas las vistas como exploratorias; no bloquear el avance esperando 10,000 perfiles. Ampliar después solo con una selección versionada, QC aprobado, procedencia y confirmación de disponibilidad/licencia.
+- **Confirmaciones concretas solicitadas:** Brian valida si 10 perfiles siguen siendo el alcance del primer tablero y si autoriza planear una muestra mayor para una fase posterior; Christian confirma el esquema inglés `snake_case`, Parquet canónico y exportación JSON para el tablero, además de la conversión horaria indicada en el contrato.
 
 ## 8. Procedencia junto a cada KPI
 
 Chip con: fuente · tipo (modelado / oficial / reanálisis / sintético) · periodo · unidad · cobertura · versión de esquema. Ejemplo: `EIA-861M · oficial · 2018–2025 Final · MWh · 51 jurisdicciones · esquema 1.0`.
 
-## 9. Preguntas abiertas
+## 9. Verificaciones de integración
 
-1. ¿Dónde está la demo actual que se va a convertir en estas seis vistas? No está en el repositorio.
-2. ¿Los nombres de columna del gold serán en inglés (como el contrato) o en español (como `datos/`)? Esta propuesta usa inglés.
-3. ¿Se ampliará el piloto de ResStock? Con 10 perfiles, P3 y las anomalías son solo exploratorias.
+1. Antes de conectar las seis vistas, verificar que el PR de analítica haya sido integrado y que sus hashes de salida coincidan con el manifiesto de Gold.
+2. Verificar que el job Spark produzca las columnas del contrato inglés `snake_case` y que `schema_version`, hashes de entradas y `quality_status` queden en manifiesto/metadatos; `quality_flags` se conserva en las filas o rechazos según el contrato. No conectar tablas con nombres distintos mediante alias invisibles en la interfaz.
+3. Verificar una conversión temporal de prueba para Colorado y Nueva York, incluidos límites de mes/año y el cambio de horario estacional, antes de generar el agregado horario local.
+4. Mantener el piloto de 10 perfiles como alcance inicial. La ampliación de muestra es una decisión de fase posterior y no debe mezclarse con las cifras de la primera versión del tablero.
