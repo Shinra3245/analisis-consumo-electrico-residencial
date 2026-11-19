@@ -69,6 +69,8 @@ Después abre <http://localhost:8000/>. La interfaz no requiere instalación de 
 - [Arquitectura propuesta](docs/arquitectura-propuesta.md)
 - [Criterios de trabajo y registro de avances](docs/seguimiento.md)
 - [Plan de desarrollo y reparto por integrante](docs/plan-de-desarrollo.md)
+- [Plan operativo de desarrollo V2 y observaciones del profesor](docs/plan-operativo-desarrollo-v2.md)
+- [División del desarrollo en cuatro bloques y flujo de PR](docs/division-bloques-equipo-v2.md)
 - [Tareas para la revisión de avance del 17 de noviembre](docs/plan-avance-17-noviembre.md)
 - [Validación inicial de fuentes](docs/validacion-inicial-fuentes.md)
 - [Resultados de la primera muestra](docs/resultados-muestra-inicial.md)
