@@ -1,0 +1,85 @@
+{
+  "manifest_version": 1,
+  "source_version": "v1-bbc916d22b5c4260",
+  "snapshot_access_date": "2026-11-19",
+  "artifact": {
+    "file": "energy_demography_state_year_v1.csv",
+    "rows": 306,
+    "bytes": 29789,
+    "sha256": "5333c61ecd66e07100262d003dc1e5826e22ee3ead7698978fc4189ee15c0106"
+  },
+  "grain": [
+    "state_fips",
+    "year"
+  ],
+  "fields": [
+    "state_fips",
+    "state_code",
+    "year",
+    "population_estimate",
+    "land_area_sq_mi_2020",
+    "population_density_per_sq_mi",
+    "residential_sales_mwh",
+    "residential_kwh_per_capita",
+    "eia_data_status",
+    "census_vintage",
+    "source_version"
+  ],
+  "units": {
+    "population_estimate": "personas al 1 de julio",
+    "land_area_sq_mi_2020": "mi² terrestres",
+    "population_density_per_sq_mi": "personas/mi² terrestre, estimación calculada",
+    "residential_sales_mwh": "MWh/año",
+    "residential_kwh_per_capita": "kWh/persona/año"
+  },
+  "coverage": {
+    "geography": "50 estados de EE. UU. y el Distrito de Columbia",
+    "years": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "expected_jurisdictions": 51,
+    "expected_state_years": 306,
+    "state_years_by_year": {
+      "2020": 51,
+      "2021": 51,
+      "2022": 51,
+      "2023": 51,
+      "2024": 51,
+      "2025": 51
+    },
+    "monthly_eia_rows_read": 5304,
+    "final_months_used": 3672,
+    "excluded_state_years": []
+  },
+  "sources": {
+    "population": {
+      "file": "NST-EST2025-ALLDATA.csv",
+      "url": "https://www2.census.gov/programs-surveys/popest/datasets/2020-2025/state/totals/NST-EST2025-ALLDATA.csv",
+      "version": "Census PEP Vintage 2025",
+      "bytes": 53555,
+      "sha256": "92188e29cb0a67dcf95afa7d6c47359409782f086478b70ea4128eb70e223ca9"
+    },
+    "land_area": {
+      "file": "tigerweb_tab20_state_2020_us.html",
+      "url": "https://tigerweb.geo.census.gov/tigerwebmain/Files/tab20/tigerweb_tab20_state_2020_us.html",
+      "version": "Geografía del Censo 2020, BVP20",
+      "bytes": 70445,
+      "sha256": "424faf4ae8806131d39a8973556dcad58c33fed7cfc8e2caece82386f4deda60"
+    },
+    "electricity": {
+      "file": "eia_residencial_mensual.csv",
+      "version": "Serie mensual residencial del equipo",
+      "bytes": 171187,
+      "sha256": "dff80ba19688732949ef340046e1257eab4bb1e206b0480162b7ed61fba9f93a",
+      "upstream_dataset": "EIA-861M, hoja Monthly-States",
+      "upstream_url": "https://www.eia.gov/electricity/data/eia861m/xls/sales_revenue.xlsx",
+      "url": "https://github.com/Shinra3245/analisis-consumo-electrico-residencial/blob/bbf2b4f02f4bcd498f17d3554dd2e9a2e45545f8/datos/eia_residencial_mensual.csv",
+      "upstream_access_date": "2026-11-17"
+    }
+  }
+}
