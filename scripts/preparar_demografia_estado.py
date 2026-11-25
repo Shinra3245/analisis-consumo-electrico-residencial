@@ -31,7 +31,10 @@ EIA_CSV_AT_CUTOFF = (
     "https://github.com/Shinra3245/analisis-consumo-electrico-residencial/blob/"
     "bbf2b4f02f4bcd498f17d3554dd2e9a2e45545f8/datos/eia_residencial_mensual.csv"
 )
-EIA_SHA_AT_CUTOFF = "dff80ba19688732949ef340046e1257eab4bb1e206b0480162b7ed61fba9f93a"
+POP_SHA256_V1 = "92188e29cb0a67dcf95afa7d6c47359409782f086478b70ea4128eb70e223ca9"
+AREA_SHA256_V1 = "424faf4ae8806131d39a8973556dcad58c33fed7cfc8e2caece82386f4deda60"
+EIA_SHA256_V1 = "dff80ba19688732949ef340046e1257eab4bb1e206b0480162b7ed61fba9f93a"
+EIA_SHA_AT_CUTOFF = EIA_SHA256_V1
 CSV_NAME = "energy_demography_state_year_v1.csv"
 FIELDS = (
     "state_fips", "state_code", "year", "population_estimate", "land_area_sq_mi_2020",
@@ -174,6 +177,17 @@ def build(eia_file, census_dir, snapshot_date):
     pop_data = census_bytes(POP_FILE, POP_URL, census_dir)
     area_data = census_bytes(AREA_FILE, AREA_URL, census_dir)
     eia_data = eia_file.read_bytes()
+    for label, data, expected in (
+        (POP_FILE, pop_data, POP_SHA256_V1),
+        (AREA_FILE, area_data, AREA_SHA256_V1),
+        (eia_file.name, eia_data, EIA_SHA256_V1),
+    ):
+        actual = sha256(data)
+        if actual != expected:
+            raise ValueError(
+                f"El insumo {label} no coincide con el SHA-256 fijado para v1: {actual}. "
+                "Revise las fuentes y documente una nueva versión antes de actualizar el corte."
+            )
     sources = {}
     for key, name, url, data, vintage in (
         ("population", POP_FILE, POP_URL, pop_data, "Census PEP Vintage 2025"),
@@ -264,8 +278,8 @@ def main():
                         help="Carpeta con el CSV de población y el HTML de superficie para uso sin red")
     parser.add_argument("--output", type=Path, default=ROOT / "datos/demografia_estatal",
                         help="Carpeta de salida")
-    parser.add_argument("--fecha-consulta", type=date.fromisoformat, default=date.today(),
-                        help="Fecha de consulta de los insumos del corte (AAAA-MM-DD)")
+    parser.add_argument("--fecha-consulta", type=date.fromisoformat, required=True,
+                        help="Fecha explícita de consulta de los insumos (AAAA-MM-DD)")
     parser.add_argument("--comparar-con", type=Path, metavar="CARPETA",
                         help="Verificar el CSV y el manifiesto contra una entrega existente")
     args = parser.parse_args()
