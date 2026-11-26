@@ -23,7 +23,7 @@ Desarrollar una plataforma de análisis para explorar el consumo eléctrico resi
 | U.S. Energy Information Administration (EIA) | Estadísticas residenciales por estado; demanda horaria del sistema como contexto opcional | Las estadísticas residenciales y la demanda multisectorial de red son productos distintos. EIA-930 se pospone hasta justificar su uso y normalizar el tiempo. |
 | Open-Meteo | Variables meteorológicas históricas y previsiones disponibles | Se validará la compatibilidad espacial y temporal con las demás fuentes. |
 
-La propuesta contempla iniciar el análisis detallado con al menos 10,000 perfiles. Un año de registros cada 15 minutos para esa selección equivaldría aproximadamente a 350.4 millones de filas. Son metas de escala de la propuesta, no el primer hito técnico: el MVP empieza con agregados geográficos y un subconjunto medido para reducir riesgo de tamaño, acceso y costo. Consulta la [decisión inicial de alcance](docs/decision-alcance-mvp.md).
+La propuesta contempla analizar al menos 10,000 perfiles. La selección v2 final ya tiene 10,000 perfiles raw descargados y validados en S3 privado (35,040 intervalos por perfil, 350.4 millones en total). Esto no significa que Spark ya los haya procesado: el procesamiento Silver/Gold a escala 10,000 sigue pendiente. La selección no es una muestra probabilística representativa. Consulta la [decisión inicial de alcance](docs/decision-alcance-mvp.md) y la [decisión de selección v2](docs/decision-seleccion-resstock-final-v2.md).
 
 ## Arquitectura propuesta
 
@@ -33,15 +33,16 @@ La propuesta plantea Amazon S3 para archivos y resultados, Amazon Kinesis Data S
 
 - [x] Propuesta versión 2 aprobada por el profesor.
 - [x] Pipeline PySpark local ejecutado con 21 controles de calidad; lote exploratorio ampliado a 50 perfiles, con 1,752,000 intervalos verificados. Sus salidas ampliadas permanecen en `/tmp` y no se versionaron.
+- [x] Ingesta raw Scale-10k: 10,000 perfiles únicos validados y almacenados en S3 privado; la selección final v2 contiene 9,998 perfiles primarios y dos reemplazos. Spark/QC Silver/Gold sobre esos 10,000 aún no se ha ejecutado.
 - [x] Tablero web con seis vistas. La versión incluida en el repositorio consume 10 tablas Gold JSON del manifiesto: piloto versionado de 10 perfiles más EIA, clima y analítica de anomalías/backtest. Filas, bytes y SHA-256 verificados.
 - [x] Análisis EIA reproducible: 43 candidatos estadísticos (no eventos confirmados), sensibilidad con inyecciones sintéticas y backtest de 24 meses (2024–2025). El mejor modelo tiene sMAPE mediana 5.71% frente a 7.05% de la baseline en 51 jurisdicciones; gana en 46. No es proyección futura.
 - [x] Patrones horarios del lote local de 50 perfiles convertidos a tiempo local por zona IANA; meses incompletos se identifican. Clima sigue separado y no se une al consumo.
 - [x] HTML autónomo del tablero (8.5 MB) cargado en el prefijo privado `site/` de S3 en `us-east-1`; una URL prefirmada temporal se generó desde la consola. El objeto reúne los datos versionados de 10 perfiles, no el paquete temporal de 50.
-- [ ] Llegar a 10,000 perfiles procesados: los IDs restantes continúan siendo candidatos, no descargas realizadas.
+- [ ] Procesar por Spark la selección final de 10,000 perfiles, ejecutar QC global y generar/publicar Silver y Gold de escala. La ingesta raw sí se completó; los resultados del dashboard versionado siguen basados en el piloto de 10 perfiles.
 - [ ] Flujo AWS completo: EMR Serverless rechazó el inicio por falta de permisos; no existe stream Kinesis ni distribución CloudFront. S3 no es público; la URL prefirmada es temporal y no proporciona dominio permanente.
 - [ ] Reproducir la razón Colorado/EIA de 87.16% desde su agregado fuente. No se presenta como precisión ni como resultado validado.
 
-Los resultados versionados del tablero corresponden al piloto de 10 perfiles; el lote de 50 se conserva localmente para validación y presentación controlada. ResStock contiene perfiles modelados y EIA ventas agregadas de todo el sector residencial: sus coberturas son distintas. Clima permanece como serie independiente.
+Los resultados versionados del tablero corresponden al piloto de 10 perfiles. También se probó en CloudShell un flujo real de 5 perfiles S3 → Spark → S3 (21/21 controles de calidad); la prueba local de 50 perfiles es independiente. Los 10,000 perfiles raw permanecen en S3 privado, todavía sin procesamiento Spark global. ResStock contiene perfiles modelados y EIA ventas agregadas de todo el sector residencial: sus coberturas son distintas. Clima permanece como serie independiente.
 
 ## Abrir el dashboard local
 
@@ -88,6 +89,7 @@ Después abre <http://localhost:8000/>. La interfaz no requiere instalación de 
 - [Contrato de datos Gold v2 del dashboard](docs/contrato-dashboard-datos-v2.md)
 - [Ejecución del pipeline y exportación al dashboard](docs/ejecucion-job-spark-local.md)
 - [Ingesta de ResStock por lotes](docs/ingesta-resstock-lotes.md)
+- [Decisión de selección ResStock final v2 y evidencia raw Scale-10k](docs/decision-seleccion-resstock-final-v2.md)
 - [Adaptación del lote ResStock a Spark](docs/adaptador-lote-resstock-spark.md)
 - [Publicación privada del dashboard v2 en S3](docs/publicacion-s3-dashboard-v2.md)
 - [Lote exploratorio ResStock de 50 perfiles](docs/lote-resstock-50.md)

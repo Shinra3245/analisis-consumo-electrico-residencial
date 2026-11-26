@@ -22,13 +22,15 @@
 
 2. **Acceso Web y Ausencia de URL Pública:**
    - Un bucket privado de S3 **no proporciona una URL permanente ni pública**.
-   - **CloudFront:** No se encuentra desplegado ni verificado con Origin Access Control (OAC). Por ende, no existe un dominio web público ni CDN activo.
+   - **CloudFront:** No se encuentra desplegado. Revalidado el 26-nov-2026: `ListDistributions` y `CreateDistribution` devuelven `AccessDenied` debido a que ninguna política basada en identidad otorga permisos en Learner Lab. Por ende, no existe ni es viable desplegar un dominio web público o CDN con Origin Access Control (OAC).
    - **Mecanismo de Evaluación:** El acceso visual requiere que un operador autenticado genere manualmente una **URL prefirmada temporal** desde la consola AWS de su sesión (por ejemplo, con expiración de 1 a 2 horas).
    - **Regla Estricta de Gobernanza:** Ninguna URL prefirmada debe ser registrada, versionada o guardada en repositorios, archivos markdown, logs ni chats, ya que actúa como credencial temporal de lectura directa al objeto privado.
 
 3. **Estado de Servicios de Cómputo y Streaming:**
-   - **EMR Serverless:** Se documenta en estado no disponible (permisos insuficientes en el entorno Learner Lab del equipo). Todo el procesamiento Spark y analítico se mantiene reproducible en entornos locales.
-   - **Amazon Kinesis:** Sin streams activos ni consumidores cloud configurados. El tablero opera en base a los datos Gold generados por el pipeline, sin simulación de streaming en vivo.
+   - **EMR Serverless:** Se documenta en estado no disponible. Revalidado el 26-nov-2026: tanto `ListApplications` como `CreateApplication` devuelven `AccessDeniedException` en la cuenta Learner Lab. Todo el procesamiento Spark y analítico se mantiene reproducible en entornos locales.
+   - **Amazon Kinesis:** Sin streams activos (`ListStreams` reporta 0) ni consumidores cloud configurados. No se crean streams para evitar facturación sin consumidor cloud. El tablero opera en base a los datos Gold generados por el pipeline, sin simulación de streaming en vivo.
+
+4. **Raw ResStock Scale-10k (separado del dashboard):** La selección final v2 tiene 10,000 Parquet raw validados en S3 privado (9,998 perfiles primarios y dos reemplazos). Estos objetos no forman parte del release Gold del dashboard; no se ejecutó aún Spark/QC Silver/Gold para los 10,000 perfiles. El estado, roster y hashes de selección están en [`decision-seleccion-resstock-final-v2.md`](decision-seleccion-resstock-final-v2.md).
 
 ---
 
@@ -104,7 +106,7 @@ python3 -m http.server 8080 -d /tmp/omar-dashboard-release-v2-2026-11-26-traceab
 
 Se subieron 14 artefactos derivados a `us-east-1`: los 11 JSON Gold v2 y `manifest.json` bajo `gold/v2/releases/v2-20261126-09a014f6/`; `index.html` y `release_manifest.json` bajo `site/releases/v2-20261126-09a014f6/`. El HTML local mide 9,170,600 bytes y su SHA-256 se registra arriba; el manifiesto Gold enumera 11 tablas y 20,858 filas.
 
-Antigravity verificó la carga en la consola S3: Content-Type correspondientes, cifrado SSE-S3 y Block Public Access conservado. El bucket mantiene versionado deshabilitado. No se subieron archivos fuente crudos ni se modificó ninguna política, ACL o configuración de acceso. Esta publicación es privada: no hay endpoint público, CloudFront/OAC ni URL prefirmada generada. El hash se verificó para el artefacto local/manifiesto; no se afirma una recalculación SHA-256 remota de cada objeto.
+Antigravity verificó la carga de este release del dashboard en la consola S3: Content-Type correspondientes, cifrado SSE-S3 y Block Public Access conservado. El bucket mantiene versionado deshabilitado. Este release Gold/web no incluye crudos; una ingesta raw ResStock Scale-10k se publicó después en prefijos privados separados (véase [`decision-seleccion-resstock-final-v2.md`](decision-seleccion-resstock-final-v2.md)). No se modificó ninguna política, ACL o configuración de acceso. Esta publicación es privada: no hay endpoint público, CloudFront/OAC ni URL prefirmada generada. El hash se verificó para el artefacto local/manifiesto; no se afirma una recalculación SHA-256 remota de cada objeto de este release.
 
 ### Salida Spark de validación de un perfil (26-nov-2026)
 

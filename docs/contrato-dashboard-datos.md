@@ -5,6 +5,8 @@
 **Esquema:** `1.0`
 **Ubicación de entrega:** `tablero/data/v1/`
 
+**Alcance:** este contrato y sus tablas versionadas corresponden al dashboard v1 (piloto ResStock de 10 perfiles). La selección raw final de 10,000 perfiles se mantiene separada en [`datos/releases/resstock-seleccion-final-v2/`](../datos/releases/resstock-seleccion-final-v2/) y en S3 privado; todavía no generó nuevas tablas Gold ni reemplaza los datos del dashboard. Véase la [decisión v2](decision-seleccion-resstock-final-v2.md).
+
 ---
 
 ## 1. Convenciones y principios metodológicos

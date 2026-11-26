@@ -28,5 +28,5 @@ Leyenda: **Confirmado** = visto en la fuente oficial citada. **No confirmado** =
 
 - Las páginas de ResStock se leyeron desde documentación oficial de NLR y OEDI. Se inspeccionó un agregado por estado; no se descargó el conjunto completo ni se inspeccionaron series individuales por vivienda.
 - No se revisó aún la atribución y reutilización específica exigida por EIA ni el aviso de columnas del release ResStock.
-- La granularidad de 15 minutos se verificó también en el archivo de muestra. La escala de 550,000 muestras/~500 GB solo se verificó en la guía técnica, no en una descarga. La cifra de 350.4 millones de filas para 10,000 perfiles es una proyección aritmética de la propuesta, no una cantidad observada.
+- La granularidad de 15 minutos se verificó también en el archivo de muestra. La escala de 550,000 muestras/~500 GB solo se verificó en la guía técnica, no en una descarga. En esta validación inicial, la cifra de 350.4 millones para 10,000 perfiles era una proyección aritmética. El 26-nov-2026 se validó después la ingesta raw de 10,000 perfiles (35,040 filas por objeto) en S3; ese volumen aún no se procesó con Spark.
 - Los términos de uso pueden cambiar; la fecha de consulta es la referencia.

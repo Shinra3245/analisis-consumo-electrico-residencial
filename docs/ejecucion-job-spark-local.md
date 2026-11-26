@@ -43,7 +43,7 @@ El QC de ResStock ya no fija 10 perfiles: el número esperado N sale de un **ros
 "profile_roster": {"bldg_ids": [1234, 5678], "intervals_per_profile": 35040}
 ```
 
-`bldg_ids` son los IDs efectivamente descargados y presentes en el Parquet (no los 10,000 candidatos de `resstock_seleccion_propuesta.csv`). El job exige enteros positivos sin duplicados, `rows == N × 35040`, y que el conjunto de `bldg_id` del Parquet sea idéntico al roster.
+`bldg_ids` son los IDs efectivamente descargados y presentes en el Parquet (no se infieren del tamaño de la selección). El job exige enteros positivos sin duplicados, `rows == N × 35040`, y que el conjunto de `bldg_id` del Parquet sea idéntico al roster. La selección v1 original contenía 10,000 candidatos; la selección raw final v2 ya fue validada en S3, pero todavía no se ejecuta Spark a esa escala.
 
 **Entrada sin roster.** El manifiesto actual de 10 perfiles no tiene `profile_roster`, así que por defecto se rechaza antes de iniciar Spark. Para procesarlo como **piloto legado** hay que pedirlo explícitamente:
 
@@ -83,7 +83,7 @@ PYSPARK_PYTHON=/tmp/bigdata-spark-venv/bin/python \
 | Gold ResStock mensual | Perfil × mes fuente | 120 | `bldg_id`, `source_period`, `state_code`, `housing_type`, `profile_weight`, `kwh_month`, `n_intervals` |
 | Gold EIA mensual | Estado × mes × estado de publicación | 5,304 | `period`, `state_code`, `data_status`, `sales_mwh` |
 
-Para completar Silver ResStock, `state_code`, `housing_type` y `profile_weight` se obtienen de `resstock_seleccion_propuesta.csv` mediante `bldg_id`. El QC verifica que cada perfil del Parquet tenga metadatos válidos y unívocos. El índice tiene 10,000 candidatos; el Parquet procesado contiene 10 perfiles.
+Para completar Silver ResStock, `state_code`, `housing_type` y `profile_weight` se obtienen de la selección correspondiente mediante `bldg_id`. El QC verifica que cada perfil del Parquet tenga metadatos válidos y unívocos. Esta ejecución documenta el piloto procesado de 10 perfiles; la selección v2 con 10,000 raw aceptados en S3 es otro release y aún no se procesó con Spark.
 
 Silver conserva el timestamp fuente como fin de intervalo en EST fijo. El Gold mensual asigna el consumo al intervalo que termina restando 15 minutos. El exportador del tablero convierte ese inicio primero a UTC y después a `America/Denver` o `America/New_York`; deriva de ahí hora, día y mes local, conserva el offset y marca meses parciales. EIA conserva `Final`/`Preliminary`; clima permanece separado y en UTC.
 
@@ -122,7 +122,7 @@ La salida está en `/tmp/bigdata-spark-piloto-final-20261118` en el entorno dond
 
 ### Prueba de escala con 50 perfiles (26-nov-2026)
 
-Se amplió la cadena con 50 perfiles descargados y aceptados por el ingestor. La primera ejecución se detuvo al llegar al límite de bytes por ejecución, tras 29 perfiles; se reanudó con `--continuar` y un nuevo tope. El resumen final registró 50/50 aceptados, 0 rechazados, 0 fallidos, 0 conflictos y 9,950 candidatos aún sin intentar. Los crudos permanecen localmente bajo `data/raw/` (ignorado por Git).
+Se amplió la cadena local con 50 perfiles descargados y aceptados por el ingestor. La primera ejecución se detuvo al llegar al límite de bytes por ejecución, tras 29 perfiles; se reanudó con `--continuar` y un nuevo tope. El resumen de esa corrida registró 50/50 aceptados, 0 rechazados, 0 fallidos y 0 conflictos. En ese corte histórico quedaban 9,950 IDs sin intentar; después se completó la ingesta raw de la selección final v2 en S3. Los crudos de esta prueba local permanecen bajo `data/raw/` (ignorado por Git).
 
 El adaptador y `preparar_entrada_spark.py` generaron la entrada de Spark bajo `/tmp/omar-escala50-final-20261126/`. Con PySpark 4.0.1, Java 17 y `local[2]`, el job finalizó en 34.4 s con RSS máximo reportado de 119 MB y estado `VALID_WITH_WARNINGS`: 21 reglas aprobadas, 0 fallidas y 2 advertencias metodológicas (clima desacoplado y hora UTC exacta de descarga no registrada). Se cotejaron roster, tamaños, filas y SHA-256 de cada archivo físico contra sus manifiestos; no hubo discrepancias.
 
@@ -149,7 +149,7 @@ PYSPARK_PYTHON=/tmp/bigdata-spark-validate-venv/bin/python \
   --master 'local[2]'
 ```
 
-Spark 4.0.1 terminó con `VALID_WITH_WARNINGS`: 21 reglas aprobadas, 0 fallidas y 2 advertencias metodológicas (la muestra climática permanece separada y el manifiesto no conserva la hora UTC exacta de descarga). Se inspeccionaron los Parquet y se cotejaron filas, esquemas y SHA-256 con `manifiesto_ejecucion.json`: Silver ResStock 35,040; Silver EIA 5,304; Silver clima 336; Gold ResStock mensual 12; Gold EIA mensual 5,304. La salida temporal no está versionada ni se subió a S3. Esta ejecución valida un perfil; no demuestra escalabilidad del lote de 50, los 10,000 candidatos ni ejecución en AWS/EMR.
+Spark 4.0.1 terminó con `VALID_WITH_WARNINGS`: 21 reglas aprobadas, 0 fallidas y 2 advertencias metodológicas (la muestra climática permanece separada y el manifiesto no conserva la hora UTC exacta de descarga). Se inspeccionaron los Parquet y se cotejaron filas, esquemas y SHA-256 con `manifiesto_ejecucion.json`: Silver ResStock 35,040; Silver EIA 5,304; Silver clima 336; Gold ResStock mensual 12; Gold EIA mensual 5,304. La salida temporal no está versionada ni se subió a S3. Esta ejecución valida un perfil; no demuestra Spark a escala 10,000 ni ejecución administrada en AWS/EMR.
 
 ## Exportación para el tablero web (`tablero/data/v1/`)
 

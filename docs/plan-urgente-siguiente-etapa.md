@@ -1,5 +1,7 @@
 # Plan urgente de la siguiente etapa
 
+> **Estado actualizado (26-nov-2026):** este documento conserva la planificación y los cortes históricos de la ruta local. Desde entonces, la ingesta raw final de 10,000 perfiles se completó en S3 privado y se validó un lote real de 5 perfiles con Spark en CloudShell (21/21 QC). El procesamiento de los 10,000 sigue pendiente. Usa [`plan-definitivo-general.md`](plan-definitivo-general.md) y [`plan-bloque-omar.md`](plan-bloque-omar.md) como estado vigente.
+
 ## Propósito y criterio de prioridad
 
 Este plan convierte en trabajo ejecutable los cinco pendientes de integración y escalamiento. La prioridad refleja dependencias técnicas, riesgo y capacidad de desbloquear otros bloques; **no asigna fechas de entrega**. El plan sigue la propuesta V2 aprobada y las especificaciones de tablero y contratos Gold ya integradas en `main`.

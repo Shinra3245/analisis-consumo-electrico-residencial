@@ -18,7 +18,7 @@ La plantilla de Big Data contiene doce secciones. Este plan contribuye a objetiv
 4. **Prevenir fuga de información.** Ningún atributo observado después de la fecha de predicción puede utilizarse como entrada de una predicción histórica. Los meses de prueba se conservan fuera del ajuste y selección del modelo.
 5. **Separar predicción de escenario.** Una estimación condicionada a clima observado no es un pronóstico operativo. Una previsión meteorológica de pocos días no sustenta por sí sola un pronóstico de energía anual.
 6. **Etiquetar el nivel de evidencia.** Usar `VERIFICADO`, `PARCIAL`, `CANDIDATO`, `SINTÉTICO`, `NO REPRODUCIDO` o `PENDIENTE` según corresponda. Una alerta estadística no demuestra una anomalía real ni una falla eléctrica.
-7. **No ampliar sin medición.** Los 10,000 identificadores ResStock son candidatos, no perfiles descargados. La muestra local de 50 perfiles equivale a 1,752,000 intervalos; el paquete versionado en Git/S3 contiene 10 perfiles (350,400 intervalos).
+7. **Distinguir raw de procesado.** La selección final v2 ya tiene 10,000 perfiles raw validados en S3 (350,400,000 intervalos, 35,040 por perfil); el job Spark/QC Silver/Gold a esa escala sigue pendiente. El lote local de 50 perfiles equivale a 1,752,000 intervalos y el dashboard versionado conserva el piloto de 10 (350,400 intervalos).
 8. **Mantener AWS privado y acotado.** No hacer público el bucket para facilitar una demostración. No subir secretos. Los archivos fuente solo se conservarán o redistribuirán si su licencia y las reglas del proyecto lo permiten.
 
 ## 3. Estado de partida conocido
