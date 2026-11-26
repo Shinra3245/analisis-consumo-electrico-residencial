@@ -1,4 +1,3 @@
-import { DATA_BASE, SCHEMA_VERSION, TABLES } from './config.js';
 import { loadAll, store, rowsOf, statusOf, ensureTable } from './data.js';
 import { esc, nf, lineChart, barChart, heatmap, scatterChart } from './charts.js';
 import { isoHouse } from './iso.js';
@@ -7,11 +6,11 @@ import { isoHouse } from './iso.js';
 const ico = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const VIEWS = [
   { id: 'resumen', label: 'Resumen', short: 'Resumen', icon: ico('<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>'), q: 'Cuánta electricidad se vende a los hogares y de dónde salen los datos.' },
-  { id: 'patrones', label: 'Patrones de consumo', short: 'Patrones', icon: ico('<path d="M3 17l5-6 4 3 5-8 4 5"/><path d="M3 21h18"/>'), q: 'Cuándo y dónde se usa más electricidad.' },
+  { id: 'patrones', label: 'Patrones de consumo', short: 'Patrones', icon: ico('<path d="M3 17l5-6 4 3 5-8 4 5"/><path d="M3 21h18"/>'), q: 'Cambios por mes, tipo de vivienda y hora del día.' },
   { id: 'clima', label: 'Clima', short: 'Clima', icon: ico('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/>'), q: 'Temperaturas disponibles y por qué aún no se cruzan con el consumo.' },
   { id: 'anomalias', label: 'Meses atípicos', short: 'Atípicos', icon: ico('<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17v.5"/>'), q: 'Meses con cambios fuera de lo habitual, para revisar.' },
-  { id: 'estimaciones', label: 'Estimaciones', short: 'Estimar', icon: ico('<path d="M3 20V8M9 20V4M15 20v-9M21 20V12"/>'), q: 'Qué tan bien acierta un modelo sencillo en meses ya conocidos.' },
-  { id: 'calidad', label: 'Calidad de datos', short: 'Calidad', icon: ico('<path d="M9 12l2 2 4-4"/><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/>'), q: 'Origen, cobertura y verificación de cada tabla.' },
+  { id: 'estimaciones', label: 'Estimaciones', short: 'Estimar', icon: ico('<path d="M3 20V8M9 20V4M15 20v-9M21 20V12"/>'), q: 'Comparación del cálculo con ventas reales de meses anteriores.' },
+  { id: 'calidad', label: 'Calidad de datos', short: 'Calidad', icon: ico('<path d="M9 12l2 2 4-4"/><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/>'), q: 'De dónde vienen los datos, qué periodo cubren y cómo se revisaron.' },
 ];
 const state = {
   view: 'resumen',
@@ -31,10 +30,11 @@ const state = {
   demoIncludeDc: false,
 };
 const $ = (s) => document.querySelector(s);
+let pendingDropdownFocus = null;
 const SRC = {
   eia: { cls: 'eia', name: 'EIA-861M', kind: 'ventas oficiales agregadas' },
-  res: { cls: 'res', name: 'ResStock 2018', kind: 'simulación (modelado)' },
-  clim: { cls: 'clim', name: 'Open-Meteo ERA5-Land', kind: 'reanálisis' },
+  res: { cls: 'res', name: 'ResStock 2018', kind: 'viviendas simuladas' },
+  clim: { cls: 'clim', name: 'Open-Meteo', kind: 'temperatura estimada' },
   demo: { cls: 'demo', name: 'Census PEP + EIA', kind: 'oficial anual' },
 };
 
@@ -54,18 +54,28 @@ const STATE_NAMES = {
 };
 const jurisdictionName = (c) => STATE_NAMES[c] || c;
 const HOUSING_TYPE_LABELS = {
-  'Mobile Home': 'Casa móvil (Mobile Home)',
-  'Single-Family Detached': 'Unifamiliar aislada (Single-Family Detached)',
-  'Single-Family Attached': 'Unifamiliar adosada (Single-Family Attached)',
-  'Multi-Family with 2 - 4 Units': 'Multifamiliar (2 a 4 unidades de vivienda)',
-  'Multi-Family with 5+ Units': 'Multifamiliar (5 o más unidades de vivienda)',
+  'Mobile Home': 'Casa móvil',
+  'Single-Family Detached': 'Casa unifamiliar aislada',
+  'Single-Family Attached': 'Casa unifamiliar adosada',
+  'Multi-Family with 2 - 4 Units': 'Vivienda multifamiliar (2 a 4 unidades)',
+  'Multi-Family with 5+ Units': 'Vivienda multifamiliar (5 o más unidades)',
 };
 const housingTypeName = (t) => HOUSING_TYPE_LABELS[t] || t;
+const timezoneName = (z) => ({
+  'America/Denver': 'Hora de la montaña', 'America/Chicago': 'Hora central',
+  'America/New_York': 'Hora del este', 'America/Los_Angeles': 'Hora del Pacífico',
+  'America/Phoenix': 'Hora de Arizona',
+}[z] || 'Hora local');
+const climatePlaceName = (id) => ({ denver: 'Denver', denver_co: 'Denver', grand_junction: 'Grand Junction', grand_junction_co: 'Grand Junction' }[String(id).toLowerCase()] || 'Ubicación de Colorado');
 const chip = (src, parts) => { const s = SRC[src]; return `<span class="chip ${s.cls}"><i></i><b>${esc(s.name)}</b> · ${esc(s.kind)}${parts.map((p) => ` · ${esc(p)}`).join('')}</span>`; };
 const preChip = (t) => `<span class="chip pre"><b>Preliminar</b> · ${esc(t)}</span>`;
-const stateName = (s) => (s === 'ALL' ? 'Suma 51 jurisdicciones' : s);
+const stateName = (s) => (s === 'ALL' ? 'Todo EE. UU.' : jurisdictionName(s));
 const cmp = (v) => (Math.abs(v) >= 1e6 ? `${nf(v / 1e6, v % 1e6 ? 1 : 0)} M` : Math.abs(v) >= 1e4 ? `${nf(v / 1e3)} mil` : nf(v));
+const SQMI_TO_KM2 = 2.589988110336;
 const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const monthLabel = (period) => `${MES[Number(period.slice(5, 7)) - 1]} ${period.slice(0, 4)}`;
+const dateLabel = (value) => new Date(`${value.slice(0, 10)}T12:00:00Z`).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+const dateTimeLabel = (value) => new Date(value).toLocaleString('es-MX', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
 const inRange = (p) => p >= state.from && p <= state.to; // p = 'YYYY-MM'
 
 /* ---------- datos derivados ---------- */
@@ -126,40 +136,40 @@ function slot(fn, aria) {
 }
 function dataTable(head, rows, max = 80) {
   const body = rows.slice(0, max).map((r) => `<tr>${r.map((c, i) => `<td${typeof c === 'number' ? ' class="n"' : ''}>${typeof c === 'number' ? nf(c, 2) : esc(c)}</td>`).join('')}</tr>`).join('');
-  return `<details class="data"><summary>Ver datos de la gráfica (${rows.length} filas${rows.length > max ? `, primeras ${max}` : ''})</summary><div class="tbl-wrap"><table class="t"><thead><tr>${head.map((h) => `<th scope="col">${esc(h)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div></details>`;
+  return `<details class="data"><summary>Ver tabla de datos${rows.length > max ? ` (primeros ${max})` : ''}</summary><div class="tbl-wrap"><table class="t"><thead><tr>${head.map((h) => `<th scope="col">${esc(h)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div></details>`;
 }
-const card = ({ id, q, accent = 'none', body, chips = '', limit = '', more = '', cls = '' }) => `<section class="card accent-${accent} ${cls}" ${id ? `aria-labelledby="h-${id}"` : ''}><header class="card-h"><h2 id="h-${id}">${esc(q)}</h2>${id ? `<span class="cid" title="Referencia del requisito">${id}</span>` : ''}</header><div class="card-b">${body}</div>${limit ? `<p class="limit"><span class="limit-i" aria-hidden="true">i</span><span>${limit}</span></p>` : ''}${more ? `<details class="more"><summary>Más detalle</summary><p>${more}</p></details>` : ''}${chips ? `<div class="chips" aria-label="Fuente y unidades">${chips}</div>` : ''}</section>`;
+const card = ({ id, q, accent = 'none', body, chips = '', limit = '', more = '', cls = '' }) => `<section class="card accent-${accent} ${cls}" ${id ? `aria-labelledby="h-${id}"` : ''}><header class="card-h"><h2 id="h-${id}">${esc(q)}</h2></header><div class="card-b">${body}</div>${limit ? `<p class="limit"><span class="limit-i" aria-hidden="true">i</span><span>${limit}</span></p>` : ''}${more ? `<details class="more"><summary>Más detalle</summary><p>${more}</p></details>` : ''}${chips ? `<div class="chips" aria-label="Fuente y unidades">${chips}</div>` : ''}</section>`;
 const empty = (title, text, extra = '', err = false) => `<div class="empty ${err ? 'err' : ''}" role="status"><strong>${esc(title)}</strong>${text}${extra}</div>`;
-const pendingTables = (names) => `<ul>${names.map((n) => `<li><code>${n}</code> — ${statusLabel(n)}</li>`).join('')}</ul>`;
+const DATA_LABELS = {
+  gold_eia_monthly: 'Ventas mensuales de electricidad', gold_resstock_monthly: 'Consumo mensual de viviendas simuladas',
+  gold_resstock_pattern: 'Horarios de viviendas simuladas', gold_resstock_pattern_aggregate: 'Resumen de horarios simulados',
+  gold_resstock_profile_summary: 'Resumen de viviendas simuladas', gold_climate: 'Temperaturas consultadas',
+  gold_demography_state_year: 'Población y ventas por habitante', gold_anomaly_candidates: 'Cambios que conviene revisar',
+  gold_anomaly_synthetic_eval: 'Prueba del detector', gold_forecast_metrics: 'Evaluación de estimaciones',
+  gold_forecast_series: 'Ventas observadas y estimadas',
+};
+const pendingTables = (names) => `<ul class="friendly-list">${names.map((n) => `<li>${esc(DATA_LABELS[n] || 'Información de esta sección')}: ${statusLabel(n)}</li>`).join('')}</ul>`;
 function statusLabel(n) {
   const s = store.tables[n];
-  if (!s) return store.entries?.[n] ? 'listada en el manifiesto; esta versión del tablero aún no la grafica' : 'no entregada todavía';
-  if (s.status === 'lazy') return 'bajo demanda (inspección individual)';
-  if (s.status === 'loading') return 'cargando…';
-  return { ok: 'cargada', pending: 'no entregada todavía', error: s.message }[s.status] || s.status;
+  if (!s) return store.entries?.[n] ? 'disponible para consultar' : 'aún no disponible';
+  if (s.status === 'lazy') return 'disponible al abrir esta sección';
+  if (s.status === 'loading') return 'cargando';
+  return { ok: 'disponible', pending: 'aún no disponible', error: 'no pudo verificarse y se omitió para evitar mostrar cifras incorrectas' }[s.status] || 'en revisión';
 }
 /** Estado vacío/err de una o varias tablas requeridas. Devuelve null si todo está disponible. */
 function needTables(names, what) {
   const bad = names.filter((n) => statusOf(n) !== 'ok');
   if (!bad.length) return null;
   const loading = bad.some((n) => statusOf(n) === 'loading');
-  if (loading) return empty(`Cargando datos de ${what}…`, 'Descargando datos y verificando integridad contra manifiesto.');
+  if (loading) return empty('Cargando información…', `Estamos preparando los datos de ${what}.`);
   const err = bad.some((n) => statusOf(n) === 'error');
-  return empty(err ? `No se pudo cargar los datos de ${what}` : `${what[0].toUpperCase()}${what.slice(1)}: esperando datos`,
-    err ? 'Falló la lectura o validación; no se muestran cifras.' : 'El bloque de datos aún no entrega esta tabla; no se muestran cifras de relleno.', pendingTables(bad), err);
+  return empty(err ? 'Información no disponible por ahora' : 'Esta información aún no está disponible',
+    err ? 'No mostramos cifras porque no se pudieron verificar.' : 'Esta sección aparecerá cuando sus datos estén disponibles.', pendingTables(bad), err);
 }
-const noResState = () => empty(`No hay perfiles ResStock para ${state.st === 'ALL' ? 'este filtro' : state.st}${state.type !== 'ALL' ? ` · ${state.type}` : ''} en el piloto`,
-  `Disponibles: ${resStates().join(', ') || '—'}${state.type !== 'ALL' ? '. Prueba con “Todos” en tipo de vivienda.' : '.'}`);
+const noResState = () => empty(`No hay viviendas simuladas para ${state.st === 'ALL' ? 'este filtro' : jurisdictionName(state.st)}${state.type !== 'ALL' ? ` · ${housingTypeName(state.type)}` : ''}`,
+  `Disponibles en ${resStates().map(jurisdictionName).join(' y ') || 'ningún estado'}${state.type !== 'ALL' ? '. Prueba con “Todos” en tipo de vivienda.' : '.'}`);
 
 /* ---------- Selector visual de tipo de vivienda ---------- */
-const TYPE_SHORT = { 'Mobile Home': 'Móvil', 'Single-Family Detached': 'Aislada', 'Single-Family Attached': 'Adosada', 'Multi-Family with 2 - 4 Units': '2–4 unid.', 'Multi-Family with 5+ Units': '5+ unid.' };
-function typePicker() {
-  const types = resTypes();
-  if (!types.length) return '';
-  const b = (v, l, t) => `<button type="button" data-pick-type="${esc(v)}" aria-pressed="${state.type === v}" title="${esc(t)}">${esc(l)}</button>`;
-  return `<div class="type-pick" role="group" aria-label="Filtrar por tipo de vivienda">${b('ALL', 'Todos', 'Todos los tipos')}${types.map((t) => b(t, TYPE_SHORT[t] || t, housingTypeName(t))).join('')}</div>`;
-}
-
 /* ---------- Resumen ---------- */
 function viewResumen() {
   const showAll = state.source === 'ALL';
@@ -168,13 +178,13 @@ function viewResumen() {
   const p = currentProfile();
   const ht = p?.housing_type;
   const heroMeta = p
-    ? `<p class="eyebrow">Vivienda simulada · ResStock #${esc(p.bldg_id)}</p><h2 class="hero-t">${esc(housingTypeName(p.housing_type))} · ${esc(jurisdictionName(p.state_code))}</h2>
+    ? `<p class="eyebrow">Vivienda simulada · ResStock</p><h2 class="hero-t">${esc(housingTypeName(p.housing_type))} · ${esc(jurisdictionName(p.state_code))}</h2>
        <p class="sub">Vivienda <strong>modelada</strong> (${esc(p.source_year)}), no una casa real medida.</p>
-       <dl class="kv"><div><dt>Al año</dt><dd>${nf(p.annual_kwh)} <small>kWh</small></dd></div><div><dt>Por hora, en promedio</dt><dd>${nf(p.mean_hour_kwh, 2)} <small>kWh</small></dd></div><div><dt>Hora de mayor uso</dt><dd>${nf(p.peak_hour_kwh, 2)} <small>kWh</small></dd></div></dl>
+       <dl class="kv"><div><dt>Al año</dt><dd>${nf(p.annual_kwh)} <small>kWh</small></dd></div><div><dt>Por hora, en promedio</dt><dd>${nf(p.mean_hour_kwh, 2)} <small>kWh</small></dd></div><div><dt>Pico en una hora</dt><dd>${nf(p.peak_hour_kwh, 2)} <small>kWh</small></dd></div></dl>
        <div class="chips">${chip('res', ['kWh', `${p.source_year}`, '1 vivienda simulada'])}</div>`
     : `<p class="eyebrow">Ilustración de referencia</p><h2 class="hero-t">No hay viviendas simuladas para este filtro</h2>
        <p class="sub">${statusOf('gold_resstock_profile_summary') === 'ok' ? `Las simulaciones solo cubren ${esc(resStates().map(jurisdictionName).join(' y '))}. ` : 'La tabla de viviendas simuladas aún no está disponible. '}La ilustración no muestra cifras.</p>`;
-  out.push(`<section class="card hero" aria-label="Tipo de vivienda"><div class="iso-wrap">${isoHouse(ht)}${typePicker()}<p class="iso-cap">Exterior ilustrativo; sin consumo por cuarto.</p></div><div class="meta">${heroMeta}</div></section>`);
+  out.push(`<section class="card hero" aria-label="Tipo de vivienda"><div class="iso-wrap">${isoHouse(ht)}<p class="iso-cap">Ilustración de referencia.</p></div><div class="meta">${heroMeta}</div></section>`);
 
   const cards = [];
   if (showAll || state.source === 'eia') {
@@ -192,14 +202,14 @@ function viewResumen() {
       cards.push(card({
         id: 'R1a', q: `Electricidad vendida a hogares en ${y}`, accent: 'eia',
         body: `<div class="big">${nf(tot)}<span class="unit" title="1 MWh = 1,000 kWh">MWh</span></div><p class="sub stat">${esc(stateName(state.st))} · ${rows.length === 12 ? 'año completo' : `<strong>parcial: ${rows.length} de 12 meses</strong>`}${pre ? ` · ${pre} meses preliminares` : ''}</p>`,
-        chips: `<span class="chip eia"><i></i><b>Fuente: EIA-861M</b> · ${esc(rows[0].period)} a ${esc(rows[rows.length - 1].period)}</span>` + (pre ? preChip('puede cambiar') : ''),
+        chips: `<span class="chip eia"><i></i><b>Fuente: EIA-861M</b> · ${monthLabel(rows[0].period)} a ${monthLabel(rows[rows.length - 1].period)}</span>` + (pre ? preChip('puede cambiar') : ''),
         limit: 'Ventas reportadas por compañías eléctricas; no son consumo por hogar.',
       }));
       const fin = s.filter((r) => r.status === 'Final').length, prel = s.length - fin;
       cards.push(card({
-        id: 'R1b', q: 'Meses con datos en el periodo', accent: 'eia',
-        body: `<div class="big">${nf(fin)}<span class="unit">definitivos</span></div><p class="sub">${nf(prel)} preliminares${state.prelim ? '' : ' (ocultos por el filtro)'}; EIA aún puede corregirlos.</p>`,
-        chips: `<span class="chip eia"><i></i><b>EIA-861M</b> · ${esc(state.from)} a ${esc(state.to)}</span>`, more: 'El detalle de meses por estado y año está en la vista Calidad.',
+        id: 'R1b', q: 'Meses publicados por EIA', accent: 'eia',
+        body: `<div class="big">${nf(fin)}<span class="unit">confirmados</span></div><p class="sub">${nf(prel)} provisionales${state.prelim ? '' : ' ocultos'}; pueden cambiar en próximas publicaciones.</p>`,
+        chips: `<span class="chip eia"><i></i><b>EIA-861M</b> · ${monthLabel(state.from)} a ${monthLabel(state.to)}</span>`, more: 'El detalle de meses por estado y año está en la vista Calidad.',
       }));
     }
   }
@@ -210,8 +220,8 @@ function viewResumen() {
       const total = rowsOf('gold_resstock_profile_summary').length, ps = profiles();
       cards.push(card({
         id: 'R1c', q: 'Viviendas simuladas disponibles', accent: 'res',
-        body: `<div class="big">${nf(ps.length)}<span class="unit">de ${nf(total)} simulaciones</span></div><p class="sub">${esc(state.st === 'ALL' ? 'Estados del piloto' : state.st)}${state.type === 'ALL' ? '' : ` · ${esc(state.type)}`}</p>`,
-        chips: `<span class="chip res"><i></i><b>ResStock 2018</b> · ${esc(resStates().join('/'))}</span>`, limit: 'Muestra simulada: no representa al estado ni al país.',
+        body: `<div class="big">${nf(ps.length)}<span class="unit">de ${nf(total)} viviendas</span></div><p class="sub">${esc(state.st === 'ALL' ? 'Estados incluidos' : jurisdictionName(state.st))}${state.type === 'ALL' ? '' : ` · ${esc(housingTypeName(state.type))}`}</p>`,
+        chips: `<span class="chip res"><i></i><b>ResStock · 2018</b> · ${esc(resStates().map(jurisdictionName).join(' y '))}</span>`, limit: 'Muestra simulada; no representa al estado ni al país.',
       }));
     }
   }
@@ -222,18 +232,18 @@ function viewResumen() {
       const all = rowsOf('gold_climate'), pts = new Set(all.map((r) => r.point_id)), ts = all.map((r) => r.timestamp_utc).sort();
       cards.push(card({
         id: 'R1d', q: 'Datos de clima disponibles', accent: 'clim',
-        body: `<div class="big">${pts.size}<span class="unit">puntos</span></div><p class="sub">Solo ${[...new Set(all.map((r) => r.state_code))].join(', ')} · ${nf(all.length)} lecturas horarias</p>`,
-        chips: `<span class="chip clim"><i></i><b>Open-Meteo ERA5-Land</b> · ${ts[0].slice(0, 10)} a ${ts[ts.length - 1].slice(0, 10)} UTC</span>`, limit: 'Reanálisis, no estaciones; se muestra aparte del consumo.',
+      body: `<div class="big">${pts.size}<span class="unit">ubicaciones</span></div><p class="sub">Colorado · ${nf(all.length)} temperaturas por hora</p>`,
+        chips: `<span class="chip clim"><i></i><b>Open-Meteo</b> · ${dateLabel(ts[0])} a ${dateLabel(ts.at(-1))}</span>`, limit: 'Temperatura estimada; se presenta por separado de la electricidad.',
       }));
     }
   }
   if (showAll) {
     const fc = store.manifest?.analytics?.forecast;
     cards.push(card({
-      id: 'R1e', q: 'Error típico del modelo de estimación', accent: 'none',
-      body: fc ? `<div class="big">${nf(fc.median_model_smape_pct, 2)}<span class="unit">%</span></div><p class="sub">sMAPE mediano · mejor que la referencia simple en ${nf(fc.states_model_beats_naive)} de ${nf(fc.state_count)}</p>` : empty('Pendiente', 'No hay un backtest Gold disponible.'),
-      chips: fc ? `<span class="chip eia"><i></i><b>EIA-861M</b> · backtest ${esc(fc.holdout[0])} a ${esc(fc.holdout[1])}</span>` : '',
-      limit: 'Evaluado con meses ya conocidos; no es un pronóstico del futuro.',
+      id: 'R1e', q: 'Qué tan cerca estuvieron las estimaciones', accent: 'none',
+      body: fc ? `<div class="big">${nf(fc.median_model_smape_pct, 2)}<span class="unit">%</span></div><p class="sub">Diferencia típica frente a las ventas reales; menor es mejor.</p>` : empty('Pendiente', 'La evaluación de estimaciones aún no está disponible.'),
+      chips: fc ? `<span class="chip eia"><i></i><b>EIA-861M</b> · evaluación ${esc(fc.holdout[0])}–${esc(fc.holdout[1])}</span>` : '',
+      limit: 'Compara meses ya ocurridos; no es un pronóstico futuro.',
     }));
   }
   if (showAll || state.source === 'demo') {
@@ -250,14 +260,14 @@ function viewResumen() {
         const avgKwh = totPop > 0 ? (totMwh * 1000) / totPop : 0;
         cards.push(card({
           id: 'R1f', q: 'Electricidad por habitante, 2025', accent: 'demo',
-          body: `<div class="big">${nf(avgKwh, 1)}<span class="unit">kWh/hab</span></div><p class="sub">50 estados + DC · ${nf(totPop)} residentes (1 jul 2025)</p>`,
+          body: `<div class="big">${nf(avgKwh, 1)}<span class="unit">kWh por persona</span></div><p class="sub">50 estados + DC · ${nf(totPop)} residentes (2025)</p>`,
           chips: '<span class="chip demo"><i></i><b>Census PEP V2025 + EIA-861M</b> · 2025</span>',
           limit: 'Ventas a hogares ÷ población; no es la factura de un hogar.',
         }));
       } else if (stRow) {
         cards.push(card({
-          id: 'R1f', q: `Electricidad por habitante, 2025 · ${stRow.state_code}`, accent: 'demo',
-          body: `<div class="big">${nf(stRow.residential_kwh_per_capita, 1)}<span class="unit">kWh/hab</span></div><p class="sub">${jurisdictionName(stRow.state_code)}: ${nf(stRow.population_estimate)} hab. · ${nf(stRow.population_density_per_sq_mi, 1)} hab./mi² (año 2025).</p>`,
+          id: 'R1f', q: `Electricidad por habitante, 2025 · ${jurisdictionName(stRow.state_code)}`, accent: 'demo',
+          body: `<div class="big">${nf(stRow.residential_kwh_per_capita, 1)}<span class="unit">kWh por persona</span></div><p class="sub">${jurisdictionName(stRow.state_code)} · ${nf(stRow.population_estimate)} residentes · ${nf(stRow.population_density_per_sq_mi / SQMI_TO_KM2, 1)} personas/km²</p>`,
           chips: `<span class="chip demo"><i></i><b>Census PEP + EIA-861M</b> · 2025 · ${nf(stRow.residential_sales_mwh)} MWh</span>`,
           limit: 'Ventas a hogares ÷ población; descriptivo, no explica causas.',
         }));
@@ -266,16 +276,16 @@ function viewResumen() {
   }
   out.push(`<div class="grid g4">${cards.join('')}</div>`);
 
-  // R2: cobertura, sin razón
+  // Comparación de alcance: dos conjuntos distintos, sin presentarlos como una misma población.
   if (showAll || state.source === 'eia' || state.source === 'res') {
     const co = eiaIdx?.get('CO');
     const tot = co ? [...co.entries()].filter(([p]) => p.startsWith('2018')) : [];
     out.push(card({
       id: 'R2', q: '¿Se pueden comparar las simulaciones con las ventas reales?', accent: 'none',
-      body: `${empty('No directamente', 'ResStock simula pocas viviendas; EIA reporta ventas de todo el estado. No se publica una razón entre ambas.')}
-      <div class="tbl-wrap" style="max-height:none"><table class="t wrap"><caption class="sr">Cobertura de cada fuente</caption><thead><tr><th scope="col">Fuente</th><th scope="col">Población</th><th scope="col">Periodo</th><th scope="col">Cobertura</th></tr></thead><tbody>
-      <tr><td>${chip('eia', [])}</td><td>Ventas de todo el estado (CO)</td><td>2018</td><td>${tot.length ? `${tot.length} meses · ${nf(tot.reduce((a, [, v]) => a + v.mwh, 0))} MWh` : 'sin datos'}</td></tr>
-      <tr><td>${chip('res', [])}</td><td>${(() => { const n = (resSummary() || []).filter((r) => r.state_code === 'CO').length; return n ? `${n} perfiles modelados de CO (no solo unifamiliar aislada)` : 'perfiles piloto no disponibles'; })()}</td><td>2018 (EST fijo)</td><td>Piloto exploratorio; sin ponderación válida</td></tr></tbody></table></div>`,
+      body: `${empty('Miden cosas distintas', 'EIA reúne las ventas de todo el estado. ResStock simula viviendas de ejemplo; sus resultados no representan las ventas estatales.')}
+      <div class="tbl-wrap" style="max-height:none"><table class="t wrap"><caption class="sr">Qué representa cada fuente en Colorado durante 2018</caption><thead><tr><th scope="col">Fuente</th><th scope="col">Qué representa</th><th scope="col">Periodo</th><th scope="col">Para qué sirve</th></tr></thead><tbody>
+      <tr><td>EIA-861M</td><td>Ventas eléctricas residenciales de Colorado</td><td>Ene–dic 2018</td><td>Observar el total estatal</td></tr>
+      <tr><td>ResStock</td><td>${(() => { const n = (resSummary() || []).filter((r) => r.state_code === 'CO').length; return n ? `${n} viviendas simuladas de Colorado` : 'Viviendas simuladas de Colorado'; })()}</td><td>2018</td><td>Explorar perfiles de consumo</td></tr></tbody></table></div>`,
       more: 'Se usa Colorado 2018 como ejemplo porque ahí coinciden ambas fuentes. La cifra preliminar 87.16 % no se reprodujo y no mide precisión.',
     }));
   }
@@ -284,13 +294,13 @@ function viewResumen() {
   out.push(card({
     id: 'R3', q: '¿Cómo leer estas cifras?', accent: 'none',
     body: `<div class="dim-grid">
-      <div class="dim-card"><span class="dot eia"></span><b>Ventas EIA (MWh)</b><div class="sub">Total mensual vendido a los hogares de un estado (1 MWh = 1,000 kWh).</div></div>
-      <div class="dim-card"><span class="dot res"></span><b>Viviendas simuladas ResStock (kWh)</b><div class="sub">Viviendas tipo modeladas (2018) para ver formas y horarios.</div></div>
-      <div class="dim-card"><span class="dot demo"></span><b>Por habitante (kWh/hab)</b><div class="sub">Ventas anuales ÷ población, para comparar estados.</div></div>
-      <div class="dim-card"><span class="dot clim"></span><b>Clima (°C)</b><div class="sub">Temperatura horaria de reanálisis, pocos puntos y días.</div></div>
+      <div class="dim-card"><span class="dot eia"></span><b>Ventas de electricidad (MWh)</b><div class="sub">Total mensual que las compañías reportan para los hogares de un estado. 1 MWh = 1,000 kWh.</div></div>
+      <div class="dim-card"><span class="dot res"></span><b>Consumo de viviendas simuladas (kWh)</b><div class="sub">Perfiles de viviendas modeladas en 2018 para explorar cuándo y cuánto consumen.</div></div>
+      <div class="dim-card"><span class="dot demo"></span><b>Electricidad por habitante</b><div class="sub">Ventas residenciales divididas entre la población. Ayuda a comparar estados de distinto tamaño.</div></div>
+      <div class="dim-card"><span class="dot clim"></span><b>Temperatura (°C)</b><div class="sub">Clima horario consultado en dos ubicaciones; se presenta separado del consumo.</div></div>
     </div>`,
     limit: 'Las fuentes no se suman entre sí y ninguna comparación implica causa.',
-    more: 'Periodos: EIA 2018–2026, ResStock 2018, clima 1–7 ene 2018. Washington D.C. (DC) es un distrito federal, no un estado.',
+    more: 'Periodos disponibles: ventas EIA de 2018 a 2026; viviendas simuladas de 2018; temperaturas del 1 al 7 de enero de 2018. Washington D. C. es un distrito federal.',
   }));
   return out.join('');
 }
@@ -306,15 +316,15 @@ function viewPatrones() {
   const p = currentProfile();
   const heroHt = isIndividual ? p?.housing_type : (state.type !== 'ALL' ? state.type : p?.housing_type);
   const heroTitle = isIndividual
-    ? `${esc(housingTypeName(p?.housing_type || ''))} · ${esc(p?.state_code || '')}`
-    : (state.type !== 'ALL' ? `${esc(housingTypeName(state.type))} · ${esc(state.st === 'ALL' ? 'Muestra general' : state.st)}` : `Todos los tipos de vivienda · ${esc(state.st === 'ALL' ? 'Todos los estados' : jurisdictionName(state.st))}`);
+    ? `${esc(housingTypeName(p?.housing_type || ''))} · ${esc(jurisdictionName(p?.state_code || ''))}`
+    : (state.type !== 'ALL' ? `${esc(housingTypeName(state.type))} · ${esc(state.st === 'ALL' ? 'Muestra general' : jurisdictionName(state.st))}` : `Todos los tipos de vivienda · ${esc(state.st === 'ALL' ? 'Todos los estados' : jurisdictionName(state.st))}`);
   const heroSub = isIndividual
-    ? `Una vivienda simulada (#${esc(p?.bldg_id)}).`
+    ? 'Vista individual de una vivienda simulada.'
     : `Promedio de las viviendas simuladas del filtro.`;
   const heroChip = isIndividual
-    ? (p ? chip('res', ['kWh', '1 vivienda simulada']) : '')
+    ? (p ? chip('res', ['kWh', 'vivienda simulada']) : '')
     : chip('res', ['kWh', 'promedio de la muestra']);
-  const hero = `<section class="card hero" aria-label="Tipo de vivienda"><div class="iso-wrap">${isoHouse(heroHt)}${isIndividual ? '' : typePicker()}<p class="iso-cap">Exterior ilustrativo; sin consumo por cuarto.</p></div><div class="meta"><p class="eyebrow">${isIndividual ? 'Una vivienda simulada' : 'Viviendas simuladas · promedio'}</p><h2 class="hero-t">${heroTitle}</h2><p class="sub">${heroSub}</p><div class="chips">${heroChip}</div></div></section>`;
+  const hero = `<section class="card hero" aria-label="Tipo de vivienda"><div class="iso-wrap">${isoHouse(heroHt)}<p class="iso-cap">Ilustración de referencia.</p></div><div class="meta"><p class="eyebrow">${isIndividual ? 'Una vivienda simulada' : 'Viviendas simuladas · promedio'}</p><h2 class="hero-t">${heroTitle}</h2><p class="sub">${heroSub}</p><div class="chips">${heroChip}</div></div></section>`;
   out.push(hero);
   if (state.gran === 'monthly') {
     out.push('<div class="grid g2">' + patternP1() + patternP1b() + '</div>' + patternP3() + patternP4());
@@ -337,12 +347,12 @@ function patternP1() {
       points: rows.map((r) => ({ x: +r.period.slice(5), y: r.mwh, tip: `${r.period} · ${nf(r.mwh)} MWh · ${r.status === 'Final' ? 'Final' : 'Preliminar, puede cambiar'}` })) };
   });
   const peak = s.reduce((a, r) => (r.mwh > a.mwh ? r : a));
-  const aria = `Líneas de ventas mensuales en MWh por año para ${stateName(state.st)}; el máximo es ${nf(peak.mwh)} MWh en ${peak.period}.`;
+  const aria = `Ventas mensuales de electricidad para ${stateName(state.st)}; el máximo observado es ${nf(peak.mwh)} MWh en ${monthLabel(peak.period)}.`;
   const pre = s.some((r) => r.status !== 'Final');
   return card({
     ...base,
-    body: slot((w) => lineChart({ width: w, series, xTicks: MES.map((m, i) => ({ x: i + 1, label: m })), xDomain: [1, 12], yLabel: 'MWh', aria, yFmt: cmp })) + dataTable(['Periodo', 'Estado', 'MWh', 'Publicación'], s.map((r) => [r.period, state.st, r.mwh, r.status])),
-    chips: chip('eia', ['MWh', `${s[0].period}…${s[s.length - 1].period}`, state.st === 'ALL' ? '51 jurisdicciones' : state.st]) + (pre ? preChip('línea punteada') : ''),
+    body: slot((w) => lineChart({ width: w, series, xTicks: MES.map((m, i) => ({ x: i + 1, label: m })), xDomain: [1, 12], yLabel: 'Ventas (MWh)', aria, yFmt: cmp })) + dataTable(['Mes', 'Estado', 'Ventas residenciales (MWh)', 'Publicación'], s.map((r) => [monthLabel(r.period), state.st === 'ALL' ? 'EE. UU.' : jurisdictionName(state.st), r.mwh, r.status === 'Final' ? 'Definitivo' : 'Preliminar']), 80),
+    chips: chip('eia', ['MWh', `${monthLabel(s[0].period)} a ${monthLabel(s[s.length - 1].period)}`, state.st === 'ALL' ? '51 estados y DC' : jurisdictionName(state.st)]) + (pre ? preChip('línea punteada') : ''),
     limit: 'Una línea por año; punteada = con meses preliminares. Ventas totales, no consumo por hogar.',
     more: esc(aria),
   });
@@ -357,13 +367,13 @@ function patternP1b() {
   const ids = new Set(ps.map((x) => String(x.bldg_id)));
   const rows = rowsOf('gold_resstock_monthly').filter((r) => ids.has(String(r.bldg_id)) && inRange(r.source_period));
   if (!rows.length) return card({ ...base, body: empty('Sin datos ResStock en el periodo', `El piloto cubre 2018; el rango ${state.from}…${state.to} no lo intersecta.`) });
-  const series = ps.map((x) => ({ name: `${x.housing_type} (${x.state_code})`, color: typeCol(x.housing_type), markers: true,
-    points: rows.filter((r) => String(r.bldg_id) === String(x.bldg_id)).map((r) => ({ x: +r.source_period.slice(5), y: +r.kwh_month, tip: `#${x.bldg_id} · ${r.source_period} · ${nf(r.kwh_month)} kWh` })) })).filter((s) => s.points.length);
-  const aria = `Consumo mensual modelado en kWh de ${series.length} perfil(es) de ${state.st === 'ALL' ? 'los estados del piloto' : state.st}, calendario fuente EST.`;
+  const series = ps.map((x) => ({ name: `${housingTypeName(x.housing_type)} (${jurisdictionName(x.state_code)})`, color: typeCol(x.housing_type), markers: true,
+    points: rows.filter((r) => String(r.bldg_id) === String(x.bldg_id)).map((r) => ({ x: +r.source_period.slice(5), y: +r.kwh_month, tip: `${housingTypeName(x.housing_type)} · ${r.source_period} · ${nf(r.kwh_month)} kWh` })) })).filter((s) => s.points.length);
+  const aria = `Consumo mensual modelado en kWh de ${series.length} viviendas simuladas de ${state.st === 'ALL' ? 'los estados incluidos' : jurisdictionName(state.st)}, según el calendario estándar del este de Estados Unidos.`;
   return card({
     ...base,
-    body: slot((w) => lineChart({ width: w, series, xTicks: MES.map((m, i) => ({ x: i + 1, label: m })), xDomain: [1, 12], yLabel: 'kWh por mes', aria, yFmt: cmp })) + dataTable(['Perfil', 'Mes fuente', 'kWh'], rows.map((r) => [`#${r.bldg_id} ${r.housing_type}`, r.source_period, +r.kwh_month])),
-    chips: chip('res', ['kWh', 'mensual', `${ps.length} perfiles`, 'calendario fuente EST']),
+    body: slot((w) => lineChart({ width: w, series, xTicks: MES.map((m, i) => ({ x: i + 1, label: m })), xDomain: [1, 12], yLabel: 'Consumo (kWh/mes)', aria, yFmt: cmp })) + dataTable(['Vivienda simulada', 'Mes', 'Consumo (kWh)'], rows.map((r) => { const x = ps.find((profile) => String(profile.bldg_id) === String(r.bldg_id)); return [`${housingTypeName(x?.housing_type || r.housing_type)} · ${jurisdictionName(x?.state_code || r.state_code)}`, monthLabel(r.source_period), +r.kwh_month]; })),
+    chips: chip('res', ['kWh', 'mensual', `${ps.length} viviendas simuladas`, 'hora estándar del este']),
     limit: 'Una vivienda simulada por tipo y estado: explorar, no generalizar.',
     more: esc(aria),
   });
@@ -377,12 +387,12 @@ function patternP3() {
   if (!ps.length) return card({ ...base, body: noResState() });
   if (state.to < '2018-01' || state.from > '2018-12') return card({ ...base, body: empty('Sin datos ResStock en el periodo', `El resumen anual corresponde a 2018; el rango ${state.from}…${state.to} no lo incluye.`) });
   const sts = [...new Set(ps.map((x) => x.state_code))].sort();
-  const groups = sts.map((s) => ({ label: s, bars: ps.filter((x) => x.state_code === s).map((x) => ({ name: x.housing_type, color: typeCol(x.housing_type), value: +x.annual_kwh, tip: `${s} · ${x.housing_type} · #${x.bldg_id} · ${nf(x.annual_kwh)} kWh` })) }));
+  const groups = sts.map((s) => ({ label: jurisdictionName(s), bars: ps.filter((x) => x.state_code === s).map((x) => ({ name: housingTypeName(x.housing_type), color: typeCol(x.housing_type), value: +x.annual_kwh, tip: `${jurisdictionName(s)} · ${housingTypeName(x.housing_type)} · ${nf(x.annual_kwh)} kWh` })) }));
   const aria = `Barras de consumo anual modelado en kWh por tipo de vivienda en ${sts.join(' y ')}.`;
   return card({
     ...base,
-    body: slot((w) => barChart({ width: w, groups, yLabel: 'kWh al año', aria, yFmt: cmp })) + dataTable(['Estado', 'Tipo', 'Perfil', 'kWh anual'], ps.map((x) => [x.state_code, x.housing_type, `#${x.bldg_id}`, +x.annual_kwh])),
-    chips: chip('res', ['kWh', 'anual 2018', `${ps.length} perfiles`]),
+    body: slot((w) => barChart({ width: w, groups, yLabel: 'kWh al año', aria, yFmt: cmp })) + dataTable(['Estado', 'Tipo de vivienda', 'Consumo anual (kWh)'], ps.map((x) => [jurisdictionName(x.state_code), housingTypeName(x.housing_type), +x.annual_kwh])),
+    chips: chip('res', ['kWh', 'año 2018', `${ps.length} viviendas simuladas`]),
     limit: 'Un ejemplo por tipo y estado, no una comparación estadística.',
     more: esc(aria),
   });
@@ -417,26 +427,26 @@ function patternP4() {
     <div class="dim-card">
       <span class="eyebrow">Población</span>
       <b>Mayor población</b>
-      <div style="font-size:18px;font-weight:700;color:var(--demo);margin:4px 0">${esc(jurisdictionName(popLeader.state_code))} (${esc(popLeader.state_code)})</div>
+      <div style="font-size:18px;font-weight:700;color:var(--demo);margin:4px 0">${esc(jurisdictionName(popLeader.state_code))}</div>
       <div>${nf(popLeader.population_estimate)} residentes al 1 de julio</div>
     </div>
     <div class="dim-card">
       <span class="eyebrow">Densidad</span>
-      <b>Estado más denso (sin DC)</b>
-      <div style="font-size:18px;font-weight:700;color:var(--demo);margin:4px 0">${esc(jurisdictionName(densLeader.state_code))} (${esc(densLeader.state_code)})</div>
-      <div>${nf(densLeader.population_density_per_sq_mi, 1)} hab./mi² <span class="badge-dc" title="Distrito federal urbano censal (Washington D.C.), no un estado">DC: ${nf(dcRow?.population_density_per_sq_mi, 1)} hab./mi² (distrito urbano)</span></div>
+      <b>Estado con mayor densidad</b>
+      <div style="font-size:18px;font-weight:700;color:var(--demo);margin:4px 0">${esc(jurisdictionName(densLeader.state_code))}</div>
+      <div>${nf(densLeader.population_density_per_sq_mi / SQMI_TO_KM2, 1)} hab./km² <span class="badge-dc" title="Washington D. C. es un distrito federal, no un estado">D.C.: ${nf((dcRow?.population_density_per_sq_mi || 0) / SQMI_TO_KM2, 1)} hab./km²</span></div>
     </div>
     <div class="dim-card">
       <span class="eyebrow">Ventas totales</span>
       <b>Mayores ventas totales</b>
-      <div style="font-size:18px;font-weight:700;color:var(--demo);margin:4px 0">${esc(jurisdictionName(salesLeader.state_code))} (${esc(salesLeader.state_code)})</div>
+      <div style="font-size:18px;font-weight:700;color:var(--demo);margin:4px 0">${esc(jurisdictionName(salesLeader.state_code))}</div>
       <div>${nf(salesLeader.residential_sales_mwh)} MWh/año</div>
     </div>
     <div class="dim-card">
       <span class="eyebrow">Por habitante</span>
       <b>Mayores ventas por habitante</b>
-      <div style="font-size:18px;font-weight:700;color:var(--demo);margin:4px 0">${esc(jurisdictionName(kwhLeader.state_code))} (${esc(kwhLeader.state_code)})</div>
-      <div>${nf(kwhLeader.residential_kwh_per_capita, 1)} kWh/hab/año</div>
+      <div style="font-size:18px;font-weight:700;color:var(--demo);margin:4px 0">${esc(jurisdictionName(kwhLeader.state_code))}</div>
+      <div>${nf(kwhLeader.residential_kwh_per_capita, 1)} kWh por persona al año</div>
     </div>
   </div>`;
 
@@ -453,7 +463,7 @@ function patternP4() {
     // Escala cuadrática acotada perceptible entre 4px y 14px
     const popRadius = 4 + ((Math.sqrt(pop) - sqrtMin) / (sqrtMax - sqrtMin || 1)) * 10;
     return {
-      x: Number(r.population_density_per_sq_mi),
+      x: Number(r.population_density_per_sq_mi) / SQMI_TO_KM2,
       y: Number(r.residential_kwh_per_capita),
       r: Number(popRadius.toFixed(1)),
       state_code: r.state_code,
@@ -461,32 +471,32 @@ function patternP4() {
       isDc: r.state_code === 'DC',
       isSelected: r.state_code === state.st,
       showLabel: ['CA', 'TX', 'FL', 'NY', 'NJ', 'LA', 'DC', 'HI', 'WY', 'AK'].includes(r.state_code) || r.state_code === state.st,
-      tip: `${jurisdictionName(r.state_code)} (${r.state_code}) · Año ${r.year}
+      tip: `${jurisdictionName(r.state_code)} · Año ${r.year}
 · Población residente: ${nf(r.population_estimate)} hab. (radio proporcional)
-· Ventas por habitante: ${nf(r.residential_kwh_per_capita, 2)} kWh/hab/año
-· Densidad estimada: ${nf(r.population_density_per_sq_mi, 2)} hab./mi²
+· Ventas por persona: ${nf(r.residential_kwh_per_capita, 2)} kWh por persona al año
+· Densidad estimada: ${nf(r.population_density_per_sq_mi / SQMI_TO_KM2, 2)} hab./km²
 · Ventas residenciales: ${nf(r.residential_sales_mwh, 2)} MWh
-· Superficie terrestre: ${nf(r.land_area_sq_mi_2020, 2)} mi²`,
+· Superficie terrestre: ${nf(r.land_area_sq_mi_2020 * SQMI_TO_KM2, 2)} km²`,
     };
   });
 
   const chartCtl = `
   <div class="ctl" style="justify-content:space-between;margin-top:14px">
-    <label class="tog"><input type="checkbox" id="chk-demo-dc" ${includeDc ? 'checked' : ''}> Incluir Washington D.C. (DC)</label>
-    <span class="sub" style="font-size:12px;color:var(--ink-2);margin:0">${includeDc ? 'DC comprime la escala por su densidad urbana.' : 'DC oculto en la gráfica; sigue en la tabla.'}</span>
+    <label class="tog"><input type="checkbox" id="chk-demo-dc" ${includeDc ? 'checked' : ''}> Mostrar Washington D. C. en la gráfica</label>
+    <span class="sub" style="font-size:12px;color:var(--ink-2);margin:0">${includeDc ? 'Es un distrito federal y su densidad es mucho mayor.' : 'El distrito permanece visible en la tabla.'}</span>
   </div>`;
 
-  const ariaChart = `Gráfica de dispersión de ventas por habitante (kWh/hab) frente a densidad poblacional (hab./mi²) para el año ${activeYear}. El tamaño de los círculos representa la población residente.`;
+  const ariaChart = `Gráfica de ventas por habitante frente a densidad poblacional para el año ${activeYear}. El tamaño de los círculos representa la población.`;
   const chartHtml = slot((w) => scatterChart({
     width: w,
     height: 350,
     points,
-    xLabel: 'Densidad poblacional estimada (personas/mi² terrestre)',
-    yLabel: 'Ventas residenciales por habitante (kWh/persona/año)',
+    xLabel: 'Densidad poblacional (habitantes/km²)',
+    yLabel: 'Electricidad vendida por habitante (kWh/año)',
     aria: ariaChart,
     xFmt: (v) => nf(v),
     yFmt: (v) => nf(v),
-  })) + `<p class="sub how"><strong>Cómo leerla:</strong> cada círculo es un estado. Derecha = más denso; arriba = más electricidad por persona; tamaño = población. Toca un punto para ver el detalle.</p>`;
+  })) + `<p class="sub how"><strong>Cómo leerla:</strong> más a la derecha significa más habitantes por km²; más arriba, más ventas por persona. El tamaño del círculo representa la población. Las etiquetas son abreviaturas; la tabla muestra los nombres completos.</p>`;
 
   // Tabla interactiva ordenable
   const sortCol = state.demoSortCol || 'residential_kwh_per_capita';
@@ -504,12 +514,12 @@ function patternP4() {
   });
 
   const cols = [
-    { key: 'state_code', label: 'Jurisdicción', numeric: false },
-    { key: 'population_estimate', label: 'Población (hab.)', numeric: true },
-    { key: 'population_density_per_sq_mi', label: 'Densidad (hab./mi²)', numeric: true },
-    { key: 'residential_sales_mwh', label: 'Ventas totales (MWh)', numeric: true },
-    { key: 'residential_kwh_per_capita', label: 'Ventas por hab. (kWh/hab)', numeric: true },
-    { key: 'land_area_sq_mi_2020', label: 'Superficie (mi²)', numeric: true },
+    { key: 'state_code', label: 'Estado o distrito', numeric: false },
+    { key: 'population_estimate', label: 'Población', numeric: true },
+    { key: 'population_density_per_sq_mi', label: 'Personas por km²', numeric: true },
+    { key: 'residential_sales_mwh', label: 'Ventas residenciales (MWh/año)', numeric: true },
+    { key: 'residential_kwh_per_capita', label: 'Ventas por persona (kWh/año)', numeric: true },
+    { key: 'land_area_sq_mi_2020', label: 'Superficie (km²)', numeric: true },
   ];
 
   const thHtml = cols.map((c) => {
@@ -527,7 +537,7 @@ function patternP4() {
   const tableHeader = `
   <thead>
     <tr>
-      <th scope="col" style="width:40px">#</th>
+      <th scope="col" style="width:40px" aria-label="Lugar en la lista">#</th>
       ${thHtml}
     </tr>
   </thead>`;
@@ -538,12 +548,12 @@ function patternP4() {
     const name = jurisdictionName(r.state_code);
     return `<tr class="${isSel ? 'sel' : ''}">
       <td class="sub">${i + 1}</td>
-      <th scope="row"><strong>${esc(name)}</strong> <span class="sub">(${esc(r.state_code)})</span>${isDc ? '<span class="badge-dc" title="Distrito federal urbano censal (Washington D.C.)">DC: distrito urbano</span>' : ''}</th>
+      <th scope="row"><strong>${esc(name)}</strong>${isDc ? '<span class="badge-dc" title="Washington D. C. es un distrito federal, no un estado">Distrito federal</span>' : ''}</th>
       <td class="n">${nf(r.population_estimate)}</td>
-      <td class="n">${nf(r.population_density_per_sq_mi, 2)}</td>
+      <td class="n">${nf(r.population_density_per_sq_mi / SQMI_TO_KM2, 2)}</td>
       <td class="n">${nf(r.residential_sales_mwh, 2)}</td>
       <td class="n"><strong>${nf(r.residential_kwh_per_capita, 2)}</strong></td>
-      <td class="n">${nf(r.land_area_sq_mi_2020, 2)}</td>
+      <td class="n">${nf(r.land_area_sq_mi_2020 * SQMI_TO_KM2, 2)}</td>
     </tr>`;
   }).join('');
 
@@ -551,7 +561,7 @@ function patternP4() {
   <div style="margin-top:16px">
     <div style="display:flex;flex-wrap:wrap;gap:4px 12px;justify-content:space-between;align-items:center;margin-bottom:6px">
       <h3 class="h3">50 estados + DC · ${activeYear}</h3>
-      <span class="sub" style="font-size:12px;margin:0">Pulsa un encabezado para ordenar</span>
+      <span class="sub" style="font-size:12px;margin:0">Selecciona una columna para ordenar</span>
     </div>
     <div class="tbl-wrap" style="max-height:360px">
       <table class="t">
@@ -567,7 +577,7 @@ function patternP4() {
   return card({
     ...base,
     body: yearTabs + summaryStrip + chartCtl + chartHtml + tableHtml,
-    chips: chip('demo', [`Año ${activeYear}`, '50 estados + DC', 'kWh/hab · hab./mi²']),
+    chips: chip('demo', [`Año ${activeYear}`, '50 estados + DC', 'ventas por persona · habitantes por km²']),
     limit: '<strong>Descriptivo, no causal.</strong>',
     more: limitText.replace('<strong>Descriptivo, no causal.</strong> ', ''),
   });
@@ -582,7 +592,7 @@ function patternP2() {
   const base = {
     id: 'P2',
     q: isIndividual
-      ? `¿A qué hora del día usa más electricidad la vivienda simulada #${esc(p?.bldg_id)}?`
+      ? '¿A qué hora del día usa más electricidad esta vivienda simulada?'
       : '¿A qué hora del día se usa más electricidad en las viviendas simuladas?',
     accent: 'res',
   };
@@ -595,10 +605,10 @@ function patternP2() {
   const e = needTables([tableNeeded, 'gold_resstock_profile_summary'], isIndividual ? 'patrones horarios individuales' : 'patrones horarios agregados');
   if (e) return card({ ...base, body: e });
 
-  const selProfile = `<div class="ctl"><label>Viviendas <select id="sel-profile">
+  const selProfile = `<div class="ctl"><label>Vivienda <select id="sel-profile">
     <option value="ALL" ${!isIndividual ? 'selected' : ''}>Promedio de la muestra</option>
     <optgroup label="Una vivienda simulada">
-      ${ps.map((x) => `<option value="${x.bldg_id}" ${(isIndividual && String(x.bldg_id) === String(p?.bldg_id)) ? 'selected' : ''}>${esc(housingTypeName(x.housing_type))} · ${esc(x.state_code)} (#${x.bldg_id})</option>`).join('')}
+      ${ps.map((x, i) => `<option value="${x.bldg_id}" ${(isIndividual && String(x.bldg_id) === String(p?.bldg_id)) ? 'selected' : ''}>Muestra ${i + 1} · ${esc(housingTypeName(x.housing_type))} · ${esc(jurisdictionName(x.state_code))}</option>`).join('')}
     </optgroup>
   </select></label>
     <div class="seg" role="group" aria-label="Tipo de día"><button type="button" data-day="weekday" aria-pressed="${state.day === 'weekday'}">Día laboral</button><button type="button" data-day="weekend" aria-pressed="${state.day === 'weekend'}">Fin de semana</button></div></div>`;
@@ -617,7 +627,7 @@ function patternP2() {
   const tzRows = isIndividual ? rows : rows.filter((r) => r.time_zone === activeTz);
 
   const tzSwitcher = (!isIndividual && allTzs.length > 1)
-    ? `<div class="ctl" style="margin-top:6px"><label>Zona horaria <select id="sel-tz">${allTzs.map((z) => `<option value="${esc(z)}" ${z === activeTz ? 'selected' : ''}>${esc(z)}</option>`).join('')}</select></label><span class="sub" style="font-size:12px;margin:0">Separado para no mezclar horas locales.</span></div>`
+    ? `<div class="ctl" style="margin-top:6px"><label>Hora local de la zona <select id="sel-tz">${allTzs.map((z) => `<option value="${esc(z)}" ${z === activeTz ? 'selected' : ''}>${esc(timezoneName(z))}</option>`).join('')}</select></label><span class="sub" style="font-size:12px;margin:0">Se muestran por separado para comparar horas equivalentes.</span></div>`
     : '';
 
   const sel = selProfile + tzSwitcher;
@@ -634,31 +644,29 @@ function patternP2() {
   const pk = hourAvg.indexOf(Math.max(...hourAvg));
 
   const aria = isIndividual
-    ? `Mapa de calor de la mediana horaria en kWh, hora local ${tz}, ${periods.length} periodos; la hora con mayor mediana promedio es ${String(pk).padStart(2, '0')}:00.`
-    : `Mapa de calor del patrón horario agregado en kWh, hora local ${tz}, ${periods.length} periodos; la hora con mayor consumo promedio es ${String(pk).padStart(2, '0')}:00.`;
+    ? `Mapa de calor del consumo típico por hora en ${timezoneName(tz)}, ${periods.length} meses; la hora con mayor consumo es ${String(pk).padStart(2, '0')}:00.`
+    : `Mapa de calor del consumo típico por hora en ${timezoneName(tz)}, ${periods.length} meses; la hora con mayor consumo es ${String(pk).padStart(2, '0')}:00.`;
 
   const tableHead = isIndividual
-    ? ['Periodo local', 'Hora local', 'Zona IANA', 'Mediana kWh', 'Parcial', 'Fuente NOAA']
-    : ['Periodo local', 'Hora local', 'Estado', 'Tipo vivienda', 'Zona IANA', 'Mediana kWh', 'Media kWh', 'P10', 'P90', 'Perfiles', 'Parcial', 'Fuente NOAA'];
+    ? ['Mes', 'Tipo de día', 'Hora local', 'Consumo típico (kWh)']
+    : ['Mes', 'Tipo de día', 'Hora local', 'Estado', 'Tipo de vivienda', 'Consumo típico (kWh)', 'Viviendas simuladas'];
 
   const tableRows = isIndividual
-    ? tzRows.map((r) => [r.period_local, r.hour_local, r.time_zone, +r.median_kwh, r.is_partial_period ? 'sí' : 'no', r.source_version || 'NOAA c_16ap26'])
-    : tzRows.map((r) => [r.period_local, r.hour_local, r.state_code, r.housing_type, r.time_zone, +r.median_kwh, +r.mean_kwh, +r.p10_kwh, +r.p90_kwh, r.n_profiles, r.is_partial_period ? 'sí' : 'no', r.source_version || 'NOAA c_16ap26']);
+    ? tzRows.map((r) => [monthLabel(r.period_local), state.day === 'weekday' ? 'Laboral' : 'Fin de semana', `${String(r.hour_local).padStart(2, '0')}:00`, +r.median_kwh])
+    : tzRows.map((r) => [monthLabel(r.period_local), state.day === 'weekday' ? 'Laboral' : 'Fin de semana', `${String(r.hour_local).padStart(2, '0')}:00`, jurisdictionName(r.state_code), housingTypeName(r.housing_type), +r.median_kwh, r.n_profiles]);
 
   const chips = isIndividual
-    ? chip('res', ['kWh por hora', `hora local ${tz}`, `#${p.bldg_id}`])
-    : chip('res', ['kWh por hora', `hora local ${tz}`, 'promedio', `${state.type === 'ALL' ? 'todos los tipos' : housingTypeName(state.type)}`]);
+    ? chip('res', ['consumo por hora', timezoneName(tz), 'vivienda simulada'])
+    : chip('res', ['consumo por hora', timezoneName(tz), 'muestra simulada']);
 
   const limit = isIndividual
     ? 'Una sola vivienda simulada.'
     : '<strong>Muestra simulada: no representa a la población ni a las ventas totales.</strong>';
-  const howHm = isIndividual
-    ? 'Filas: meses; columnas: horas del día; color más intenso = más consumo (mediana).'
-    : 'Filas: meses; columnas: horas del día; color más intenso = más consumo (mediana por estado, tipo y zona horaria).';
+  const howHm = 'Cada fila representa un mes y cada columna una hora del día. Un color más intenso indica mayor consumo típico. Los valores resumen viviendas simuladas; no son lecturas de hogares reales.';
 
   return card({
     ...base,
-    body: sel + slot((w) => heatmap({ width: w, rows: periods, cells, unit: 'kWh/h', aria })) + `<p class="sub"><strong>Hora local · ${esc(tz)}</strong>${nPart ? ` · ${nPart} periodo(s) parcial(es) con borde punteado: no comparables con meses completos.` : ''}</p>` + dataTable(tableHead, tableRows),
+    body: sel + slot((w) => heatmap({ width: w, rows: periods, cells, unit: 'kWh por hora', aria })) + `<p class="sub"><strong>${esc(timezoneName(tz))}</strong>${nPart ? ` · ${nPart} mes(es) con cobertura parcial se distinguen con borde punteado.` : ''}</p>` + dataTable(tableHead, tableRows),
     chips,
     limit,
     more: `${howHm} ${esc(aria)}`,
@@ -669,27 +677,27 @@ function patternP2() {
 function viewClima() {
   const e = needTables(['gold_climate'], 'clima');
   const out = [];
-  if (e) out.push(card({ id: 'C1', q: '¿Qué temperatura hubo en los puntos medidos?', accent: 'clim', body: e }));
+  if (e) out.push(card({ id: 'C1', q: '¿Qué temperaturas se estimaron en Colorado?', accent: 'clim', body: e }));
   else {
     const rows = climRows();
     if (!rows.length) {
-      const have = [...new Set(rowsOf('gold_climate').map((r) => r.state_code))].join(', ');
+      const have = [...new Set(rowsOf('gold_climate').map((r) => r.state_code))].map(jurisdictionName).join(', ');
       out.push(card({ id: 'C1', q: '¿Qué temperatura hubo en los puntos consultados?', accent: 'clim', body: empty(`No hay clima para ${stateName(state.st)} en ${state.from}…${state.to}`, `La muestra solo cubre ${esc(have)} y 1–7 ene 2018.`) }));
     } else {
       const by = new Map();
       for (const r of rows) (by.get(r.point_id) || by.set(r.point_id, []).get(r.point_id)).push(r);
       const t0 = Date.parse(rows.map((r) => r.timestamp_utc).sort()[0]);
       const COL = ['#b45f06', '#7a4fd1', '#2b8fc4', '#c2410c'];
-      const series = [...by.entries()].map(([id, rs], i) => ({ name: id, color: COL[i % COL.length], points: rs.map((r) => ({ x: (Date.parse(r.timestamp_utc) - t0) / 36e5, y: +r.temperature_c, tip: `${id} · ${r.timestamp_utc.replace('T', ' ').replace('Z', ' UTC')} · ${r.temperature_c} °C` })) }));
+      const series = [...by.entries()].map(([id, rs], i) => ({ name: climatePlaceName(id), color: COL[i % COL.length], points: rs.map((r) => ({ x: (Date.parse(r.timestamp_utc) - t0) / 36e5, y: +r.temperature_c, tip: `${climatePlaceName(id)} · ${r.timestamp_utc.replace('T', ' ').replace('Z', '')} hora universal · ${r.temperature_c} °C` })) }));
       const maxH = Math.max(...series.flatMap((s) => s.points.map((p) => p.x)));
       const ticks = []; for (let d = 0; d * 24 <= maxH; d++) ticks.push({ x: d * 24, label: new Date(t0 + d * 864e5).toISOString().slice(5, 10) });
       const all = rows.map((r) => +r.temperature_c);
-      const aria = `Temperatura horaria en °C de ${by.size} puntos (${[...by.keys()].join(', ')}); mínimo ${nf(Math.min(...all), 1)} °C y máximo ${nf(Math.max(...all), 1)} °C.`;
+      const aria = `Temperatura estimada por hora en ${[...by.keys()].map(climatePlaceName).join(' y ')}; mínima ${nf(Math.min(...all), 1)} °C y máxima ${nf(Math.max(...all), 1)} °C.`;
       out.push(card({
-        id: 'C1', q: '¿Qué temperatura hubo en los puntos consultados?', accent: 'clim',
-        body: slot((w) => lineChart({ width: w, series, xTicks: ticks, yLabel: '°C', xLabel: 'Fecha UTC (mes-día)', aria, yFmt: (v) => nf(v) })) + dataTable(['Punto', 'UTC', '°C'], rows.map((r) => [r.point_id, r.timestamp_utc, +r.temperature_c]), 60),
-        chips: chip('clim', ['°C', 'horario UTC', `${by.size} puntos`, `${rows[0].timestamp_utc.slice(0, 10)}…`]),
-        limit: 'Reanálisis ERA5-Land por celda de terreno, no estaciones.',
+        id: 'C1', q: 'Temperatura estimada en Colorado', accent: 'clim',
+        body: slot((w) => lineChart({ width: w, series, xTicks: ticks, yLabel: 'Temperatura (°C)', xLabel: 'Día consultado', aria, yFmt: (v) => nf(v) })) + dataTable(['Ubicación', 'Fecha y hora (hora universal)', 'Temperatura (°C)'], rows.map((r) => [climatePlaceName(r.point_id), dateTimeLabel(r.timestamp_utc), +r.temperature_c]), 60),
+        chips: chip('clim', ['°C', '2 ubicaciones', '1–7 ene 2018']),
+        limit: 'Estimación meteorológica; se presenta aparte porque aún no está vinculada con las viviendas.',
         more: esc(aria),
       }));
     }
@@ -697,9 +705,9 @@ function viewClima() {
   const all = rowsOf('gold_climate');
   const days = all ? new Set(all.map((r) => r.timestamp_utc.slice(0, 10))).size : null;
   out.push(card({
-    id: 'C2', q: '¿Se puede relacionar el clima con el consumo?', accent: 'none',
-    body: empty('Todavía no', `Solo ${days ? `${days} días` : '7 días'} y ${all ? new Set(all.map((r) => r.point_id)).size : 2} puntos; no se dibuja correlación ni se sugiere causa.`),
-    more: 'El clima está en UTC y las simulaciones en hora fija EST; falta una regla de unión documentada.',
+    id: 'C2', q: '¿Cómo aporta contexto el clima?', accent: 'none',
+    body: empty('Se muestra por separado', `La muestra cubre ${days ? `${days} días` : '7 días'} en dos ubicaciones. No se combina con los perfiles de consumo.`),
+    more: 'Para comparar clima y electricidad se necesita una cobertura de fechas y ubicaciones compatible. Esta muestra todavía no permite esa comparación.',
   }));
   return out.join('');
 }
@@ -713,15 +721,19 @@ function viewAnomalias() {
     .sort((a, b) => Math.abs(+b.robust_z) - Math.abs(+a.robust_z));
   const evals = rowsOf('gold_anomaly_synthetic_eval');
   const counts = store.manifest?.analytics?.anomaly_counts || {};
-  const table = dataTable(['Periodo', 'Estado', 'Cambio vs. año anterior (%)', 'Estación', 'Puntuación robusta', 'Periodo', 'Etiqueta'],
-    rows.map((r) => [r.period, r.state_code, +r.yoy_change_pct, r.season, +r.robust_z, r.partition, 'Candidato estadístico']), 60);
-  const metrics = dataTable(['Cambio inyectado', 'Recall', 'Precisión', 'Falsos positivos', 'Casos positivos'],
-    evals.map((r) => [`±${nf(+r.injection_pct)}%`, `${nf(+r.recall * 100, 1)}%`, `${nf(+r.precision * 100, 1)}%`, `${nf(+r.false_positive_rate * 100, 1)}%`, `${r.tp}/${r.tp + r.fn}`]));
-  return `<div class="banner syn" role="note"><strong>Candidatos, no eventos confirmados.</strong> La prueba de sensibilidad usa cambios sintéticos inyectados a propósito.</div>`
-    + `<div class="grid g3">${card({ id: 'A1', q: 'Meses atípicos en datos definitivos', accent: 'eia', body: `<div class="big">${nf(counts.candidatos_entrenamiento + counts.candidatos_prueba)}<span class="unit">candidatos</span></div><p class="sub">${nf(counts.candidatos_entrenamiento)} en ajuste · ${nf(counts.candidatos_prueba)} en prueba</p>`, chips: '<span class="chip eia"><i></i><b>EIA-861M</b> · 51 estados · 2018–2025</span>', limit: 'Requieren revisión humana.' })}
-    ${card({ id: 'A2', q: 'Meses atípicos en datos preliminares', accent: 'eia', body: `<div class="big">${nf(counts.candidatos_preliminares_2026)}<span class="unit">candidatos</span></div><p class="sub">Aparte; no fijan el umbral</p>`, chips: preChip('2026, corte enero–agosto'), limit: 'Valores preliminares: EIA puede actualizarlos.' })}
-    ${card({ id: 'A3', q: '¿Detecta cambios artificiales? (prueba sintética)', accent: 'syn', body: metrics, chips: '<span class="chip syn"><i></i><b>Sintético</b> · cambios inyectados</span>', limit: 'Detecta poco los cambios pequeños y no mide eventos reales.', more: 'Recall = cambios artificiales detectados; precisión = alertas que eran correctas.' })}</div>`
-    + card({ id: 'A4', q: `Lista de meses atípicos para revisar (${rows.length})`, accent: 'eia', body: table, chips: chip('eia', ['variación interanual', `k = 3.5 MAD`, `${state.from}…${state.to}`]), limit: 'Cambio interanual fuera de lo habitual (k = 3.5 MAD).', more: 'Cada mes se compara con el mismo mes del año anterior. Se marca si el cambio se aleja más de 3.5 desviaciones robustas (MAD) de lo habitual para ese estado y estación, según el periodo de ajuste.' });
+  const table = dataTable(['Mes', 'Estado', 'Cambio frente al mismo mes anterior', 'Resultado'],
+    rows.map((r) => [monthLabel(r.period), jurisdictionName(r.state_code), `${nf(+r.yoy_change_pct, 1)}%`, 'Conviene revisar']), 60);
+  const metrics = dataTable(['Cambio añadido', 'Encontrados', 'Avisos justificados', 'Avisos innecesarios'],
+    evals.map((r) => [`±${nf(+r.injection_pct)}%`, `${nf(+r.recall * 100, 1)}%`, `${nf(+r.precision * 100, 1)}%`, `${nf(+r.false_positive_rate * 100, 1)}%`]));
+  const mediumTest = evals.find((r) => +r.injection_pct === 30);
+  const testSummary = mediumTest
+    ? `<p class="sub"><strong>En una prueba con cambios artificiales de 30%:</strong> detectó ${nf(Math.round(+mediumTest.recall * 100), 0)} de cada 100 cambios; casi ${nf(+mediumTest.precision * 100, 0)} de cada 100 alertas señalaron uno de esos cambios.</p>`
+    : '<p class="sub">La tabla muestra los resultados de los cambios añadidos durante la prueba.</p>';
+  return `<div class="banner syn" role="note"><strong>Son alertas para revisar, no fallas confirmadas.</strong> El sistema señala meses cuyo cambio se aparta de lo habitual.</div>`
+    + `<div class="grid g3">${card({ id: 'A1', q: 'Cambios inusuales en datos definitivos', accent: 'eia', body: `<div class="big">${nf(counts.candidatos_entrenamiento + counts.candidatos_prueba)}<span class="unit">meses por revisar</span></div><p class="sub">Ventas definitivas de 2018–2025 en 51 estados y DC.</p>`, chips: '<span class="chip eia"><i></i><b>Fuente: EIA-861M</b></span>', limit: 'Cada alerta requiere contexto antes de interpretarse.' })}
+    ${card({ id: 'A2', q: 'Cambios en meses preliminares', accent: 'eia', body: `<div class="big">${nf(counts.candidatos_preliminares_2026)}<span class="unit">por revisar</span></div><p class="sub">Enero–agosto de 2026</p>`, chips: preChip('EIA puede corregir estos datos'), limit: 'Se separan de los datos definitivos.' })}
+    ${card({ id: 'A3', q: '¿Cómo respondió ante cambios de prueba?', accent: 'syn', body: testSummary + metrics, chips: '<span class="chip syn"><i></i><b>Prueba con cambios añadidos</b></span>', limit: 'La prueba usa cambios artificiales; no confirma eventos reales.', more: '“Encontrados” es el porcentaje de cambios añadidos que el sistema detectó. “Avisos justificados” indica cuántas alertas correspondieron a esos cambios.' })}</div>`
+    + card({ id: 'A4', q: `Meses que conviene revisar (${rows.length})`, accent: 'eia', body: table, chips: chip('eia', ['comparación con el mismo mes del año anterior', `${state.from}…${state.to}`]), limit: 'Un cambio inusual es una señal para investigar, no una explicación de su causa.', more: 'El método compara cada mes con el mismo mes de otros años para identificar variaciones alejadas de su comportamiento habitual.' });
 }
 
 /* ---------- Estimaciones: backtest temporal, no proyección futura ---------- */
@@ -738,16 +750,16 @@ function viewEstimaciones() {
     points: periods.map((p, i) => {
       const rr = picked.filter((r) => r.period === p);
       const y = rr.length ? rr.reduce((s, r) => s + +r[key], 0) : null;
-      return { x: i, y, tip: `${p} · ${name}: ${nf(y)} MWh` };
+      return { x: i, y, tip: `${monthLabel(p)} · ${name}: ${nf(y)} MWh` };
     }),
   });
   // Ticks adaptativos: trimestral en escritorio, semestral en tablet, anual en móvil.
   const tickStep = (w) => (w < 480 ? 12 : w < 760 ? 6 : 3);
   const chart = slot((w) => lineChart({
     width: w, height: w < 480 ? 280 : 330,
-    series: [toSeries('actual_mwh', 'Real (EIA)', 'var(--eia)'), toSeries('naive_mwh', 'Referencia simple', 'var(--ink-2)', '6 4'), toSeries('model_mwh', 'Modelo', 'var(--res)')],
-    xTicks: periods.map((p, i) => ({ p, i })).filter(({ i }) => i % tickStep(w) === 0).map(({ p, i }) => ({ x: i, label: p })), xDomain: [0, periods.length - 1],
-    yLabel: 'Ventas EIA (MWh)', xLabel: 'Mes evaluado', aria: 'Backtest mensual de ventas EIA: observado, naive estacional y modelo log-lineal con mes.', zeroBase: false,
+    series: [toSeries('actual_mwh', 'Ventas registradas', 'var(--eia)'), toSeries('naive_mwh', 'Repetición del año anterior', 'var(--ink-2)', '6 4'), toSeries('model_mwh', 'Estimación del sistema', 'var(--res)')],
+    xTicks: periods.map((p, i) => ({ p, i })).filter(({ i }) => i % tickStep(w) === 0).map(({ p, i }) => ({ x: i, label: monthLabel(p) })), xDomain: [0, periods.length - 1],
+    yLabel: 'Ventas de electricidad (MWh)', xLabel: 'Mes evaluado', aria: 'Comparación mensual de ventas observadas, repetición del patrón anual y estimación del modelo.', zeroBase: false,
     yFmt: (v) => cmp(v),
   }));
   const smapeN = byState.map((r) => +r.naive_smape_pct).sort((a,b) => a-b);
@@ -758,17 +770,16 @@ function viewEstimaciones() {
   const naiveMetric = selectedMetrics ? +selectedMetrics.naive_smape_pct : median(smapeN);
   const nWins = state.st === 'ALL' ? byState.filter((r) => +r.model_smape_pct < +r.naive_smape_pct).length : Number(modelMetric < naiveMetric);
   const detail = picked.map((r) => [r.period, +r.actual_mwh, +r.naive_mwh, +r.model_mwh]);
-  const lineTable = dataTable(['Periodo', 'EIA observado (MWh)', 'Naive estacional (MWh)', 'Modelo (MWh)'], detail, 48);
-  const stateLabel = state.st === 'ALL' ? 'suma de 51 jurisdicciones' : state.st;
-  return `<div class="banner warn" role="note"><strong>No es un pronóstico.</strong> Ajustado con 2018–2023 y comparado con 2024–2025 reales; sin preliminares de 2026.</div>`
-    + `<div class="grid g3">${card({ id: 'E1', q: 'Error del modelo', accent: 'eia', body: `<div class="big">${nf(modelMetric, 2)}<span class="unit">%</span></div><p class="sub">${state.st === 'ALL' ? 'Mediana entre estados' : `Estado ${state.st}`}</p>`, chips: chip('eia', ['2018–2025', 'periodos separados']), limit: 'sMAPE: menor es mejor.', more: 'sMAPE: diferencia porcentual promedio entre lo estimado y lo real en 2024–2025.' })}
-    ${card({ id: 'E2', q: 'Error de la referencia simple', accent: 'none', body: `<div class="big">${nf(naiveMetric, 2)}<span class="unit">%</span></div><p class="sub">El modelo mejora en ${nf(nWins)} de ${nf(byState.length)} estados del filtro.</p>`, chips: chip('eia', ['naive estacional']), limit: 'Repite el último año de ajuste (naive estacional).' })}
-    ${card({ id: 'E3', q: 'Meses evaluados', accent: 'none', body: `<div class="big">24<span class="unit">meses</span></div><p class="sub">${stateLabel} · 2024-01 a 2025-12.</p>`, chips: chip('eia', ['sin preliminares']), limit: 'Un solo corte temporal; otros periodos pueden dar otro resultado.' })}</div>`
-    + card({ id: 'E4', q: `Real frente a estimado · ${stateLabel}`, accent: 'eia', body: chart + lineTable, chips: chip('eia', ['MWh', 'backtest']), limit: 'No se extiende a 2026 ni a años futuros.', more: 'Modelo log-lineal con tendencia y efecto del mes, ajustado solo con 2018–2023.' });
+  const lineTable = dataTable(['Mes', 'Ventas reales (MWh)', 'Repetición del año anterior (MWh)', 'Estimación (MWh)'], detail.map(([period, ...values]) => [monthLabel(period), ...values]), 48);
+  const stateLabel = state.st === 'ALL' ? '51 estados y DC' : jurisdictionName(state.st);
+  return `<div class="banner warn" role="note"><strong>Evaluación de meses pasados.</strong> No es una predicción para meses futuros.</div>`
+    + `<div class="grid g3">${card({ id: 'E1', q: 'Error típico de las estimaciones', accent: 'eia', body: `<div class="big">${nf(modelMetric, 2)}<span class="unit">%</span></div><p class="sub">${state.st === 'ALL' ? 'Valor típico entre estados' : jurisdictionName(state.st)}</p>`, chips: chip('eia', ['revisión 2024–2025']), limit: 'Un porcentaje menor significa que la estimación se acercó más a las ventas observadas.', more: 'Compara cada estimación con el dato real del mismo mes. No es una probabilidad de acierto.' })}
+    ${card({ id: 'E2', q: 'Comparación con el año anterior', accent: 'none', body: `<div class="big">${nf(naiveMetric, 2)}<span class="unit">%</span></div><p class="sub">El modelo tuvo menor error en ${nf(nWins)} de ${nf(byState.length)} estados.</p>`, chips: chip('eia', ['referencia: mismo mes del año previo']), limit: 'La referencia supone que se repetirá el patrón del año anterior.' })}
+    ${card({ id: 'E3', q: 'Periodo revisado', accent: 'none', body: `<div class="big">24<span class="unit">meses</span></div><p class="sub">${stateLabel} · ene 2024–dic 2025</p>`, chips: chip('eia', ['ventas definitivas']), limit: 'El resultado describe este periodo; puede variar en otros años.' })}</div>`
+    + card({ id: 'E4', q: `Ventas observadas y estimadas · ${stateLabel}`, accent: 'eia', body: chart + lineTable, chips: chip('eia', ['MWh', 'comparación mensual']), limit: 'No representa un pronóstico de 2026 o años futuros.', more: 'El modelo aprende de los años 2018–2023 y se compara con los datos reales de 2024–2025.' });
 }
 
 /* ---------- Flujo / Calidad ---------- */
-const short = (h) => (h ? `${h.slice(0, 8)}…${h.slice(-6)}` : '—');
 function viewCalidad() {
   const out = [];
   const showEia = state.source === 'ALL' || state.source === 'eia';
@@ -780,35 +791,52 @@ function viewCalidad() {
       const cnt = new Map();
       for (const r of rows) { const k = `${r.state_code}|${r.period.slice(0, 4)}`, c = cnt.get(k) || { f: 0, p: 0 }; r.data_status === 'Final' ? c.f++ : c.p++; cnt.set(k, c); }
       const sts = eiaStates();
-      const cell = (s, y) => { const c = cnt.get(`${s}|${y}`) || { f: 0, p: 0 }; const m = 12 - c.f - c.p; return `<td aria-label="${s} ${y}: ${c.f} finales, ${c.p} preliminares, ${m} faltantes"><span class="cell12" title="${c.f} finales · ${c.p} prelim. · ${m} faltantes">${'<i></i>'.repeat(c.f)}${'<i class="p"></i>'.repeat(c.p)}${'<i class="m"></i>'.repeat(m)}</span></td>`; };
+      const cell = (s, y) => { const c = cnt.get(`${s}|${y}`) || { f: 0, p: 0 }; const m = 12 - c.f - c.p; return `<td aria-label="${jurisdictionName(s)} ${y}: ${c.f} definitivos, ${c.p} preliminares, ${m} meses sin dato"><span class="cell12" title="${c.f} definitivos · ${c.p} preliminares · ${m} meses sin dato">${'<i></i>'.repeat(c.f)}${'<i class="p"></i>'.repeat(c.p)}${'<i class="m"></i>'.repeat(m)}</span></td>`; };
       const tot = years.map((y) => rows.filter((r) => r.period.startsWith(y) && r.data_status !== 'Final').length);
       out.push(card({
         id: 'Q1', q: '¿Qué meses tiene cada estado en EIA?', accent: 'eia',
-        body: `<ul class="legend"><li><span class="cell12"><i></i></span>mes definitivo</li><li><span class="cell12"><i class="p"></i></span>mes preliminar</li><li><span class="cell12"><i class="m"></i></span>mes faltante</li></ul>
-        <div class="tbl-wrap" style="max-height:420px"><table class="t"><caption class="sr">Meses finales, preliminares y faltantes por estado y año</caption><thead><tr><th scope="col">Estado</th>${years.map((y) => `<th scope="col">${y}</th>`).join('')}</tr></thead><tbody>${sts.map((s) => `<tr class="${s === state.st ? 'sel' : ''}"><th scope="row">${s}</th>${years.map((y) => cell(s, y)).join('')}</tr>`).join('')}</tbody></table></div>
-        <p class="tbl-hint" aria-hidden="true">Desliza la tabla para ver más años →</p><p class="sub">${sts.length} jurisdicciones · ${nf(rows.length)} registros. Preliminares por estado: ${years.map((y, i) => `${y}: ${tot[i] / sts.length || 0}`).filter((_, i) => tot[i]).join(', ') || 'ninguno'} .</p>`,
-        chips: chip('eia', ['meses por año', `${years[0]}…${years[years.length - 1]}`, `${sts.length} jurisdicciones`]),
+        body: `<p class="sub">Cada fila es un estado; cada columna, un año. Cada cuadrito representa un mes, de enero a diciembre.</p><ul class="legend"><li><span class="cell12"><i></i></span>confirmado</li><li><span class="cell12"><i class="p"></i></span>provisional</li><li><span class="cell12"><i class="m"></i></span>sin dato</li></ul>
+        <div class="tbl-wrap" style="max-height:420px"><table class="t coverage-table"><caption class="sr">Meses definitivos, preliminares y sin dato por estado y año</caption><thead><tr><th scope="col">Estado</th>${years.map((y) => `<th scope="col">${y}</th>`).join('')}</tr></thead><tbody>${sts.map((s) => `<tr class="${s === state.st ? 'sel' : ''}"><th scope="row">${esc(jurisdictionName(s))}</th>${years.map((y) => cell(s, y)).join('')}</tr>`).join('')}</tbody></table></div>
+        <p class="tbl-hint" aria-hidden="true">Desliza la tabla para ver más años →</p><p class="sub">${sts.length} estados y DC. Meses provisionales: ${years.map((y, i) => `${y}: ${Math.round(tot[i] / sts.length)} por estado`).filter((_, i) => tot[i]).join(', ') || 'ninguno'}.</p>`,
+        chips: chip('eia', ['cobertura mensual', `${years[0]}–${years[years.length - 1]}`, `${sts.length} estados y DC`]),
         limit: 'Faltan meses de 2026 porque EIA aún no los publica; no es un error.',
       }));
     }
   }
-  // Q2 manifiesto
-  const man = store.manifest, ent = store.entries || {};
-  const names = [...new Set([...Object.keys(TABLES), ...Object.keys(ent)])];
-  const srcOf = (n) => ({ eia: 'EIA', resstock: 'ResStock', climate: 'Open-Meteo', demography: 'Census PEP + EIA' }[TABLES[n]?.source] || (ent[n]?.source ?? '—'));
-  const keep = names.filter((n) => state.source === 'ALL' || (state.source === 'eia' && TABLES[n]?.source === 'eia') || (state.source === 'res' && TABLES[n]?.source === 'resstock') || (state.source === 'clim' && TABLES[n]?.source === 'climate') || (state.source === 'demo' && TABLES[n]?.source === 'demography'));
-  const trs = keep.map((n) => {
-    const s = store.tables[n], en = ent[n];
-    const st = s ? ({ ok: `✔ cargada · ${s.validated}`, pending: '… pendiente de entrega', error: `✖ ${s.message}` }[s.status]) : 'listada; sin lector en esta versión';
-    return `<tr><th scope="row"><code>${esc(n)}</code></th><td>${esc(srcOf(n))}</td><td class="n">${s?.status === 'ok' ? nf(s.rows.length) : '—'}${en?.rows != null ? ` / ${nf(en.rows)} manifiesto` : ''}</td><td class="n">${en?.bytes != null ? nf(en.bytes) : '—'}</td><td><code title="${esc(en?.sha256 || '')}">${short(en?.sha256)}</code></td><td>${Array.isArray(en?.inputs) ? `${en.inputs.length} entradas` : '—'}</td><td style="white-space:normal">${esc(st)}</td></tr>`;
-  }).join('');
+  // Fuentes: descripción orientada a la persona que consulta el tablero.
+  const eiaRows = rowsOf('gold_eia_monthly') || [];
+  const eiaPeriods = eiaRows.map((r) => r.period).sort();
+  const eiaFinal = eiaRows.filter((r) => r.data_status === 'Final').length;
+  const resProfiles = rowsOf('gold_resstock_profile_summary') || [];
+  const resStatesList = [...new Set(resProfiles.map((r) => r.state_code))].map(jurisdictionName).join(' y ');
+  const climateRows = rowsOf('gold_climate') || [];
+  const climateDays = [...new Set(climateRows.map((r) => r.timestamp_utc.slice(0, 10)))];
+  const climatePlaces = [...new Set(climateRows.map((r) => r.point_id))].map(climatePlaceName).join(' y ');
+  const demoData = rowsOf('gold_demography_state_year') || [];
+  const sources = [
+    ['EIA · Energía de EE. UU.', 'Agencia federal que publica las ventas eléctricas de los hogares por estado y mes.', `${monthLabel(eiaPeriods[0] || '2018-01')} a ${monthLabel(eiaPeriods.at(-1) || '2026-08')} · ${nf(eiaRows.length)} datos estado-mes; ${nf(eiaFinal)} confirmados.`, 'Comparar cómo cambian las ventas con el tiempo.', 'https://www.eia.gov/electricity/data/eia861m/'],
+    ['ResStock · viviendas simuladas', 'Colección de viviendas modeladas para estudiar su consumo; no son lecturas de medidores.', `2018 · ${nf(resProfiles.length)} viviendas en ${resStatesList || 'Colorado y Nueva York'}.`, 'Explorar diferencias por tipo de vivienda y horario.', 'https://data.openei.org/submissions/4520'],
+    ['Censo de EE. UU. + EIA', 'Población estimada por el Censo y ventas eléctricas residenciales de EIA.', `2020–2025 · ${nf(demoData.length)} datos anuales por estado.`, 'Comparar estados de distinto tamaño.', 'https://www.census.gov/data/datasets/time-series/demo/popest/2020s-state-total.html'],
+    ['Open-Meteo', 'Temperaturas históricas calculadas con modelos meteorológicos.', `${climateDays.length ? `${dateLabel(climateDays[0])} a ${dateLabel(climateDays.at(-1))}` : '1–7 ene 2018'} · ${nf(climateRows.length)} horas en ${climatePlaces || 'Denver y Grand Junction'}.`, 'Dar contexto climático; aún no se combina con la electricidad.', 'https://open-meteo.com/en/docs/historical-weather-api'],
+    ['NOAA / Servicio Meteorológico', 'Mapa de condados usado para asignar la hora local; no aporta datos de consumo.', 'Referencia geográfica de Estados Unidos.', 'Interpretar correctamente los horarios de consumo.', 'https://www.weather.gov/gis/Counties'],
+  ];
+  const sourceCards = sources.map(([name, what, coverage, use, href]) => `<article class="source-card"><h4><a class="source-anchor" href="${href}" target="_blank" rel="noopener noreferrer">${esc(name)} <span aria-hidden="true">↗</span></a></h4><p>${esc(what)}</p><dl><div><dt>Datos disponibles</dt><dd>${esc(coverage)}</dd></div><div><dt>Para qué se usan</dt><dd>${esc(use)}</dd></div></dl></article>`).join('');
   out.push(card({
-    id: 'Q2', q: '¿De dónde viene cada tabla y se verificó?', accent: 'none',
-    body: `<p class="sub">Índice de datos (manifiesto): ${man ? `esquema ${esc(man.schema_version ?? man.manifest_version)} · origen ${/^[a-z]+:/i.test(DATA_BASE) ? 'externo configurado (dirección oculta)' : `local <code>${esc(DATA_BASE)}</code>`}` : esc(store.manifestMessage || 'no disponible')}</p><p class="tbl-hint" aria-hidden="true">Desliza la tabla para ver todas las columnas →</p><div class="tbl-wrap"><table class="t compact"><caption class="sr">Tablas Gold consumidas y su validación</caption><thead><tr><th scope="col">Tabla</th><th scope="col">Fuente</th><th class="n" scope="col">Filas</th><th class="n" scope="col">Bytes</th><th scope="col">SHA-256</th><th scope="col">Entradas</th><th scope="col">Estado</th></tr></thead><tbody>${trs}</tbody></table></div>`,
-    limit: 'Si filas, tamaño o SHA-256 no coinciden con el manifiesto, la tabla no se usa.',
+    id: 'Q2', q: 'Fuentes de información y cómo se usan', accent: 'none',
+    body: `<p class="sub">Qué aporta cada fuente y cómo ayuda al análisis. Selecciona una fuente para abrir su sitio.</p><div class="source-grid">${sourceCards}</div>`,
   }));
-  out.push(`<div class="grid g2">${card({ id: 'Q3', q: '¿Hay un flujo de datos en vivo?', body: empty('No', 'Copia local de datos procesados; no se simula un estado «en vivo».'), more: 'Aún no hay salida de reproducción del pipeline (<code>replay_id</code>, <code>ingested_at_utc</code>).' })}
-  ${card({ id: 'Q4', q: '¿Qué controles de calidad se aplicaron?', body: empty('Pendiente', 'Se mostrarán cuando el procesamiento en Spark exporte <code>quality_status</code> y <code>quality_flags</code> al manifiesto.') })}</div>`);
+  const qc = store.manifest?.qc_rules;
+  const qcSummary = qc
+    ? `<div class="quality-score"><strong>${nf(qc.passed_rules)} de ${nf(qc.total_rules)} revisiones correctas</strong><span>${nf(qc.failed_rules)} con error</span></div><p class="sub">Se revisaron cobertura, valores faltantes, duplicados y consistencia antes de mostrar los resultados.</p>`
+    : empty('Revisión no disponible', 'No se pudo consultar el resumen de calidad de los datos.');
+  out.push(card({
+    id: 'Q4', q: '¿Cómo revisamos que los datos sean confiables?', accent: 'none',
+    body: qcSummary + `<p class="quality-note"><strong>Alcance:</strong> la temperatura se analiza por separado de la electricidad. Una diferencia entre estados no explica por sí sola su causa.</p>`,
+  }));
+  out.push(card({
+    id: 'Q3', q: '¿Los datos cambian en tiempo real?', accent: 'none',
+    body: empty('No', 'El tablero muestra datos preparados previamente. Cambian cuando el equipo publica una nueva versión.'),
+  }));
   return out.join('');
 }
 
@@ -817,21 +845,21 @@ function rules() {
   const v = state.view, on = { on: true }, off = (why) => ({ on: false, why });
   const nothing = (why) => ({ st: off(why), period: off(why), type: off(why), source: off(why), gran: off(why), prelim: off(why), profile: off(why) });
   if (v === 'anomalias') {
-    const R = nothing('Esta vista solo se filtra por estado y periodo.');
+    const R = nothing('Aquí puedes elegir estado y periodo.');
     R.st = on; R.period = on;
     return R;
   }
   if (v === 'estimaciones') {
-    const R = nothing('El periodo evaluado es fijo (2024–2025); solo cambia el estado.');
+    const R = nothing('La evaluación cubre 2024–2025; aquí puedes cambiar el estado.');
     R.st = on;
     return R;
   }
   const R = { st: on, period: on, type: on, source: on, gran: on, prelim: on, profile: on };
-  if (v === 'resumen') R.gran = off('El resumen no tiene gráficas con granularidad variable.');
-  if (v === 'patrones') { R.source = off('Cada gráfica de Patrones ya está ligada a una fuente.'); R.prelim = off('Solo aplica a P1 (EIA); se ve en la leyenda cuando hay meses preliminares.'); if (state.gran === 'monthly') R.prelim = on; }
-  if (v === 'clima') { R.type = off('Sin efecto: el clima no tiene tipo de vivienda.'); R.source = off('Esta vista ya es solo clima.'); R.prelim = off('Sin efecto: el clima no tiene estado Final/Preliminary.'); R.profile = off('Sin efecto en clima.'); }
-  if (v === 'calidad') { R.type = off('Sin efecto en la cobertura ni el manifiesto.'); R.gran = off('Sin efecto en Calidad.'); R.prelim = off('La cuadrícula muestra siempre finales y preliminares.'); R.profile = off('Sin efecto en Calidad.'); R.period = off('La cobertura se muestra siempre completa.'); }
-  if (v === 'patrones' && state.gran === 'monthly') R.profile = off('El perfil se elige en P2 (granularidad horaria).');
+  if (v === 'resumen') R.gran = off('El resumen combina indicadores de distintas frecuencias.');
+  if (v === 'patrones') { R.source = off('Esta vista ya muestra por separado cada fuente.'); R.prelim = off('El estado de publicación se indica junto a las ventas EIA.'); if (state.gran === 'monthly') R.prelim = on; }
+  if (v === 'clima') { R.type = off('El clima no se divide por tipo de vivienda.'); R.source = off('Esta vista muestra únicamente temperaturas.'); R.gran = off('Las temperaturas están disponibles por hora.'); R.prelim = off('La fuente climática no usa datos definitivos o provisionales.'); R.profile = off('El clima no se divide por vivienda.'); }
+  if (v === 'calidad') { R.type = off('Esta vista muestra el alcance completo de las fuentes.'); R.gran = off('Aquí se muestran todos los periodos disponibles.'); R.prelim = off('Los datos confirmados y provisionales aparecen juntos.'); R.profile = off('Esta vista no se limita a una vivienda.'); R.period = off('Aquí se muestra todo el periodo disponible.'); }
+  if (v === 'patrones' && state.gran === 'monthly') R.profile = off('Elige una vivienda en la gráfica por hora.');
   // Estado: si la vista depende de ResStock/clima y el estado no existe, se explica, no se oculta
   return R;
 }
@@ -843,32 +871,144 @@ function renderFilters() {
   if (!state.from) { state.from = lo; state.to = hi; }
   const months = []; for (let [y, m] = lo.split('-').map(Number); `${y}-${String(m).padStart(2, '0')}` <= hi; m === 12 ? (y++, m = 1) : m++) months.push(`${y}-${String(m).padStart(2, '0')}`);
   const sel = (id, opts, val, r, extra = '') => `<select id="${id}" ${r.on ? '' : 'disabled'} ${r.on ? '' : `aria-describedby="why-${id}"`} ${extra}>${opts.map(([v, l, d]) => `<option value="${esc(v)}" ${String(v) === String(val) ? 'selected' : ''} ${d ? 'disabled' : ''}>${esc(l)}</option>`).join('')}</select>`;
-  const sts = [['ALL', 'Todo EE. UU. (50 estados + DC)'], ...eiaStates().map((s) => [s, `${jurisdictionName(s)} (${s})${resStates().includes(s) ? ' ★' : ''}`])];
+  const sts = [['ALL', 'Todo EE. UU. (50 estados + DC)'], ...eiaStates().map((s) => [s, `${jurisdictionName(s)}${resStates().includes(s) ? ' · viviendas simuladas' : ''}`])];
   if (sts.length === 1) for (const s of ['CO', 'NY']) sts.push([s, s]);
-  const stWhy = !R.st.on ? R.st.why : ((w) => (w === 'patrones' || w === 'clima' || w === 'resumen') ? `Simulaciones: ${resStates().join(', ') || '—'} · Clima: ${[...new Set((rowsOf('gold_climate') || []).map((r) => r.state_code))].join(', ') || '—'}. En otros estados esas tarjetas aparecen vacías.` : 'Elige un estado o el total del país. ★ = tiene viviendas simuladas.')(state.view);
+  const stWhy = !R.st.on ? R.st.why : ((w) => (w === 'patrones' || w === 'clima' || w === 'resumen') ? `Viviendas simuladas: ${resStates().map(jurisdictionName).join(' y ') || '—'} · temperatura: Colorado.` : 'Elige un estado o todo EE. UU.')(state.view);
   const types = resTypes();
   const typeWhy = R.type.on ? (statusOf('gold_resstock_profile_summary') === 'ok' ? 'Solo cambia las viviendas simuladas.' : 'Esperando la tabla de viviendas simuladas.') : R.type.why;
   const ps = profiles(), cp = currentProfile();
   const html = [
     fld('f-st', 'Estado', sel('f-st', sts, state.st, R.st), stWhy, R.st),
-    fld('f-from', 'Desde (mes)', sel('f-from', months.map((m) => [m, m]), state.from, R.period), `Ventas EIA: ${lo} a ${hi}. Simulaciones: solo 2018.`, R.period),
-    fld('f-to', 'Hasta (mes)', sel('f-to', months.map((m) => [m, m]), state.to, R.period), 'Clima: solo 1–7 ene 2018.', R.period),
+    fld('f-from', 'Periodo inicial', sel('f-from', months.map((m) => [m, monthLabel(m)]), state.from, R.period), '', R.period),
+    fld('f-to', 'Periodo final', sel('f-to', months.map((m) => [m, monthLabel(m)]), state.to, R.period), `Datos disponibles: EIA hasta ${monthLabel(hi)} · viviendas 2018 · clima 1–7 ene 2018.`, R.period),
     fld('f-type', 'Tipo de vivienda', sel('f-type', [['ALL', 'Todos los tipos'], ...types.map((t) => [t, housingTypeName(t)])], state.type, R.type), typeWhy, R.type),
-    fld('f-profile', 'Vivienda simulada', sel('f-profile', [
+    fld('f-profile', 'Vivienda', sel('f-profile', [
       ['ALL', 'Promedio de la muestra'],
-      ...ps.map((p) => [p.bldg_id, `${housingTypeName(p.housing_type)} · ${p.state_code} (#${p.bldg_id})`])
+      ...ps.map((p, i) => [p.bldg_id, `Muestra ${i + 1} · ${housingTypeName(p.housing_type)} · ${jurisdictionName(p.state_code)}`])
     ], state.profile || 'ALL', R.profile), 'El promedio o una vivienda concreta.', R.profile),
-    fld('f-source', 'Fuente de datos', sel('f-source', [['ALL', 'Todas las fuentes'], ['eia', 'Ventas EIA (oficial)'], ['res', 'Simulaciones ResStock'], ['clim', 'Clima (Open-Meteo)'], ['demo', 'Población (Census + EIA)']], state.source, R.source), 'Muestra solo las tarjetas de esa fuente.', R.source),
-    fld('f-gran', 'Detalle de tiempo', sel('f-gran', [['monthly', 'Por mes' + (state.view === 'clima' ? ' (no aplica: 7 días)' : ''), state.view === 'clima'], ['hourly', 'Por hora del día']], state.view === 'clima' ? 'hourly' : state.gran, R.gran), state.view === 'clima' ? 'El clima solo tiene datos por hora.' : 'Por mes: meses y estados. Por hora: horario de uso.', R.gran),
-    fld('f-prelim', 'Meses preliminares', `<label class="tog"><input type="checkbox" id="f-prelim" ${state.prelim ? 'checked' : ''}> Incluir</label>`, 'Meses recientes que EIA aún puede corregir.', R.prelim),
+    fld('f-source', 'Mostrar datos de', sel('f-source', [['ALL', 'Todas las fuentes'], ['eia', 'Ventas · EIA'], ['res', 'Viviendas simuladas · ResStock'], ['clim', 'Temperatura · Open-Meteo'], ['demo', 'Población + ventas · Census y EIA']], state.source, R.source), '', R.source),
+    fld('f-gran', 'Frecuencia', sel('f-gran', [['monthly', 'Por mes' + (state.view === 'clima' ? ' (no aplica: 7 días)' : ''), state.view === 'clima'], ['hourly', 'Por hora del día']], state.view === 'clima' ? 'hourly' : state.gran, R.gran), state.view === 'clima' ? 'La temperatura se muestra por hora.' : 'Elige datos mensuales u horarios.', R.gran),
+    fld('f-prelim', 'Datos provisionales de EIA', `<label class="tog"><input type="checkbox" id="f-prelim" ${state.prelim ? 'checked' : ''}> Incluir</label>`, '', R.prelim),
   ].join('');
-  const NAMES = { st: 'estado', period: 'periodo', type: 'tipo de vivienda', profile: 'vivienda simulada', source: 'fuente', gran: 'detalle de tiempo', prelim: 'preliminares' };
-  const offs = Object.entries(R).filter(([, r]) => !r.on);
-  const note = offs.length ? `<p class="filters-note">No aplican aquí: ${offs.map(([k]) => NAMES[k]).join(', ')}. ${new Set(offs.map(([, r]) => r.why)).size === 1 ? esc(offs[0][1].why || '') : ''}</p>` : '';
-  $('#filters').innerHTML = html + note;
-  $('#filters-count').textContent = `${Object.values(R).filter((r) => r.on).length} disponibles`;
+  $('#filters').innerHTML = html;
+  enhanceDropdowns($('#filters'));
   if (focus && $('#' + focus)) $('#' + focus).focus();
 }
+
+// Sustituye el popup nativo por un menú propio; el select original conserva el valor
+// contractual y emite change para reutilizar el flujo de filtros existente.
+function enhanceDropdowns(root) {
+  root.querySelectorAll('select:not([data-dropdown-ready])').forEach((select) => {
+    select.dataset.dropdownReady = 'true';
+    const wrap = document.createElement('div');
+    wrap.className = 'select-wrap';
+    select.before(wrap);
+    wrap.append(select);
+    select.classList.add('select-native');
+    select.tabIndex = -1;
+    select.setAttribute('aria-hidden', 'true');
+
+    const label = root.querySelector(`label[for="${CSS.escape(select.id)}"]`)?.textContent.trim()
+      || select.closest('label')?.childNodes[0]?.textContent.trim()
+      || 'Seleccionar';
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'dropdown-trigger';
+    trigger.id = `combo-${select.id}`;
+    trigger.setAttribute('role', 'combobox');
+    trigger.setAttribute('aria-label', label);
+    trigger.setAttribute('aria-haspopup', 'listbox');
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.setAttribute('aria-controls', `listbox-${select.id}`);
+    if (select.getAttribute('aria-describedby')) trigger.setAttribute('aria-describedby', select.getAttribute('aria-describedby'));
+    if (select.disabled) trigger.disabled = true;
+    const value = document.createElement('span');
+    value.className = 'dropdown-value';
+    const caret = document.createElement('span');
+    caret.className = 'dropdown-caret';
+    caret.setAttribute('aria-hidden', 'true');
+    trigger.append(value, caret);
+
+    const list = document.createElement('div');
+    list.className = 'dropdown-menu';
+    list.id = `listbox-${select.id}`;
+    list.setAttribute('role', 'listbox');
+    list.setAttribute('aria-label', label);
+    for (const option of select.options) {
+      if (option.disabled) continue;
+      const item = document.createElement('div');
+      item.className = 'dropdown-option';
+      item.setAttribute('role', 'option');
+      item.tabIndex = -1;
+      item.dataset.value = option.value;
+      item.textContent = option.textContent.trim();
+      if (option.selected) item.setAttribute('aria-selected', 'true');
+      item.addEventListener('click', () => {
+        select.value = option.value;
+        pendingDropdownFocus = select.id;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        closeDropdown(wrap);
+      });
+      item.addEventListener('keydown', (event) => moveDropdown(event, wrap, item));
+      list.append(item);
+    }
+    wrap.append(trigger, list);
+    wrap.addEventListener('focusout', () => setTimeout(() => {
+      if (!wrap.contains(document.activeElement)) closeDropdown(wrap);
+    }, 0));
+    const sync = () => {
+      const selected = select.selectedOptions[0];
+      value.textContent = selected?.textContent.trim() || 'Seleccionar';
+      list.querySelectorAll('[role="option"]').forEach((item) => {
+        const active = item.dataset.value === select.value;
+        item.setAttribute('aria-selected', String(active));
+      });
+    };
+    select.addEventListener('change', sync);
+    sync();
+    trigger.addEventListener('click', () => {
+      const wasOpen = wrap.classList.contains('is-open');
+      document.querySelectorAll('.select-wrap.is-open').forEach(closeDropdown);
+      if (!wasOpen) openDropdown(wrap, select.value);
+    });
+    trigger.addEventListener('keydown', (event) => {
+      if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
+        event.preventDefault();
+        openDropdown(wrap, select.value);
+        const items = [...list.querySelectorAll('[role="option"]')];
+        const selected = items.find((item) => item.dataset.value === select.value) || items[0];
+        selected?.focus();
+      }
+    });
+  });
+}
+function openDropdown(wrap, value) {
+  wrap.classList.add('is-open');
+  wrap.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'true');
+  const selected = [...wrap.querySelectorAll('[role="option"]')].find((item) => item.dataset.value === value);
+  selected?.scrollIntoView({ block: 'nearest' });
+}
+function closeDropdown(wrap, restoreFocus = false) {
+  wrap.classList.remove('is-open');
+  wrap.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false');
+  if (restoreFocus) wrap.querySelector('.dropdown-trigger')?.focus();
+}
+function moveDropdown(event, wrap, item) {
+  const items = [...wrap.querySelectorAll('[role="option"]')];
+  const index = items.indexOf(item);
+  let next = null;
+  if (event.key === 'ArrowDown') next = items[Math.min(items.length - 1, index + 1)];
+  if (event.key === 'ArrowUp') next = items[Math.max(0, index - 1)];
+  if (event.key === 'Home') next = items[0];
+  if (event.key === 'End') next = items.at(-1);
+  if (event.key === 'Escape') { event.preventDefault(); closeDropdown(wrap, true); }
+  else if (event.key === 'Tab') closeDropdown(wrap);
+  else if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); item.click(); }
+  else if (next) { event.preventDefault(); next.focus(); }
+}
+document.addEventListener('click', (event) => {
+  if (!event.target.closest('.select-wrap')) document.querySelectorAll('.select-wrap.is-open').forEach(closeDropdown);
+});
 
 function onFilter(e) {
   const id = e.target.id, val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -885,22 +1025,15 @@ const BUILD = { resumen: viewResumen, patrones: viewPatrones, clima: viewClima, 
 function renderRail() {
   $('#rail').innerHTML = `<div class="brand"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3l12 7v12l-12 7-12-7V10z" fill="#2453c7"/><path d="M16 3l12 7-12 7-12-7z" fill="#7aa2f7"/><path d="M16 17v12l12-7V10z" fill="#1b3f9c"/></svg><span><b>Consumo eléctrico</b><small>residencial · EE. UU.</small></span></div>`
     + `<p class="rail-h">Vistas</p><ul class="nav">${VIEWS.map((x) => `<li><a href="#${x.id}" ${x.id === state.view ? 'aria-current="page"' : ''} aria-label="${esc(x.label)}">${x.icon}<span class="rail-lbl"><span class="lbl-full">${esc(x.label)}</span><span class="lbl-short">${esc(x.short || x.label)}</span></span></a></li>`).join('')}</ul>`
-    + `<div class="legend-src"><p class="rail-h">Colores por fuente</p><ul><li><i class="eia"></i>Ventas EIA · oficial</li><li><i class="res"></i>ResStock · simulado</li><li><i class="demo"></i>Población · oficial</li><li><i class="clim"></i>Clima · reanálisis</li><li><i class="syn"></i>Prueba sintética</li><li><i class="pre"></i>Preliminar</li></ul></div>`;
+    + `<div class="legend-src"><p class="rail-h">Colores</p><ul><li><i class="eia"></i>Ventas oficiales</li><li><i class="res"></i>Viviendas simuladas</li><li><i class="demo"></i>Población oficial</li><li><i class="clim"></i>Temperatura estimada</li><li><i class="syn"></i>Prueba con cambios añadidos</li><li><i class="pre"></i>Dato provisional</li></ul></div>`;
 }
 function renderStatus() {
-  const n = Object.keys(TABLES).length;
-  const available = Object.entries(store.tables).filter(([name, t]) =>
-    t.status === 'ok' || t.status === 'loading' || (t.status === 'lazy' && Boolean(store.entries?.[name]))
-  ).length;
   const ms = store.manifestStatus;
-  $('#load-status').innerHTML = ms === 'loading' ? '<span class="pill">Cargando datos…</span>' : `<span class="pill ${ms === 'ok' ? 'ok' : 'bad'}" title="Copia local de datos procesados; no es una conexión en vivo"><i></i>Datos locales ${{ ok: 'verificados', missing: 'sin manifiesto', error: 'con error' }[ms]}</span><span class="pill">${available} de ${n} tablas</span>`;
-  const profileCount = rowsOf('gold_resstock_profile_summary')?.length;
-  const note = $('#project-note');
-  if (note) note.textContent = `Proyecto académico exploratorio. Datos de una copia local, no en vivo. ResStock aporta ${profileCount == null ? 'viviendas simuladas' : `${nf(profileCount)} viviendas simuladas`} que no representan hogares reales ni a la población. EIA son ventas agregadas por estado. Las ilustraciones son exteriores conceptuales.`;
+  $('#load-status').innerHTML = ms === 'loading' ? '<span class="pill">Preparando información…</span>' : `<span class="pill ${ms === 'ok' ? 'ok' : 'bad'}" title="Datos de esta versión revisados; no se actualizan en tiempo real"><i></i>${{ ok: 'Datos revisados', missing: 'Datos sin revisión', error: 'Datos con problema' }[ms]}</span>`;
   const b = [];
-  if (store.manifestStatus === 'missing') b.push(`<div class="banner warn" role="status">${esc(store.manifestMessage)}</div>`);
-  if (store.manifestStatus === 'error') b.push(`<div class="banner err" role="alert">${esc(store.manifestMessage)}</div>`);
-  for (const [n2, t] of Object.entries(store.tables)) if (t.status === 'error' && store.manifestStatus !== 'error') b.push(`<div class="banner err" role="alert"><strong>Error de carga:</strong> ${esc(t.message)}</div>`);
+  if (store.manifestStatus === 'missing') b.push('<div class="banner warn" role="status">No se pudo revisar la información antes de mostrarla.</div>');
+  if (store.manifestStatus === 'error') b.push('<div class="banner err" role="alert">No se pudo verificar esta versión de los datos; las cifras relacionadas no se mostrarán.</div>');
+  if (store.manifestStatus !== 'error' && Object.values(store.tables).some((t) => t.status === 'error')) b.push('<div class="banner err" role="alert">Algunos datos no pudieron verificarse; omitimos esos resultados para no mostrar cifras incorrectas.</div>');
   $('#banners').innerHTML = b.join('');
 }
 function drawCharts() {
@@ -908,6 +1041,8 @@ function drawCharts() {
 }
 let ready = false;
 function render() {
+  const focusedDropdown = pendingDropdownFocus || document.activeElement?.closest('.select-wrap')?.querySelector('select')?.id;
+  pendingDropdownFocus = null;
   const V = VIEWS.find((x) => x.id === state.view);
   document.title = `${V.label} · Consumo eléctrico residencial`;
   $('#view-title').textContent = V.label; $('#view-question').textContent = V.q;
@@ -918,6 +1053,8 @@ function render() {
   const prevView = main.dataset.view;
   main.innerHTML = `<div class="view" ${prevView === state.view ? 'style="animation:none"' : ''}>${BUILD[state.view]()}</div>`;
   main.dataset.view = state.view;
+  enhanceDropdowns(main);
+  if (focusedDropdown) document.getElementById(`combo-${focusedDropdown}`)?.focus({ preventScroll: true });
   drawCharts();
   main.querySelector('#sel-profile')?.addEventListener('change', (e) => { state.profile = e.target.value; render(); });
   main.querySelector('#sel-tz')?.addEventListener('change', (e) => { state.tz = e.target.value; render(); });
@@ -948,8 +1085,6 @@ function route() {
   render();
   if (location.hash && ready) $('#main').focus({ preventScroll: true });
 }
-const mq = matchMedia('(max-width:900px)');
-const fw = $('#filters-wrap'); const syncFilters = () => { fw.open = !mq.matches; }; syncFilters(); mq.addEventListener('change', syncFilters);
 $('#filters').addEventListener('change', onFilter);
 window.addEventListener('hashchange', route);
 let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(drawCharts, 120); }).observe(document.body);
