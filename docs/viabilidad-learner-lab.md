@@ -1,6 +1,7 @@
 # Viabilidad del Learner Lab de AWS Academy
 
-**Fecha del registro:** 2026-11-18  
+**Fecha del registro:** 2026-11-18 (última evidencia; no revalidada con consulta a la consola desde entonces)
+
 **Estado:** sesión temporal de Learner Lab. Se creó un bucket privado dedicado, se subió la demo autónoma a site/ y cuatro artefactos derivados a gold/v1/pilot/. EMR Serverless negó acceso; Kinesis permite abrir el formulario, pero no se creó un stream.
 
 El Learner Lab es temporal y no productivo. Sus recursos y su medidor no se extrapolan a una cuenta AWS real. No se incluyen identificadores, correos, ARN, credenciales, tokens ni nombres de buckets.
@@ -21,8 +22,8 @@ El Learner Lab es temporal y no productivo. Sus recursos y su medidor no se extr
 | S3 | Carga verificada en bucket nuevo del proyecto | Separado del bucket de prácticas. ACL deshabilitadas, bloqueo de acceso público, cifrado SSE-S3 y versionado deshabilitado. Se cargó site/consumo-residencial.html (56,429 bytes, tipo text/html) y S3 reportó la carga correcta. Una URL prefirmada de 2 horas abrió el tablero desde un navegador sin usar la consola. |
 | Kinesis Data Streams | Formulario de creación accesible; no desplegado | El listado abrió con 0 streams y el formulario de creación estuvo disponible. No se creó un stream porque el consumidor EMR Serverless no tiene permisos en esta sesión; crear uno sin consumidor dejaría un recurso facturable sin completar el flujo. Mantener replay local. |
 | EMR Serverless | Acceso denegado | La consola abrió la sección EMR Serverless, pero al elegir Introducción mostró: “No tiene los permisos necesarios para EMR sin servidor”. No se creó aplicación ni se inició cómputo. Continuar con Spark local. |
-| CloudFront | Lectura parcial denegada | Se observaron `AccessDenied` para `cloudfront:ListSavingsPlans` y `cloudfront:ListDistributions`; esto no demuestra que todo el servicio esté prohibido. No depender de CloudFront para avanzar. |
-| AWS Budgets | Parcial | Abre la pantalla introductoria; no se verificó creación de presupuestos. El medidor de Learner Lab no reemplaza Budgets. |
+| CloudFront | Lectura parcial denegada; sin distribución verificada | Se observaron `AccessDenied` para `cloudfront:ListSavingsPlans` y `cloudfront:ListDistributions`; esto no demuestra que todo el servicio esté prohibido. No depender de CloudFront para avanzar. |
+| AWS Budgets | Parcial | Abre la pantalla introductoria; no hay evidencia de Budget creado ni de tope duro. El medidor de Learner Lab no reemplaza Budgets. |
 | IAM | Parcial o bloqueado | La lista de roles muestra `LabRole`; `iam:GetPolicy`, `access-analyzer:ListPolicyGenerations` y `account:GetAccountInformation` devolvieron `AccessDenied`. No se crearán roles ni se intentará ampliar permisos. |
 
 ## 3. Límites y control de riesgo

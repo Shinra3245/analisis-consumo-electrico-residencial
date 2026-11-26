@@ -6,7 +6,7 @@
 ## Qué quedó desplegado
 
 - Bucket dedicado del proyecto en us-east-1, separado del bucket de prácticas.
-- Acceso público bloqueado, ACL deshabilitadas y cifrado SSE-S3.
+- Acceso público bloqueado, ACL deshabilitadas, cifrado SSE-S3 y versionado deshabilitado (observado el 2026-11-18).
 - Objeto site/consumo-residencial.html, tipo text/html, 56,429 bytes.
 - SHA-256: e653ccf800b36d8ea84a5a14b7a522df0b8fe84ae13df66003acbae0218eb822.
 - Se abrió desde un navegador con una URL prefirmada de dos horas. La URL concede lectura temporal de ese objeto y no modifica la política privada del bucket. Una petición anónima sin firma devolvió AccessDenied, confirmando que el objeto no quedó público. No guardar ni versionar la URL: cuando caduque, generarla de nuevo en la consola S3.
@@ -46,4 +46,4 @@ El empaquetador incorpora demo/styles.css y demo/app.js dentro de demo/index.htm
 
 ## Estado de otros servicios
 
-EMR Serverless mostró falta de permisos en la consola y no se creó una aplicación. Kinesis permitió abrir el formulario, pero no se creó un stream porque no hay consumidor cloud disponible. Por ahora Spark/replay se mantienen locales. CloudFront no está desplegado; por eso no existe URL permanente pública.
+EMR Serverless mostró falta de permisos en la consola y no se creó una aplicación. Kinesis permitió abrir el formulario, pero no se creó un stream porque no hay consumidor cloud disponible. Por ahora Spark/replay se mantienen locales. CloudFront: se observó acceso de lectura parcial denegado, lo que no prueba que todas las acciones estén bloqueadas ni que exista una distribución; no hay URL permanente pública registrada. Estado observado el 2026-11-18, sin revalidar. La arquitectura completa de `arquitectura-aws-por-etapas.md` es objetivo, no lo implementado.

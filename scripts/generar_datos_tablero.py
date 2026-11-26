@@ -31,6 +31,7 @@ Manejo temporal:
 from __future__ import annotations
 
 import argparse
+import csv
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -57,16 +58,36 @@ EXPECTED_OUTPUT_FILES = PREVIOUS_EXPECTED_FILES | {
     "gold_resstock_pattern_aggregate.json",
 }
 
+EXPECTED_OUTPUT_FILES_V2 = EXPECTED_OUTPUT_FILES | {
+    "gold_demography_state_year.json",
+    "gold_anomaly_candidates.json",
+    "gold_anomaly_synthetic_eval.json",
+    "gold_forecast_metrics.json",
+    "gold_forecast_series.json",
+}
+
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Genera datos Gold reproducibles para el tablero web (v1)."
+        description="Genera datos Gold reproducibles para el tablero web (v1/v2)."
     )
     parser.add_argument(
         "--input",
         type=str,
         default="datos",
-        help="Directorio con los datos de entrada (default: datos).",
+        help="Directorio con los datos de entrada base (default: datos).",
+    )
+    parser.add_argument(
+        "--demografia-input",
+        type=str,
+        default="datos/demografia_estatal",
+        help="Directorio con los datos demográficos canónicos (default: datos/demografia_estatal).",
+    )
+    parser.add_argument(
+        "--v1-base",
+        type=str,
+        default="tablero/data/v1",
+        help="Directorio de datos v1 para conservar tablas analíticas en v2 (default: tablero/data/v1).",
     )
     parser.add_argument(
         "--output",
@@ -121,12 +142,12 @@ def validate_paths(input_dir: str, output_dir: str, overwrite: bool) -> Tuple[st
             ) from exc
         actual_files = set(os.listdir(real_output)) - {".gitkeep"}
         if (
-            manifest.get("schema_version") != "1.0"
+            manifest.get("schema_version") not in ("1.0", "2.0")
             or manifest.get("generator_script") != "scripts/generar_datos_tablero.py"
-            or actual_files not in (PREVIOUS_EXPECTED_FILES, EXPECTED_OUTPUT_FILES)
+            or actual_files not in (PREVIOUS_EXPECTED_FILES, EXPECTED_OUTPUT_FILES, EXPECTED_OUTPUT_FILES_V2)
         ):
             raise ValueError(
-                "--overwrite solo reemplaza una exportación v1 reconocida sin archivos adicionales; "
+                "--overwrite solo reemplaza una exportación Gold reconocida sin archivos adicionales; "
                 f"salida protegida: {real_output}"
             )
     return real_input, real_output
@@ -150,6 +171,199 @@ def publish_staging(staging_dir: str, output_dir: str, overwrite: bool) -> None:
         os.replace(backup_dir, output_dir)
         raise
     shutil.rmtree(backup_dir)
+
+
+def verify_demography_source(demografia_dir: str) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+    """Verifica tamaño y SHA-256 del CSV canónico demográfico contra su manifest.json."""
+    manifest_path = os.path.join(demografia_dir, "manifest.json")
+    if not os.path.exists(manifest_path):
+        raise FileNotFoundError(f"No se encontró el manifiesto demográfico: {manifest_path}")
+
+    with open(manifest_path, encoding="utf-8") as f:
+        meta = json.load(f)
+
+    art = meta.get("artifact", {})
+    filename = art.get("file", "energy_demography_state_year_v1.csv")
+    csv_path = os.path.join(demografia_dir, filename)
+    if not os.path.exists(csv_path):
+        raise FileNotFoundError(f"No se encontró el CSV demográfico: {csv_path}")
+
+    digest = hashlib.sha256()
+    size_bytes = 0
+    with open(csv_path, "rb") as f_in:
+        for chunk in iter(lambda: f_in.read(1024 * 1024), b""):
+            digest.update(chunk)
+            size_bytes += len(chunk)
+    actual_sha = digest.hexdigest()
+
+    expected_sha = art.get("sha256")
+    expected_bytes = art.get("bytes")
+    if actual_sha != expected_sha or size_bytes != expected_bytes:
+        raise ValueError(
+            f"Integridad violada en demografía {filename}: tamaño={size_bytes} (esperado {expected_bytes}), "
+            f"sha256={actual_sha} (esperado {expected_sha})"
+        )
+
+    sources_inventory = []
+    for src_key, src_val in meta.get("sources", {}).items():
+        sources_inventory.append({
+            "source_category": src_key,
+            "file": src_val.get("file"),
+            "version": src_val.get("version"),
+            "url": src_val.get("url") or src_val.get("upstream_url"),
+            "sha256": src_val.get("sha256"),
+            "bytes": src_val.get("bytes"),
+        })
+
+    return meta, sources_inventory
+
+
+def generate_gold_demography_state_year(csv_path: str) -> List[Dict[str, Any]]:
+    """Transforma el CSV canónico demográfico a formato JSON Gold con tipos validados."""
+    records = []
+    with open(csv_path, mode="r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        for r in reader:
+            records.append({
+                "state_fips": str(r["state_fips"]).zfill(2),
+                "state_code": str(r["state_code"]),
+                "year": int(r["year"]),
+                "population_estimate": int(r["population_estimate"]),
+                "land_area_sq_mi_2020": round(float(r["land_area_sq_mi_2020"]), 6),
+                "population_density_per_sq_mi": round(float(r["population_density_per_sq_mi"]), 6),
+                "residential_sales_mwh": round(float(r["residential_sales_mwh"]), 2),
+                "residential_kwh_per_capita": round(float(r["residential_kwh_per_capita"]), 6),
+                "eia_data_status": str(r["eia_data_status"]),
+                "census_vintage": int(r["census_vintage"]),
+                "source_version": str(r["source_version"]),
+            })
+    return records
+
+
+def run_demography_qc(records: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], int]:
+    """Ejecuta los 6 controles formales de calidad sobre la tabla demográfica estatal."""
+    rules_results = []
+
+    n = len(records)
+    r1 = bool(n == 306)
+    rules_results.append({
+        "fuente": "demografia",
+        "regla": "conteos_totales_esperados",
+        "condicion": "filas == 306 (51 jurisdicciones x 6 años 2020-2025)",
+        "cumplida": r1,
+        "fallos": 0 if r1 else abs(306 - n),
+    })
+
+    keys = [(r["state_fips"], r["year"]) for r in records]
+    dup_pks = len(keys) - len(set(keys))
+    r2 = bool(dup_pks == 0)
+    rules_results.append({
+        "fuente": "demografia",
+        "regla": "unicidad_clave_primaria",
+        "condicion": "tupla (state_fips, year) sin duplicados",
+        "cumplida": r2,
+        "fallos": dup_pks,
+    })
+
+    by_year = {}
+    for r in records:
+        by_year.setdefault(r["year"], set()).add(r["state_code"])
+    expected_years = {2020, 2021, 2022, 2023, 2024, 2025}
+    r3 = bool(set(by_year.keys()) == expected_years and all(len(v) == 51 for v in by_year.values()))
+    rules_results.append({
+        "fuente": "demografia",
+        "regla": "cobertura_geografica_anual_completa",
+        "condicion": "51 jurisdicciones (50 estados + DC) presentes en cada año 2020-2025",
+        "cumplida": r3,
+        "fallos": 0 if r3 else 1,
+    })
+
+    pos_bad = sum(
+        1 for r in records
+        if r["population_estimate"] <= 0
+        or r["land_area_sq_mi_2020"] <= 0
+        or r["residential_sales_mwh"] <= 0
+        or r["population_density_per_sq_mi"] <= 0
+        or r["residential_kwh_per_capita"] <= 0
+    )
+    r4 = bool(pos_bad == 0)
+    rules_results.append({
+        "fuente": "demografia",
+        "regla": "positividad_de_indicadores",
+        "condicion": "population, land_area, sales_mwh, density y kwh_per_capita estrictamente positivos",
+        "cumplida": r4,
+        "fallos": pos_bad,
+    })
+
+    meta_bad = sum(
+        1 for r in records
+        if r["eia_data_status"] != "Final" or r["census_vintage"] != 2025
+    )
+    r5 = bool(meta_bad == 0)
+    rules_results.append({
+        "fuente": "demografia",
+        "regla": "consistencia_fuentes_y_vintage",
+        "condicion": "eia_data_status == 'Final' y census_vintage == 2025 en todas las filas",
+        "cumplida": r5,
+        "fallos": meta_bad,
+    })
+
+    dc_recs = [r for r in records if r.get("state_code") == "DC"]
+    expected_years = {2020, 2021, 2022, 2023, 2024, 2025}
+    dc_ok = bool(
+        len(dc_recs) == 6
+        and {r.get("year") for r in dc_recs} == expected_years
+        and all(str(r.get("state_fips")) == "11" for r in dc_recs)
+        and all(float(r.get("population_density_per_sq_mi", 0)) > 10000 for r in dc_recs)
+    )
+    rules_results.append({
+        "fuente": "demografia",
+        "regla": "distincion_territorial_dc",
+        "condicion": "DC identificado con FIPS 11, años 2020-2025 y densidad urbana atípica (>10,000 hab/mi²)",
+        "cumplida": dc_ok,
+        "fallos": 0 if dc_ok else 1,
+    })
+
+    failed = sum(1 for r in rules_results if not r["cumplida"])
+    return rules_results, failed
+
+
+def load_and_copy_analytics(v1_base_dir: str, staging_dir: str) -> Tuple[Dict[str, Any], Dict[str, Any], str]:
+    """Copia las 4 tablas analíticas de v1 si están presentes para mantener todas las vistas en v2."""
+    manifest_path = os.path.join(v1_base_dir, "manifest.json")
+    if not os.path.exists(manifest_path):
+        return {}, {}, ""
+
+    with open(manifest_path, encoding="utf-8") as f:
+        v1_manifest = json.load(f)
+
+    analytics_tables = [
+        "gold_anomaly_candidates",
+        "gold_anomaly_synthetic_eval",
+        "gold_forecast_metrics",
+        "gold_forecast_series",
+    ]
+
+    copied_meta = {}
+    v1_tables = v1_manifest.get("tables", {})
+    for tname in analytics_tables:
+        if tname in v1_tables:
+            src_file = os.path.join(v1_base_dir, v1_tables[tname]["file"])
+            dst_file = os.path.join(staging_dir, v1_tables[tname]["file"])
+            if os.path.exists(src_file):
+                with open(src_file, "rb") as f_in:
+                    content = f_in.read()
+                actual_sha = hashlib.sha256(content).hexdigest()
+                expected_sha = v1_tables[tname].get("sha256")
+                if expected_sha and actual_sha != expected_sha:
+                    raise ValueError(f"Integridad analítica violada en {src_file}")
+                with open(dst_file, "wb") as f_out:
+                    f_out.write(content)
+                copied_meta[tname] = dict(v1_tables[tname])
+
+    analytics_section = v1_manifest.get("analytics", {})
+    analytics_status = v1_manifest.get("analytics_status", "VALID_WITH_WARNINGS")
+    return copied_meta, analytics_section, analytics_status
 
 
 def verify_input_sources(input_dir: str) -> List[Dict[str, Any]]:
@@ -1024,16 +1238,32 @@ def write_json_and_measure(data: Any, target_path: str) -> Tuple[int, str]:
 def main() -> int:
     args = parse_arguments()
     real_input, real_output = validate_paths(args.input, args.output, args.overwrite)
+    is_v2 = "v2" in real_output
     print("=" * 70)
-    print("Iniciando generación de datos Gold reproducibles para tablero/data/v1")
-    print(f"Directorio de entrada: {args.input}")
-    print(f"Directorio de salida:  {args.output}")
+    print(f"Iniciando generación de datos Gold reproducibles para {'tablero/data/v2' if is_v2 else 'tablero/data/v1'}")
+    print(f"Directorio de entrada:       {args.input}")
+    print(f"Directorio demografía:       {args.demografia_input}")
+    print(f"Directorio de salida:        {args.output}")
     print("=" * 70)
 
     # 1. Verificación de fuentes de entrada
     print("Verificando hashes e inventario de datos de entrada...")
-    source_inventory = verify_input_sources(real_input)
-    print(f"  4 archivos verificados exitosamente contra manifiesto de integración.")
+    source_inventory, rs_roster_info = verify_input_sources(real_input)
+    print("  4 archivos base verificados exitosamente contra manifiesto de integración.")
+
+    demo_sources = []
+    records_demography = []
+    demo_qc_rules = []
+    if is_v2 or os.path.exists(args.demografia_input):
+        print("Verificando fuentes demográficas canónicas...")
+        demo_meta, demo_sources = verify_demography_source(args.demografia_input)
+        demo_csv_path = os.path.join(args.demografia_input, demo_meta["artifact"]["file"])
+        records_demography = generate_gold_demography_state_year(demo_csv_path)
+        demo_qc_rules, demo_failed = run_demography_qc(records_demography)
+        print(f"  Demografía verificada: {len(records_demography)} filas, {len(demo_qc_rules)} reglas QC aprobadas.")
+        if demo_failed > 0:
+            print(f"ERROR: Se detectaron {demo_failed} reglas demográficas fallidas. Publicación bloqueada.")
+            return 1
 
     # 2. Carga de datos
     print("Cargando datasets piloto...")
@@ -1048,9 +1278,11 @@ def main() -> int:
     df_clima = pd.read_csv(clima_path)
 
     # 3. Ejecución de QC formal
-    print("Ejecutando 21 controles de calidad de datos...")
-    qc_dict, failed_count, warnings = run_qc_checks(df_resstock, df_meta, df_eia, df_clima)
-    print(f"  Reglas aprobadas: {qc_dict['passed_rules']}/{qc_dict['total_rules']}")
+    print("Ejecutando controles de calidad de datos...")
+    qc_dict, failed_count, warnings = run_qc_checks(
+        df_resstock, df_meta, df_eia, df_clima, roster_info=rs_roster_info
+    )
+    print(f"  Reglas base aprobadas: {qc_dict['passed_rules']}/{qc_dict['total_rules']}")
     if failed_count > 0:
         print(f"ERROR: Se detectaron {failed_count} reglas fallidas. Publicación bloqueada.")
         return 1
@@ -1070,12 +1302,14 @@ def main() -> int:
     print(f"  - gold_resstock_pattern:            {len(records_rs_pattern)} filas")
     print(f"  - gold_resstock_pattern_aggregate:  {len(records_rs_pattern_agg)} filas")
     print(f"  - gold_climate:                     {len(records_climate)} filas")
+    if records_demography and is_v2:
+        print(f"  - gold_demography_state_year:       {len(records_demography)} filas")
 
     # 5. Escritura atómica a carpeta de salida mediante staging
     parent_dir = os.path.dirname(real_output)
     os.makedirs(parent_dir, exist_ok=True)
 
-    staging_dir = tempfile.mkdtemp(prefix=".tablero_v1_staging_", dir=parent_dir)
+    staging_dir = tempfile.mkdtemp(prefix=".tablero_staging_", dir=parent_dir)
     now_utc_str = datetime.now(timezone.utc).isoformat()
 
     n_bldgs = len(df_resstock["bldg_id"].unique())
@@ -1093,6 +1327,13 @@ def main() -> int:
             "gold_climate": (records_climate, "gold_climate.json", ["point_id", "timestamp_utc"]),
         }
 
+        if is_v2 and records_demography:
+            payloads["gold_demography_state_year"] = (
+                records_demography,
+                "gold_demography_state_year.json",
+                ["state_fips", "year"],
+            )
+
         for table_name, (records, filename, pk) in payloads.items():
             file_path = os.path.join(staging_dir, filename)
             size_b, sha_hex = write_json_and_measure(records, file_path)
@@ -1104,74 +1345,123 @@ def main() -> int:
                 "primary_key": pk,
             }
 
+        # En v2, incorporar tablas analíticas si existen en v1 para no vaciar vistas
+        copied_analytics_meta = {}
+        analytics_section = None
+        analytics_status = None
+        if is_v2 and os.path.isdir(args.v1_base):
+            copied_analytics_meta, analytics_section, analytics_status = load_and_copy_analytics(
+                args.v1_base, staging_dir
+            )
+            tables_meta.update(copied_analytics_meta)
+
         # 6. Construcción y escritura de manifest.json
+        combined_qc_rules = list(qc_dict.get("rules", [])) + demo_qc_rules if is_v2 else qc_dict.get("rules", [])
+        total_rules = qc_dict["total_rules"] + (len(demo_qc_rules) if is_v2 else 0)
+        passed_rules = qc_dict["passed_rules"] + (len(demo_qc_rules) if is_v2 else 0)
+
+        coverage_summary = {
+            "eia": "2018-01 through 2026-08 (51 jurisdictions: 50 states + DC), monthly residential utility sales",
+            "resstock": f"AMY 2018, {n_bldgs} profiles ({states_str}), 15-minute intervals (35,040 per bldg); individual patterns and stratum-level aggregate patterns",
+            "climate": "2018-01-01 to 2018-01-07, 2 point locations in Colorado (Denver, Grand Junction), ERA5-Land hourly"
+        }
+        if is_v2:
+            coverage_summary["demography"] = "2020 through 2025 (51 jurisdictions: 50 states + DC), annual residential sales, population estimates (Vintage 2025) and density"
+
+        methodology_sep = {
+            "resstock_modelled": (
+                f"{n_bldgs} physical building energy simulation models (AMY 2018). Exploratory sample across {len(states_list)} states ({states_str}); "
+                "does not represent national totals. Timestamps converted explicitly from fixed EST to UTC and local IANA time zones by county (NOAA/NWS c_16ap26)."
+            ),
+            "resstock_pattern_aggregate": {
+                "grain": "(state_code, housing_type, time_zone, period_local, day_type, hour_local, utc_offset_minutes)",
+                "metrics_calculated": [
+                    "mean_kwh",
+                    "median_kwh",
+                    "p10_kwh",
+                    "p90_kwh",
+                    "min_kwh",
+                    "max_kwh",
+                    "n_obs",
+                    "n_profiles",
+                ],
+                "temporal_handling": (
+                    "Explicit conversion: fixed EST (-15m to interval start) -> UTC (+5h) -> "
+                    "local IANA zones resolved by county FIPS (NOAA/NWS c_16ap26), preserving utc_offset_minutes, "
+                    "excluding incomplete hours (<4 intervals), and deriving is_partial_period by civil month coverage."
+                ),
+                "sample_representativeness": (
+                    "Modeled physical simulation profiles; does NOT represent population, census totals, or utility billing totals."
+                ),
+                "scalability_purpose": (
+                    "Keeps browser payload bounded to stratum dimensions as sample size scales, while preserving individual inspection via lazy-load in gold_resstock_pattern."
+                ),
+            },
+            "eia_sales": (
+                "Aggregated official utility sales from Form EIA-861M for 51 jurisdictions. "
+                "Completely distinct population and scope from ResStock."
+            ),
+            "climate_reanalysis": (
+                "ERA5-Land reanalysis for 2 point locations in CO; preserved decoupled without spatial or temporal join to consumption."
+            ),
+            "colorado_eia_comparison_metric": {
+                "reported_ratio_pct": 87.16,
+                "status": "not_reproduced",
+                "blocker": (
+                    "The raw ResStock Colorado aggregate dataset (timeseries_aggregates) is absent from origin/main. "
+                    "Per project governance and data integrity rules, no synthetic substitute is created, "
+                    "and the 87.16% figure is documented as an unverified external descriptive ratio, not an independently reproduced precision metric."
+                )
+            }
+        }
+        if is_v2:
+            methodology_sep["state_energy_demography"] = {
+                "grain": "(state_fips, year)",
+                "coverage": "2020 through 2025 (51 jurisdictions: 50 states + DC)",
+                "metrics": [
+                    "population_estimate",
+                    "population_density_per_sq_mi",
+                    "residential_sales_mwh",
+                    "residential_kwh_per_capita",
+                ],
+                "sources": "Census PEP Vintage 2025, Census TIGERweb 2020 land area, EIA-861M final residential sales",
+                "methodology_separation": (
+                    "Aggregate macro-level data combining official Census Bureau population estimates and EIA utility sales. "
+                    "Fundamentally separate and decoupled from individual simulated building profiles (ResStock AMY 2018). "
+                    "The District of Columbia (DC) is an urban federal district (11,348 hab/mi²), distinct from the 50 states. "
+                    "Ratios and correlations between density, population, and sales per capita are strictly descriptive; no causal claim is made."
+                )
+            }
+
+        combined_inventory = list(source_inventory)
+        if is_v2 and demo_sources:
+            combined_inventory.extend(demo_sources)
+
         manifest_data = {
             "manifest_version": "1.0",
             "schema_version": "1.0",
+            "publication_version": "2.0" if is_v2 else "1.0",
             "generated_at_utc": now_utc_str,
             "generator_script": "scripts/generar_datos_tablero.py",
             "data_status": qc_dict["status"],
-            "coverage_summary": {
-                "eia": "2018-01 through 2026-08 (51 jurisdictions: 50 states + DC), monthly residential utility sales",
-                "resstock": f"AMY 2018, {n_bldgs} profiles ({states_str}), 15-minute intervals (35,040 per bldg); individual patterns and stratum-level aggregate patterns",
-                "climate": "2018-01-01 to 2018-01-07, 2 point locations in Colorado (Denver, Grand Junction), ERA5-Land hourly"
-            },
-            "methodology_separation": {
-                "resstock_modelled": (
-                    f"{n_bldgs} physical building energy simulation models (AMY 2018). Exploratory sample across {len(states_list)} states ({states_str}); "
-                    "does not represent national totals. Timestamps converted explicitly from fixed EST to UTC and local IANA time zones by county (NOAA/NWS c_16ap26)."
-                ),
-                "resstock_pattern_aggregate": {
-                    "grain": "(state_code, housing_type, time_zone, period_local, day_type, hour_local, utc_offset_minutes)",
-                    "metrics_calculated": [
-                        "mean_kwh",
-                        "median_kwh",
-                        "p10_kwh",
-                        "p90_kwh",
-                        "min_kwh",
-                        "max_kwh",
-                        "n_obs",
-                        "n_profiles",
-                    ],
-                    "temporal_handling": (
-                        "Explicit conversion: fixed EST (-15m to interval start) -> UTC (+5h) -> "
-                        "local IANA zones resolved by county FIPS (NOAA/NWS c_16ap26), preserving utc_offset_minutes, "
-                        "excluding incomplete hours (<4 intervals), and deriving is_partial_period by civil month coverage."
-                    ),
-                    "sample_representativeness": (
-                        "Modeled physical simulation profiles; does NOT represent population, census totals, or utility billing totals."
-                    ),
-                    "scalability_purpose": (
-                        "Keeps browser payload bounded to stratum dimensions as sample size scales, while preserving individual inspection via lazy-load in gold_resstock_pattern."
-                    ),
-                },
-                "eia_sales": (
-                    "Aggregated official utility sales from Form EIA-861M for 51 jurisdictions. "
-                    "Completely distinct population and scope from ResStock."
-                ),
-                "climate_reanalysis": (
-                    "ERA5-Land reanalysis for 2 point locations in CO; preserved decoupled without spatial or temporal join to consumption."
-                ),
-                "colorado_eia_comparison_metric": {
-                    "reported_ratio_pct": 87.16,
-                    "status": "not_reproduced",
-                    "blocker": (
-                        "The raw ResStock Colorado aggregate dataset (timeseries_aggregates) is absent from origin/main. "
-                        "Per project governance and data integrity rules, no synthetic substitute is created, "
-                        "and the 87.16% figure is documented as an unverified external descriptive ratio, not an independently reproduced precision metric."
-                    )
-                }
-            },
-            "source_inventory": source_inventory,
+            "coverage_summary": coverage_summary,
+            "methodology_separation": methodology_sep,
+            "source_inventory": combined_inventory,
             "qc_rules": {
-                "total_rules": qc_dict["total_rules"],
-                "passed_rules": qc_dict["passed_rules"],
-                "failed_rules": qc_dict["failed_rules"],
+                "total_rules": total_rules,
+                "passed_rules": passed_rules,
+                "failed_rules": 0,
                 "status": qc_dict["status"],
                 "warnings": qc_dict["warnings"],
+                "rules": combined_qc_rules if is_v2 else qc_dict.get("rules", []),
             },
             "tables": tables_meta,
         }
+
+        if analytics_section:
+            manifest_data["analytics"] = analytics_section
+        if analytics_status:
+            manifest_data["analytics_status"] = analytics_status
 
         manifest_path = os.path.join(staging_dir, "manifest.json")
         with open(manifest_path, "w", encoding="utf-8") as f:

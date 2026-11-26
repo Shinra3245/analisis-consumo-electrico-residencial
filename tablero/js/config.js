@@ -3,7 +3,7 @@
 export const SCHEMA_VERSION = '1.0';
 
 const param = new URLSearchParams(location.search).get('data');
-export const DATA_BASE = (param || 'data/v1/').replace(/\/?$/, '/');
+export const DATA_BASE = (param || 'data/v2/').replace(/\/?$/, '/');
 
 // Tablas que el tablero sabe leer. `columns` son obligatorias: si faltan, la tabla se rechaza
 // (no hay alias silenciosos entre nombres distintos, ver docs/especificacion-tablero.md §9).
@@ -37,6 +37,12 @@ export const TABLES = {
   gold_climate: {
     columns: ['point_id', 'state_code', 'timestamp_utc', 'temperature_c', 'model'],
     source: 'climate',
+  },
+  gold_demography_state_year: {
+    columns: ['state_fips', 'state_code', 'year', 'population_estimate', 'land_area_sq_mi_2020',
+      'population_density_per_sq_mi', 'residential_sales_mwh', 'residential_kwh_per_capita',
+      'eia_data_status', 'census_vintage', 'source_version'],
+    source: 'demography',
   },
   gold_anomaly_candidates: {
     columns: ['period', 'state_code', 'yoy_change_pct', 'season', 'robust_z', 'partition', 'classification'],
