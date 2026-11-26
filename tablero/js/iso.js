@@ -136,31 +136,61 @@ function dropShadow(x, y, w, d) {
  * ARQUETIPOS DE VIVIENDA (5 tipos normalizados)
  * ------------------------------------------------------------- */
 const SHAPES = {
-  // 1. Mobile Home: alargada, zócalo perimetral, techo metálico bajo, puerta lateral con gradas
+  // 1. Mobile Home: caja transportable alargada de una planta sobre chasis de acero visible,
+  //    dos ejes con ruedas, lanza de enganche en A, techo metálico casi plano y escalera portátil
   'Mobile Home': () => {
-    const x = -1.7, y = -0.7, zPlinth = 0.18, w = 3.3, d = 1.35, h = 0.85;
-    return dropShadow(x, y, w, d)
-      + plinth(x, y, 0, w, d, zPlinth)
-      + box(x, y, zPlinth, w, d, h)
-      + gableRoof(x, y, zPlinth + h, w, d, 0.26, 0.08, 0.1)
-      + sidingFront(x, y + d, zPlinth, zPlinth + h, w, 0.12)
-      // Puerta lateral y porche de acceso
-      + doorFront(x + 0.45, y + d, zPlinth, 0.34, 0.72)
-      + stepsFront(x + 0.4, y + d, zPlinth, 0.44, 0.24, 0.09)
-      + porchCanopy(x + 0.35, y + d, zPlinth + 0.76, 0.54, 0.3, 0.04)
-      // Secuencia de ventanas en fachada frontal
-      + winFront(x + 1.2, y + d, zPlinth + 0.22, 0.45, 0.42)
-      + winFront(x + 1.9, y + d, zPlinth + 0.22, 0.45, 0.42)
-      + winFront(x + 2.55, y + d, zPlinth + 0.22, 0.45, 0.42)
-      // Ventana en testero lateral
-      + winSide(x + w, y + 0.35, zPlinth + 0.22, 0.45, 0.42)
-      // Chimenea / tiro de ventilación de techo
-      + chimney(x + 2.4, y + 0.3, zPlinth + h + 0.18, 0.14, 0.14, 0.3)
-      // Unidad de servicio exterior (bomba de calor / gas)
-      + box(x - 0.45, y + 0.4, 0, 0.32, 0.4, 0.38, 'util-l', 'util-r', 'util-t')
-      + gardenPath(x + 0.42, y + d + 0.48, 2.3, 0.4)
-      + gardenBush(-2.2, 1.2, 0.3)
-      + gardenBush(1.9, -1.6, 0.28);
+    const x = -1.75, y = -0.6, zBox = 0.42, w = 3.5, d = 1.15, h = 0.78;
+    const yF = y + d;
+    // Rueda en el plano frontal (polígono circular en XZ)
+    const wheel = (cx, r = 0.17) => {
+      const ring = (rr, yy) => Array.from({ length: 14 }, (_, i) => {
+        const a = (i / 14) * Math.PI * 2;
+        return [cx + Math.cos(a) * rr, yy, r + Math.sin(a) * rr];
+      });
+      return poly(ring(r, yF - 0.08), 'chim-cap-r') + poly(ring(r * 0.45, yF - 0.07), 'step-t');
+    };
+    // Nervaduras del techo metálico
+    let ribs = '';
+    for (let i = 1; i < 9; i++) {
+      const xi = x - 0.05 + (i * (w + 0.1)) / 9;
+      ribs += line([xi, yF + 0.07, zBox + h], [xi, y + d / 2, zBox + h + 0.1], 'iso-eave');
+    }
+    return dropShadow(x - 0.5, y, w + 0.5, d)
+      // Bloques de apoyo y vigas longitudinales del chasis
+      + box(x + 0.5, y + 0.15, 0, 0.16, 0.16, zBox - 0.1, 'plinth-l', 'plinth-r', 'plinth-t')
+      + box(x + w - 0.5, y + 0.15, 0, 0.16, 0.16, zBox - 0.1, 'plinth-l', 'plinth-r', 'plinth-t')
+      + box(x + 0.1, y + 0.18, zBox - 0.1, w - 0.2, 0.08, 0.1, 'util-l', 'util-r', 'util-t')
+      + box(x + 0.1, yF - 0.26, zBox - 0.1, w - 0.2, 0.08, 0.1, 'util-l', 'util-r', 'util-t')
+      // Lanza de enganche en A con acople y gato de apoyo
+      + poly([[x + 0.1, y + 0.22, zBox - 0.06], [x - 0.62, y + d / 2, zBox - 0.06], [x + 0.1, yF - 0.22, zBox - 0.06]], 'util-t')
+      + line([x + 0.1, y + 0.22, zBox - 0.06], [x - 0.62, y + d / 2, zBox - 0.06], 'iso-eave')
+      + line([x + 0.1, yF - 0.22, zBox - 0.06], [x - 0.62, y + d / 2, zBox - 0.06], 'iso-eave')
+      + box(x - 0.74, y + d / 2 - 0.06, zBox - 0.1, 0.14, 0.12, 0.08, 'chim-cap-l', 'chim-cap-r', 'chim-cap-t')
+      + box(x - 0.42, y + d / 2 - 0.03, 0, 0.06, 0.06, zBox - 0.06, 'chim-cap-l', 'chim-cap-r', 'chim-cap-t')
+      // Dos ejes con ruedas
+      + wheel(x + 1.95) + wheel(x + 2.4)
+      // Caja habitable
+      + box(x, y, zBox, w, d, h)
+      + sidingFront(x, yF, zBox, zBox + h, w, 0.1)
+      // Franja decorativa típica de casa móvil
+      + poly([[x, yF + 0.006, zBox + h - 0.14], [x + w, yF + 0.006, zBox + h - 0.14], [x + w, yF + 0.006, zBox + h - 0.09], [x, yF + 0.006, zBox + h - 0.09]], 'chim-l')
+      // Techo bajo casi plano con nervaduras metálicas
+      + gableRoof(x, y, zBox + h, w, d, 0.1, 0.05, 0.07)
+      + ribs
+      // Puerta de acceso con escalera portátil y pasamanos
+      + doorFront(x + 0.55, yF, zBox, 0.32, 0.66)
+      + box(x + 0.5, yF + 0.02, zBox - 0.14, 0.42, 0.2, 0.06, 'step-l', 'step-r', 'step-t')
+      + box(x + 0.5, yF + 0.22, zBox - 0.3, 0.42, 0.2, 0.06, 'step-l', 'step-r', 'step-t')
+      + line([x + 0.94, yF + 0.42, zBox - 0.1], [x + 0.94, yF + 0.02, zBox + 0.3], 'iso-eave')
+      // Ventanas horizontales bajas
+      + winFront(x + 1.2, yF, zBox + 0.3, 0.5, 0.28)
+      + winFront(x + 2.05, yF, zBox + 0.3, 0.5, 0.28)
+      + winFront(x + 2.8, yF, zBox + 0.3, 0.42, 0.28)
+      + winSide(x + w, y + 0.36, zBox + 0.3, 0.42, 0.28)
+      // Tubo de ventilación en techo
+      + box(x + 2.9, y + 0.3, zBox + h + 0.04, 0.08, 0.08, 0.18, 'chim-cap-l', 'chim-cap-r', 'chim-cap-t')
+      + gardenBush(-2.35, 1.35, 0.28)
+      + gardenBush(2.15, -1.5, 0.26);
   },
 
   // 2. Single-Family Detached: vivienda unifamiliar completa con aleros, chimenea, porche y jardín

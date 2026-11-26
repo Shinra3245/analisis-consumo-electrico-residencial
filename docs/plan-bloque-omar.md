@@ -1,7 +1,7 @@
 # Plan definitivo de implementación — Bloque Omar
 
 **Responsable:** Omar Gadiel Bolaños García.
-**Base:** plan general [`plan-definitivo-general.md`](plan-definitivo-general.md), propuesta V2, `origin/main` `58c8fe1`, y estado de Learner Lab registrado el 18 de noviembre de 2026.
+**Base:** plan general [`plan-definitivo-general.md`](plan-definitivo-general.md), propuesta V2, `origin/main` `5572c1f` (PR #15 integrado), checkout `ui/dashboard-simplified-ui` en `5225aa2`, y evidencia AWS revalidada parcialmente el 26 de noviembre de 2026.
 **Alcance:** cierre del Bloque 0, integración de la entrega ya completada de Brian, integración final del dashboard y datos, organización/publicación S3 y cierre documentado de la factibilidad cloud.
 **No incluye:** reescribir, reasignar ni modificar las tareas de Christian o Diego, ni rehacer los archivos fuente del bloque de Brian.
 
@@ -9,13 +9,13 @@
 
 | Área | Evidencia vigente | Decisión de Omar |
 |---|---|---|
-| Bloque 0 | Plan v2 y división v2 están integrados, pero documentos de arquitectura y estado no coinciden con la consola. | Cerrar el inventario documental y usar nombres/estados únicos antes de publicar la versión final. |
-| Brian | PR #13 y PR #14 están mergeados. La tabla tiene 306 filas, 51 jurisdicciones, 2020–2025, hashes de fuentes y reproducción. | Marcar su bloque como `COMPLETADO`. Omar se responsabiliza de integrarlo en Gold/dashboard; no se reabre la tarea de Brian. |
+| Bloque 0 | Planes v2 integrados; el 26-nov se verificó Learner Lab, región us-east-1 y S3 privado. EMR/Kinesis/CloudFront no se revalidaron. | Documentar la evidencia S3 actual; conservar para los otros servicios la última observación del 18-nov hasta revalidarlos. |
+| Brian | PR #13 y #14 están mergeados. Gold v2 incluye sus 306 filas (51 jurisdicciones × seis años) dentro de 11 tablas y 20,858 filas; manifiesto: 27/27 controles aprobados con advertencias. | Su bloque está `COMPLETADO`; no se le reasigna trabajo. |
 | Christian | Su alcance de clima estatal NOAA/NCEI se conserva tal como aparece en `division-bloques-equipo-v2.md`, §4. | Omar espera y revisa la interfaz de entrega; no modifica sus tareas ni su archivo. |
 | Diego | Su alcance de ML estatal y anomalías ResStock se conserva tal como aparece en `division-bloques-equipo-v2.md`, §5. | Omar consume sus artefactos por contrato; no modifica sus tareas ni su archivo. |
-| Datos ResStock | Hay 10 perfiles/350,400 intervalos versionados. Existe un reporte de 50 perfiles/1,752,000 intervalos procesados localmente, pero ese lote no está versionado en `main` ni integrado al dashboard. 10,000 IDs son candidatos. | No mezclar esos tres estados. Omar coordina el objetivo V2 de 10,000 perfiles con roster y QC como trabajo de escala del producto. |
-| S3 | Bucket privado en `us-east-1`; prefijos `gold/` y `site/`; versionado deshabilitado según registro. Una carga abrió con URL prefirmada; otra guía dice que el dashboard se veía vacío. Se documentan objetos distintos y tamaños distintos. | Verificar cada objeto por clave, versión, bytes, MIME y build; no asumir que las capturas describen la misma publicación. |
-| Servicios AWS | EMR Serverless denegó permisos. Kinesis mostró formulario de creación, pero no existe stream. CloudFront tiene acceso parcial denegado. Learner Lab no equivale a una cuenta productiva ni tiene un tope duro por su medidor. | Completar primero el camino de datos local/S3. No crear un stream sin consumidor ni prometer URL estable sin CloudFront/OAC funcional. |
+| Datos ResStock | Gold v2 contiene 10 perfiles/350,400 intervalos; lote local de 50 reportado por separado; nueva validación runtime de ingesta/adaptador/Spark con 1 perfil y 35,040 intervalos. 10,000 IDs son candidatos. | Mantener separados los conjuntos. La prueba del job valida el flujo de una unidad, no la escala ni la meta final. |
+| S3 | El 26-nov se publicaron 12 archivos Gold v2 y 2 de sitio en prefijos inmutables privados; SSE-S3 y bloqueo público verificados. Versionado deshabilitado. | Mantener la release privada y no subir crudos; no hay URL pública ni CloudFront. |
+| Servicios AWS | Learner Lab activo el 26-nov. EMR Serverless, Kinesis y CloudFront no se revalidaron; su última evidencia es del 18-nov. | Revalidar permisos antes de intentar otros despliegues; no crear un stream sin consumidor ni prometer URL estable sin CloudFront/OAC. |
 
 ## 2. Cierre del Bloque 0 — estado, contratos y documentación
 
@@ -52,9 +52,9 @@ Actualizar bajo este bloque los documentos operativos AWS y de seguimiento para 
 
 ### Criterio de cierre del Bloque 0
 
-- [ ] Un cuadro único de observaciones con fecha, fuente y status refleja región, objetos, permisos, URLs, versionado y servicios no disponibles.
+- [~] Evidencia del 26-nov cubre región y S3; EMR/Kinesis/CloudFront y presupuesto requieren revalidación independiente.
 - [ ] Los documentos no describen como activa una arquitectura objetivo.
-- [ ] Los tres universos ResStock (10, 50 y 10,000 candidatos) están separados.
+- [x] Los conjuntos de 10 perfiles en Gold, lote local de 50, prueba local de 1 y meta de 10,000 candidatos están separados.
 - [ ] Los contratos de Brian/Christian/Diego y sus campos actuales están identificados sin duplicar tareas.
 - [ ] La cifra 87.16% permanece no reproducida hasta contar con su agregado fuente verificable.
 
@@ -92,10 +92,10 @@ Artefactos aceptados:
 
 ### Criterio de cierre de integración Brian
 
-- [ ] El dashboard consume Gold v2 generado desde la tabla de Brian, no cifras manuales.
-- [ ] La suma, ranking y tooltip coinciden con datos fuente para años y jurisdicciones filtradas.
-- [ ] El manifest v2 valida filas/bytes/hash; Gold v1 permanece intacto.
-- [ ] Se muestra claramente estado-año, unidades, DC separado, fuente/vintage y alcance residencial agregado.
+- [x] El dashboard consume Gold v2 generado desde la tabla de Brian, no cifras manuales.
+- [x] Gold v2 y su manifiesto incluyen 306 filas demográficas (51 jurisdicciones × 2020–2025); Gold v1 se conserva.
+- [x] Las vistas estatales muestran población, densidad, ventas totales y ventas por habitante, con DC separado y aclaraciones de alcance.
+- [~] Falta repetir una revisión independiente de filtros e interacciones después de integrar las entregas pendientes del equipo.
 
 ## 4. Integrar los trabajos existentes de Christian y Diego sin modificar su asignación
 
@@ -229,26 +229,28 @@ Los pasos de escala, build y publicación son actividades internas del producto 
 
 ## 9. Checklist de cierre del Bloque Omar
 
+**Leyenda:** `[x]` completado con evidencia; `[~]` parcial o pendiente de revalidación; `[ ]` pendiente.
+
 ### Bloque 0
 
-- [ ] Checkout y estado documental alineados al `main` vigente; archivos locales ajenos conservados.
-- [ ] Región/servicios/versionado/URL S3 reflejan evidencia real y fecha.
-- [ ] Campos, rutas, lotes (10/50/10,000) y estados analytics sin contradicciones.
-- [ ] No se presenta el 87.16% como precisión o cálculo reproducido.
+- [~] El checkout parte del `origin/main` vigente y conserva archivos locales ajenos; los cambios del bloque siguen en la rama local, pendientes de push/PR.
+- [~] Región y S3 tienen evidencia fechada del 26-nov; EMR/Kinesis/CloudFront y presupuesto aún reflejan la observación del 18-nov.
+- [~] Los planes distinguen 10 perfiles Gold, lote de 50 reportado y meta de 10,000; falta alinear todos los documentos de estado/analítica.
+- [x] El 87.16% se mantiene como no reproducido, no como precisión ni métrica validada.
 
 ### Brian / demografía
 
-- [ ] Se acepta formalmente su bloque como completo y se registra referencia a PR #13/#14.
-- [ ] Gold v2 y manifest leen el CSV real de 306 filas; visualización estatal valida año, unidades y categorías.
-- [ ] DC y rankings se presentan con límites correctos.
+- [x] Su bloque está registrado como completo con referencia a PR #13/#14.
+- [x] Gold v2 incluye las 306 filas del CSV real; la vista estatal presenta año, unidades y categorías.
+- [x] DC y rankings se presentan por separado, con límites de interpretación explícitos.
 
 ### Producto, escala y AWS
 
 - [ ] Christian y Diego se integran al dashboard sin reescribir sus tareas ni código fuera del bloque Omar.
 - [ ] ResStock llega a meta V2 de 10,000 perfiles aceptados con QC, o se reporta con claridad la meta no lograda y la evidencia del bloqueo.
 - [ ] Forecast ML y anomaly outputs están probados/reproducidos y las limitaciones/splits visibles.
-- [ ] Dashboard de seis vistas consume Gold v2; no hay vista final vacía ni dato sintético presentado como real.
-- [ ] S3 contiene capas versionadas que correspondan a objetos reales; la publicación usa release y manifest validados.
+- [x] El dashboard local tiene seis vistas que consumen Gold v2; pruebas sintéticas se identifican como tales y los candidatos no se presentan como eventos confirmados.
+- [x] S3 contiene el paquete Gold v2 con manifiesto y el HTML autónomo, publicados bajo prefijos privados de release.
 - [ ] La URL estable existe solo si CloudFront/OAC quedó realmente desplegado; de otro modo se declara S3 prefirmado temporal y se conserva ruta local.
 - [ ] EMR/Kinesis se marcan con resultado verificado; no se representa como cloud la ejecución Spark local.
 - [ ] Diagrama, fuente/cortes, hashes, comandos, atribución y guía para profesor son reproducibles.

@@ -1,6 +1,6 @@
 # Guía de Publicación y Release Web Privado en S3 (Dashboard v2)
 
-**Estado:** Propuesta operativa de release y empaquetado seguro. No se ejecutaron acciones AWS, no se realizaron cargas a S3 ni se generaron URLs prefirmadas durante la tarea.
+**Estado al 26-nov-2026:** release v2 subida y verificada en S3 privado desde el commit `5225aa2`. No se generó URL prefirmada ni se habilitó acceso público.
 **Script de release y empaquetado:** [`scripts/publicar_tablero_s3.py`](../scripts/publicar_tablero_s3.py)
 **Insumo de datos:** Paquete Gold v2 en [`tablero/data/v2/`](../tablero/data/v2/) (11 tablas contractuales validadas)
 **Esquema de datos:** `1.0` (Publicación `2.0` con soporte demográfico)
@@ -44,7 +44,7 @@ Desde la raíz del repositorio:
 python3 scripts/publicar_tablero_s3.py \
   --web tablero \
   --datos tablero/data/v2 \
-  --salida-dir dist/release-v2-20261125
+  --salida-dir /tmp/omar-dashboard-release-v2-2026-11-26-traceable
 ```
 
 **Mecanismos de seguridad estricta y atomicidad local:**
@@ -73,7 +73,7 @@ Al finalizar el empaquetado local, la carpeta de release contiene:
    - Funciona de manera autónoma en cualquier navegador sin realizar llamadas HTTP externas.
 2. **`release_manifest.json`:**
    - Manifiesto reproducible con metadatos del release:
-     - `release_id`: Identificador único validado (ej. `v2-20261125-<hash8>`).
+     - `release_id`: Identificador único validado (ej. `v2-20261126-09a014f6`).
      - `built_at_utc`: Marca temporal ISO 8601 de compilación.
      - `schema_version`: `"1.0"`.
      - `package_version`: `"2.0"`.
@@ -87,9 +87,24 @@ Para verificar visualmente el release local antes de cualquier interacción con 
 
 ```bash
 # Probar el archivo compilado en el navegador local
-python3 -m http.server 8080 -d dist/release-v2-20261125
+python3 -m http.server 8080 -d /tmp/omar-dashboard-release-v2-2026-11-26-traceable
 # Abrir http://localhost:8080/index.html
 ```
+
+### Release local verificada (26-nov-2026)
+
+- Commit de la interfaz: `5225aa2`.
+- ID: `v2-20261126-09a014f6`.
+- Archivo: `index.html`, 9,170,600 bytes; SHA-256 `09a014f6412e2a62d207282b466abaef2f20d96607ad790103130e90e9487f4e`.
+- Objeto propuesto: `site/releases/v2-20261126-09a014f6/index.html`.
+- Contiene 11 tablas Gold derivadas y 20,858 filas. La exportación no incluye los archivos crudos.
+- Esta verificación es local; no afirma que el objeto ya exista en S3.
+
+### Publicación S3 confirmada (26-nov-2026)
+
+Se subieron 14 artefactos derivados a `us-east-1`: los 11 JSON Gold v2 y `manifest.json` bajo `gold/v2/releases/v2-20261126-09a014f6/`; `index.html` y `release_manifest.json` bajo `site/releases/v2-20261126-09a014f6/`. El HTML local mide 9,170,600 bytes y su SHA-256 se registra arriba; el manifiesto Gold enumera 11 tablas y 20,858 filas.
+
+Antigravity verificó la carga en la consola S3: Content-Type correspondientes, cifrado SSE-S3 y Block Public Access conservado. El bucket mantiene versionado deshabilitado. No se subieron archivos fuente crudos ni se modificó ninguna política, ACL o configuración de acceso. Esta publicación es privada: no hay endpoint público, CloudFront/OAC ni URL prefirmada generada. El hash se verificó para el artefacto local/manifiesto; no se afirma una recalculación SHA-256 remota de cada objeto.
 
 ---
 
@@ -154,3 +169,14 @@ Una vez cargado el objeto por el operador:
    - Definir un tiempo de validez reducido (ej. 60 o 120 minutos).
    - Abrir el enlace en el navegador para comprobar la navegación completa entre las 6 vistas y la correcta interacción demográfica con Gold v2.
    - **Recordatorio:** No guardar ni pegar la URL generada en archivos del proyecto ni en el historial de git.
+
+---
+
+## 5. Gobernanza de datos de la release privada (revisión 2026-11-26)
+
+La release es un único HTML con 11 tablas Gold agregadas/derivadas de ResStock (CC BY 4.0), EIA-861M (dominio público, con acuse), Census PEP/TIGERweb, NOAA/NWS `c_16ap26` (dominio público; sin respaldo oficial ni presentar lo modificado como oficial) y Open-Meteo/ERA5-Land (CC BY 4.0, uso no comercial). El detalle con fuente, condición y atribución está en [`decision-publicacion-datos.md`](decision-publicacion-datos.md#revisión-de-gobernanza-release-agregada-privada-por-url-prefirmada-26-de-noviembre-de-2026).
+
+- **Admisible:** compartir el `index.html` agregado con una URL prefirmada temporal para evaluación académica privada, siempre que el HTML conserve atribuciones, el disclaimer de ResStock y el aviso de transformación.
+- **Pendiente:** Census PEP/TIGERweb no mostró en las páginas oficiales consultadas una cláusula explícita de licencia de redistribución (solo exigen citar la fuente); se considera admisible provisional en uso privado y no debe difundirse públicamente hasta confirmarlo. El XLSX de EIA sigue sin verificar por material de terceros.
+- **Fuera del bucket y del repositorio:** crudos ResStock/Parquet, selección de 10 000 IDs, XLSX de EIA, JSON de Open-Meteo, credenciales, nombre del bucket/cuenta y cualquier URL prefirmada.
+- **Uso no comercial:** si el tablero pasa a un contexto comercial o público con publicidad/cobro, se debe reevaluar Open-Meteo (plan de pago) y la lectura de «research purposes only» de ResStock.
