@@ -1,7 +1,7 @@
 # Plan definitivo de implementación — Bloque Omar
 
 **Responsable:** Omar Gadiel Bolaños García.
-**Base:** plan general [`plan-definitivo-general.md`](plan-definitivo-general.md), propuesta V2, `origin/main` `5572c1f` (PR #15 integrado), checkout `ui/dashboard-simplified-ui` en `5225aa2`, y evidencia AWS revalidada parcialmente el 26 de noviembre de 2026.
+**Base:** plan general [`plan-definitivo-general.md`](plan-definitivo-general.md), propuesta V2, `origin/main` `3ee2a11` (PR #16 integrado) y evidencia de ingesta/Spark/AWS obtenida el 26 de noviembre de 2026.
 **Alcance:** cierre del Bloque 0, integración de la entrega ya completada de Brian, integración final del dashboard y datos, organización/publicación S3 y cierre documentado de la factibilidad cloud.
 **No incluye:** reescribir, reasignar ni modificar las tareas de Christian o Diego, ni rehacer los archivos fuente del bloque de Brian.
 
@@ -9,13 +9,13 @@
 
 | Área | Evidencia vigente | Decisión de Omar |
 |---|---|---|
-| Bloque 0 | Planes v2 integrados; el 26-nov se verificó Learner Lab, región us-east-1 y S3 privado. EMR/Kinesis/CloudFront no se revalidaron. | Documentar la evidencia S3 actual; conservar para los otros servicios la última observación del 18-nov hasta revalidarlos. |
+| Bloque 0 | El 26-nov se verificaron región us-east-1, S3, Budgets, EMR Serverless, Kinesis y CloudFront. S3 está privado; 0 Budgets/streams; EMR y CloudFront devuelven AccessDenied en las acciones listadas. | Auditoría del bloque completada con estado real documentado; no crear recursos no permitidos ni llamar desplegados a los servicios denegados. |
 | Brian | PR #13 y #14 están mergeados. Gold v2 incluye sus 306 filas (51 jurisdicciones × seis años) dentro de 11 tablas y 20,858 filas; manifiesto: 27/27 controles aprobados con advertencias. | Su bloque está `COMPLETADO`; no se le reasigna trabajo. |
 | Christian | Su alcance de clima estatal NOAA/NCEI se conserva tal como aparece en `division-bloques-equipo-v2.md`, §4. | Omar espera y revisa la interfaz de entrega; no modifica sus tareas ni su archivo. |
 | Diego | Su alcance de ML estatal y anomalías ResStock se conserva tal como aparece en `division-bloques-equipo-v2.md`, §5. | Omar consume sus artefactos por contrato; no modifica sus tareas ni su archivo. |
-| Datos ResStock | Gold v2 contiene 10 perfiles/350,400 intervalos; lote local de 50 reportado por separado; nueva validación runtime de ingesta/adaptador/Spark con 1 perfil y 35,040 intervalos. 10,000 IDs son candidatos. | Mantener separados los conjuntos. La prueba del job valida el flujo de una unidad, no la escala ni la meta final. |
-| S3 | El 26-nov se publicaron 12 archivos Gold v2 y 2 de sitio en prefijos inmutables privados; SSE-S3 y bloqueo público verificados. Versionado deshabilitado. | Mantener la release privada y no subir crudos; no hay URL pública ni CloudFront. |
-| Servicios AWS | Learner Lab activo el 26-nov. EMR Serverless, Kinesis y CloudFront no se revalidaron; su última evidencia es del 18-nov. | Revalidar permisos antes de intentar otros despliegues; no crear un stream sin consumidor ni prometer URL estable sin CloudFront/OAC. |
+| Datos ResStock | Gold v2 contiene 10 perfiles/350,400 intervalos; el 26-nov se completó ingesta/adaptador/Spark con 50 perfiles/1,752,000 intervalos, 0 rechazos y 21/21 QC. Restan 9,950 candidatos. | Validación de escala intermedia completada. Mantener el lote local separado de Gold v2; no afirmar meta de 10,000. |
+| S3 | El 26-nov se publicaron 14 objetos Gold/web y 12 objetos derivados de validación Spark de un perfil; SSE-S3 y bloqueo público verificados. Versionado deshabilitado. | La publicación privada está completada. No hay URL pública ni CloudFront; los crudos y la salida Spark de 50 siguen locales. |
+| Servicios AWS | Learner Lab listo; 0 budgets, 0 streams Kinesis; `ListApplications` de EMR denegado y listado CloudFront denegado con 0 distribuciones. | Revalidación completada y documentada. No crear recursos ni cambiar permisos; Spark continúa local. |
 
 ## 2. Cierre del Bloque 0 — estado, contratos y documentación
 
@@ -34,11 +34,11 @@ Actualizar bajo este bloque los documentos operativos AWS y de seguimiento para 
 - S3 observado: bucket privado, prefijos `gold/` y `site/`, ACL deshabilitadas, Block Public Access, cifrado SSE-S3. Versionado se observó **deshabilitado**; no describirlo como activado.
 - Objetos S3: inventariar claves exactas, fecha, bytes, content type, hash si se dispone y si la URL temporal abrió. La guía cita un HTML de 8.5 MB y la nota del Learner Lab cita otro de 56,429 bytes; no tratarlos como el mismo artefacto sin verificar sus claves.
 - URL: las URL prefirmadas son temporales. No incluirlas en Git, documentación pública, screenshots ni este repositorio.
-- EMR Serverless: último resultado registrado es denegación de acceso; no se creó aplicación ni ejecutó job.
-- Kinesis: formulario accesible, cero streams creados; mantenerlo sin recursos hasta que consumidor/flujo y limpieza estén listos.
-- CloudFront: `ListDistributions`/acciones de lectura tuvieron `AccessDenied`; marcar como permiso parcialmente no verificado, no como despliegue ni como prohibición total.
-- Budgets: consola parcial; no hay evidencia de Budget creado y no debe llamarse límite duro al medidor de Learner Lab.
-- Recurso del medidor: se observó USD 0.50 de USD 50, sesión de 4 horas; el medidor puede no reflejar todos los cargos ni cortar recursos.
+- EMR Serverless: el 26-nov `ListApplications` devolvió `AccessDeniedException`; no hay aplicación ni job EMR desplegado.
+- Kinesis: el listado del 26-nov mostró cero streams; no se creó uno porque el consumidor cloud no está disponible.
+- CloudFront: el 26-nov el listado de distribuciones devolvió `AccessDenied` y no se observó ninguna distribución; no hay endpoint estable.
+- Budgets: el listado del 26-nov mostró cero presupuestos; no hay alerta ni límite duro configurado.
+- Recurso del medidor: se observó USD 1.20 de USD 50, sesión de 4 horas; el medidor puede no reflejar todos los cargos ni cortar recursos.
 - Comparación Colorado/EIA 87.16%: el agregado fuente no está en `main`, por lo que se mantiene como `NO REPRODUCIDO`, no como precisión.
 
 ### 2.3 Alinear contratos y vocabulario
@@ -46,13 +46,13 @@ Actualizar bajo este bloque los documentos operativos AWS y de seguimiento para 
 - Usar el nombre real de Brian: `population_density_per_sq_mi`. El texto antiguo `estimated_population_per_sq_mile` no es el campo integrado. No modificar la tabla ya mergeada.
 - Mantener separadas `gold/v2/` (tablas canónicas) y `site/data/v2/` (exportaciones aprobadas para el frontend). `tablero/data/v2/` es la carpeta fuente/exportación local, no un prefijo S3 alternativo.
 - Mantener `gold/v1/pilot/` intacto. No reemplazar manifest o artefactos v1.
-- Corregir contradicciones sobre ResStock: 10 perfiles/350,400 intervalos en paquete Git/S3; lote 50/1,752,000 intervalos solo reportado localmente; 10,000 IDs candidatos aún no descargados/procesados.
+- Corregir contradicciones sobre ResStock: 10 perfiles/350,400 intervalos en Gold v2; lote local verificado de 50/1,752,000 intervalos; 9,950 IDs siguen sin intentar y la meta de 10,000 no se ha procesado.
 - Corregir contradicciones de evaluación: backtest previo de 2024–2025 fue consultado. No volver a llamarlo prueba ciega o no vista. 2026 contiene meses preliminares y se debe etiquetar como tales.
 - Alinear la nomenclatura del manifiesto y la especificación UI; campos y cifras deben provenir del CSV/Gold y no de valores escritos a mano.
 
 ### Criterio de cierre del Bloque 0
 
-- [~] Evidencia del 26-nov cubre región y S3; EMR/Kinesis/CloudFront y presupuesto requieren revalidación independiente.
+- [x] Auditoría del 26-nov cubre región, S3, Budgets, EMR Serverless, Kinesis y CloudFront. Los permisos/recursos ausentes quedaron documentados; la auditoría no implica despliegue de esos servicios.
 - [ ] Los documentos no describen como activa una arquitectura objetivo.
 - [x] Los conjuntos de 10 perfiles en Gold, lote local de 50, prueba local de 1 y meta de 10,000 candidatos están separados.
 - [ ] Los contratos de Brian/Christian/Diego y sus campos actuales están identificados sin duplicar tareas.
@@ -198,7 +198,7 @@ No crear prefijos de archivos crudos por decoración: solo poblar carpetas que c
 
 ### 7.4 Costo, sesión y seguridad
 
-- La nota del lab informa sesión de 4 horas, medidor `USD 0.50 / USD 50` observado y ausencia de un límite duro. El valor no equivale a un Budget ni garantiza que AWS detenga recursos antes de cargos.
+- La nota del lab informa sesión de 4 horas, medidor `USD 1.20 / USD 50` observado y ausencia de un límite duro. El valor no equivale a un Budget ni garantiza que AWS detenga recursos antes de cargos.
 - Antes de cada acción, revisar consumo; estimar bytes/requests/duración; usar el umbral interno prudente anotado en la viabilidad (USD 5 adicionales estimados/observados para el siguiente bloque), consciente de que no es protección automática.
 - No dejar workers, streams, endpoints, buckets de prueba o checkpoints innecesarios. Tras ejecutar, comprobar cleanup y medir de nuevo.
 - S3 debe seguir privado, con SSE-S3, ACL deshabilitadas y Block Public Access. Si versioning sigue denegado/deshabilitado, usar claves inmutables versionadas y registrar esa limitación; no presentarlo como habilitado.
@@ -233,9 +233,9 @@ Los pasos de escala, build y publicación son actividades internas del producto 
 
 ### Bloque 0
 
-- [~] El checkout parte del `origin/main` vigente y conserva archivos locales ajenos; los cambios del bloque siguen en la rama local, pendientes de push/PR.
-- [~] Región y S3 tienen evidencia fechada del 26-nov; EMR/Kinesis/CloudFront y presupuesto aún reflejan la observación del 18-nov.
-- [~] Los planes distinguen 10 perfiles Gold, lote de 50 reportado y meta de 10,000; falta alinear todos los documentos de estado/analítica.
+- [x] El dashboard se integró a `main` mediante PR #16; los archivos locales ajenos y sin seguimiento se conservaron.
+- [x] Región, S3, Budgets, EMR Serverless, Kinesis y CloudFront se revalidaron el 26-nov. Se documentaron cero Budgets/streams y errores de permisos; la auditoría está cerrada, aunque los servicios denegados no quedaron desplegados.
+- [x] Ingesta/adaptador/Spark validados con 50 perfiles/1,752,000 intervalos y 21/21 controles; se distinguen de los 10 perfiles Gold v2 y de los 9,950 candidatos restantes.
 - [x] El 87.16% se mantiene como no reproducido, no como precisión ni métrica validada.
 
 ### Brian / demografía
@@ -248,11 +248,13 @@ Los pasos de escala, build y publicación son actividades internas del producto 
 
 - [ ] Christian y Diego se integran al dashboard sin reescribir sus tareas ni código fuera del bloque Omar.
 - [ ] ResStock llega a meta V2 de 10,000 perfiles aceptados con QC, o se reporta con claridad la meta no lograda y la evidencia del bloqueo.
+- [x] La escalabilidad intermedia de ingesta, adaptador y job Spark se validó con 50 perfiles; 10,000 sigue siendo una meta separada no alcanzada.
 - [ ] Forecast ML y anomaly outputs están probados/reproducidos y las limitaciones/splits visibles.
 - [x] El dashboard local tiene seis vistas que consumen Gold v2; pruebas sintéticas se identifican como tales y los candidatos no se presentan como eventos confirmados.
 - [x] S3 contiene el paquete Gold v2 con manifiesto y el HTML autónomo, publicados bajo prefijos privados de release.
+- [x] S3 contiene la salida derivada de la prueba Spark de un perfil, bajo un prefijo de validación privado; no se subieron crudos ni la salida de 50 perfiles.
 - [ ] La URL estable existe solo si CloudFront/OAC quedó realmente desplegado; de otro modo se declara S3 prefirmado temporal y se conserva ruta local.
-- [ ] EMR/Kinesis se marcan con resultado verificado; no se representa como cloud la ejecución Spark local.
+- [x] EMR/Kinesis/CloudFront/Budgets se revisaron en consola y se documentaron como denegados, inexistentes o sin presupuesto; la ejecución Spark se identifica como local.
 - [ ] Diagrama, fuente/cortes, hashes, comandos, atribución y guía para profesor son reproducibles.
 
 ## 10. Entrega del trabajo de Omar

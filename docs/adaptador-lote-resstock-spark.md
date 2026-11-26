@@ -2,7 +2,7 @@
 
 `scripts/adaptar_lote_resstock_spark.py` convierte la salida de [`ingesta_resstock_lotes.py`](ingesta-resstock-lotes.md) en la carpeta que consume `scripts/preparar_entrada_spark.py` (y, después, `scripts/job_spark_piloto.py`). Es opt-in: no cambia el flujo piloto vigente ni modifica esos scripts.
 
-**Estado de verificación (26-nov-2026):** se ejecutaron el ingestor, la consolidación, el adaptador, `preparar_entrada_spark.py` y `job_spark_piloto.py` con un lote controlado de 1 perfil. Los manifiestos y hashes se cotejaron. El job Spark 4.0.1 produjo las capas Silver/Gold: 21/21 controles aprobados y estado `VALID_WITH_WARNINGS` por clima desacoplado y hora exacta de descarga no registrada.
+**Estado de verificación (26-nov-2026):** además de una prueba inicial de 1 perfil, se ejecutaron ingestor, consolidación, adaptador, `preparar_entrada_spark.py` y `job_spark_piloto.py` con 50 perfiles aceptados. Spark 4.0.1 procesó 1,752,000 intervalos ResStock; los manifiestos y hashes coinciden, con 21/21 reglas aprobadas y estado `VALID_WITH_WARNINGS` por clima desacoplado y hora exacta de descarga no registrada.
 
 ## Uso
 
@@ -24,7 +24,7 @@ python scripts/preparar_entrada_spark.py --prepared /tmp/entrada-preparada-lote 
 python scripts/job_spark_piloto.py --input /tmp/entrada-spark-lote --output /tmp/salidas-spark-lote --master 'local[2]'
 ```
 
-La ejecución observada se hizo con los mismos pasos, usando una carpeta temporal de ingesta y salidas bajo `/tmp`. El adaptador reportó 1 perfil aceptado de 10,000 candidatos; el Parquet resultante tuvo 35,040 filas y las columnas contractuales. `preparar_entrada_spark.py` aceptó la salida y conservó filas/hash. El job Spark procesó esa entrada: 35,040 filas Silver ResStock, 5,304 Silver/Gold EIA, 336 Silver clima y 12 Gold ResStock mensuales. Ejecuta el módulo desde cualquier directorio: importa funciones de validación de `ingesta_resstock_lotes.py`, que debe estar en la misma carpeta `scripts/`. Requiere `pyarrow`.
+La ejecución observada usó carpetas locales bajo `/tmp`. En la prueba ampliada, el adaptador recibió 50 perfiles aceptados entre 10,000 candidatos; el Parquet tuvo 1,752,000 filas y 50 IDs de roster, con exactamente 35,040 filas por ID. `preparar_entrada_spark.py` aceptó la salida y conservó filas y hash. Spark 4.0.1 generó 1,752,000 filas Silver ResStock, 5,304 Silver/Gold EIA, 336 Silver clima, 600 Gold ResStock mensuales y 5,304 Gold EIA mensuales. Filas, esquemas, tamaños y SHA-256 de cada archivo físico coincidieron con `manifiesto_ejecucion.json`. La duración registrada del job fue 34.4 s y el RSS máximo reportado fue 119 MB en este entorno; son mediciones de esta corrida, no estimaciones para 10,000 perfiles. Ejecuta el módulo desde cualquier directorio: importa funciones de validación de `ingesta_resstock_lotes.py`, que debe estar en la misma carpeta `scripts/`. Requiere `pyarrow`.
 
 ## Entradas y validaciones
 
@@ -49,7 +49,7 @@ Se publica en un staging temporal junto al destino y se renombra de forma atómi
 
 ## Limitaciones
 
-- La ejecución de Spark cubrió un único perfil para validar el flujo, no la escalabilidad. Lotes de decenas, centenares o miles de perfiles siguen pendientes de pruebas de capacidad con mediciones de tiempo y memoria.
+- La ejecución de Spark cubrió 50 perfiles y valida una escala intermedia; no representa una prueba a 10,000 perfiles. Lotes mayores requieren nueva medición de tiempo, memoria, concurrencia y fallos de descarga.
 - El manifiesto de integración que escribe `preparar_entrada_spark.py` conserva su nota y descripción de transformación genéricas; la cantidad real está en `manifiesto.json` y en el roster.
 - Los CSV de EIA y clima son los del manifiesto base; no se actualizan ni se amplían aquí.
 - La atribución y licencia ResStock/NREL/DOE (CC BY 4.0, datos «as is», uso de investigación) siguen la [decisión de publicación](decision-publicacion-datos.md); no se publican crudos.

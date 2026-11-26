@@ -1,7 +1,7 @@
 # Plan definitivo general para construir y cerrar el producto
 
 **Estado:** plan rector de implementación del producto final. No representa trabajo ya ejecutado.
-**Base de revisión:** `origin/main` en `5572c1f` (PR #15 integrado) y checkout `ui/dashboard-simplified-ui` en `5225aa2`, propuesta V2 aceptada, observaciones del profesor y PR #13/#14 integrados. La interfaz está comprometida localmente; su rama aún requiere push/PR.
+**Base de revisión:** `origin/main` en `3ee2a11` (PR #16 integrado), propuesta V2 aceptada, observaciones del profesor y PR #13/#14 integrados. Estado operativo contrastado con las ejecuciones locales y la consola AWS del 26-nov-2026.
 **Propósito:** reemplazar el enfoque de demos o MVP como entregables por una ruta única de construcción, validación e integración del producto final.
 
 ## 1. Resultado que se debe entregar
@@ -33,25 +33,25 @@ La programación local, los lotes internos y los PRs son medios de implementaci�
 | Predicción por vivienda | Fuera del alcance de predicción del producto final. | ResStock aporta perfiles simulados de 2018, no una serie longitudinal observada suficiente para afirmar pronósticos reales de cada vivienda. Sus perfiles sí se usan para patrones y anomalías exploratorias. |
 | Modelo de ML | `RandomForestRegressor` global como candidato explícito de aprendizaje automático, comparado con Seasonal Naive y el modelo log-lineal existente. | Solo se declarará mejor si supera las baselines con las mismas observaciones y métricas. “IA” se explicará como aprendizaje automático tabular, no como IA generativa. |
 | Clima | NOAA/NCEI mensual estatal para el análisis estatal. La muestra Open-Meteo de dos puntos de Colorado se conserva como fuente puntual separada. | No se presentará la muestra local como clima estatal, ni el pronóstico de pocos días como variable de un pronóstico eléctrico anual. |
-| Escala ResStock | El objetivo de la propuesta V2 de 10,000 perfiles se mantiene como meta de escala final; actualmente no está procesada. | 10,000 IDs candidatos no cuentan como perfiles. Un lote de 50 perfiles se reportó procesado localmente (1,752,000 intervalos), pero no equivale al conjunto de 10,000 ni está en el paquete Gold versionado. El resultado final debe contar archivos descargados, aceptados y rechazados después de QC. |
-| Servicios cloud | Mantener S3 privado y ejecutar solo componentes que permitan los permisos observados. | La denegación de EMR Serverless, la ausencia de stream Kinesis y el acceso parcial de CloudFront deben documentarse; no se dibujarán como despliegues activos. |
+| Escala ResStock | El objetivo de la propuesta V2 de 10,000 perfiles se mantiene como meta final; todavía no está procesado. | El 26-nov se descargaron, aceptaron y procesaron 50 perfiles locales (1,752,000 intervalos; 21/21 QC). Quedan 9,950 IDs candidatos sin intentar. El lote de 50 no forma parte de Gold v2 en Git/S3. |
+| Servicios cloud | Mantener S3 privado y ejecutar solo componentes que permitan los permisos observados. | El 26-nov se confirmó S3 activo, 0 budgets, 0 streams Kinesis, `AccessDeniedException` al listar EMR Serverless y `AccessDenied` al listar distribuciones CloudFront. Registrar restricciones; no representar servicios no desplegados como activos. |
 
 ## 3. Estado real que sirve de base
 
-Este estado se contrastó con `origin/main` a `5572c1f`, `tablero/data/v2/manifest.json`, los resultados locales del 26 de noviembre y la consola AWS del Learner Lab.
+Este estado se contrastó con `origin/main` a `3ee2a11` (PR #16), `tablero/data/v2/manifest.json`, las ejecuciones locales del 26 de noviembre y la consola AWS del Learner Lab.
 
-- **Bloque 0:** planes y asignación de bloques están en `main`. El 26-nov se revalidaron región y S3: release v2 privada cargada, SSE-S3 y bloqueo público activos. EMR/Kinesis/CloudFront y presupuesto no se revalidaron en esta sesión.
+- **Bloque 0:** planes y asignación están en `main`. El 26-nov se revalidaron S3, Budgets, EMR Serverless, Kinesis y CloudFront. Resultado: S3 privado operativo; 0 budgets y 0 streams; `AccessDeniedException` para listar aplicaciones EMR y `AccessDenied` para listar distribuciones CloudFront. No se crearon recursos de infraestructura.
 - **Brian:** bloque completado. PR #13 añadió la tabla anual y el script; PR #14 fijó fuentes y aclaró metodología. La salida tiene 306 filas, 51 jurisdicciones × 6 años, y hash/manifiesto reproducibles. No se debe volver a asignar su generación como pendiente.
 - **Christian:** bloque de clima estatal mensual pendiente. Su alcance vigente permanece en [`division-bloques-equipo-v2.md`, §4](division-bloques-equipo-v2.md).
 - **Diego:** bloque de ML y anomalías pendiente. Su alcance vigente permanece en [`division-bloques-equipo-v2.md`, §5](division-bloques-equipo-v2.md).
-- **Dashboard:** `origin/main` incluye seis vistas y Gold v2 con 11 tablas y 20,858 filas; el manifiesto reporta 27/27 reglas aprobadas con advertencias. Los cambios de interfaz están comprometidos localmente en `5225aa2`, aún no publicados en una rama remota.
-- **Datos ResStock:** Gold v2 en Git/S3 contiene 10 perfiles/350,400 intervalos. El 26-nov se ejecutaron ingesta local, adaptador y job Spark con 1 perfil/35,040 intervalos y 21/21 reglas aprobadas; el lote reportado de 50 sigue separado y ninguna de esas pruebas alcanza la meta de 10,000.
+- **Dashboard:** `origin/main` incluye seis vistas y Gold v2 con 11 tablas y 20,858 filas; el manifiesto reporta 27/27 reglas aprobadas con advertencias. El rediseño se integró mediante PR #16 (`3ee2a11`).
+- **Datos ResStock:** Gold v2 en Git/S3 conserva 10 perfiles/350,400 intervalos. El 26-nov se ejecutaron ingesta, adaptador y Spark con 50 perfiles/1,752,000 intervalos y 21/21 reglas aprobadas; quedan 9,950 candidatos sin intentar. Gold v2 no se sustituyó con el lote de escala.
 - **EIA/anomalías/estimaciones:** Gold v2 contiene candidatos estadísticos EIA, una evaluación sintética y un backtest log-lineal frente a Seasonal Naive. El modelo Random Forest de Diego sigue pendiente; los candidatos no son eventos reales confirmados.
 - **Clima estatal:** Gold v2 conserva la muestra puntual Open-Meteo; la entrega mensual estatal NOAA/NCEI de Christian sigue pendiente.
-- **S3:** el 26-nov se cargaron 12 archivos Gold v2 y dos archivos del sitio bajo prefijos privados de release. Se verificaron Content-Type, SSE-S3 y bloqueo público; versionado deshabilitado. No se generó URL prefirmada ni se desplegó CloudFront.
-- **EMR/Kinesis/CloudFront:** el registro del 18 de noviembre muestra EMR Serverless denegado, Kinesis sin stream y CloudFront sin distribución verificada. Se debe revalidar el estado antes de una acción cloud.
+- **S3:** el 26-nov se publicaron 14 objetos Gold v2/web y, bajo otro prefijo, 12 objetos de validación Spark de un perfil (7 archivos de datos/reporte y 5 marcadores `_SUCCESS`). Se verificaron Content-Type, SSE-S3 y Block Public Access; versionado deshabilitado. No hay URL pública ni prefirmada nueva.
+- **EMR/Kinesis/CloudFront/Budgets:** revalidados el 26-nov; EMR `ListApplications` denegado, Kinesis con 0 streams, CloudFront con 0 distribuciones y consulta denegada, AWS Budgets con 0 presupuestos. Estas restricciones están verificadas; no se creó infraestructura.
 - **ResStock:** Gold v2 contiene 10 perfiles y 350,400 intervalos. El objetivo de 10,000 perfiles no se ha alcanzado; el lote local reportado de 50 no está en el paquete Gold versionado.
-- **Checkout local:** `ui/dashboard-simplified-ui` parte de `origin/main` en `5572c1f` y contiene commits locales `4258843` y `5225aa2`. Los documentos operativos siguen locales y los archivos sin seguimiento existentes se conservan fuera del commit.
+- **Checkout local:** PR #16 está mergeado en `origin/main` (`3ee2a11`). Los datos crudos y salidas de la prueba de 50 perfiles permanecen solo en rutas locales ignoradas; los documentos de evidencia de esta nueva corrida se actualizan en la rama actual.
 
 ## 4. Integrantes y límites de responsabilidad
 
