@@ -120,6 +120,21 @@ Resultado observado: Spark 4.0.1 finalizó con `VALID_WITH_WARNINGS`, 21/21 regl
 
 La salida está en `/tmp/bigdata-spark-piloto-final-20261118` en el entorno donde se hizo la ejecución; no está versionada ni publicada en la nube.
 
+### Validación del adaptador con un perfil (26-nov-2026)
+
+Además de la ejecución de 10 perfiles documentada arriba, se validó el flujo del ingestor con un perfil recién descargado, consolidado, adaptado y procesado por Spark. La instalación de `pyspark==4.0.1` se hizo en un entorno virtual temporal bajo `/tmp`; no se modificaron las dependencias globales ni se escribieron resultados en el repositorio.
+
+```bash
+JAVA_HOME=/usr/lib/jvm/java-17-temurin-jdk \
+PYSPARK_PYTHON=/tmp/bigdata-spark-validate-venv/bin/python \
+/tmp/bigdata-spark-validate-venv/bin/python scripts/job_spark_piloto.py \
+  --input /tmp/omar-resstock-spark-input-validation-20261126 \
+  --output /tmp/omar-spark-job-one-profile-20261126 \
+  --master 'local[2]'
+```
+
+Spark 4.0.1 terminó con `VALID_WITH_WARNINGS`: 21 reglas aprobadas, 0 fallidas y 2 advertencias metodológicas (la muestra climática permanece separada y el manifiesto no conserva la hora UTC exacta de descarga). Se inspeccionaron los Parquet y se cotejaron filas, esquemas y SHA-256 con `manifiesto_ejecucion.json`: Silver ResStock 35,040; Silver EIA 5,304; Silver clima 336; Gold ResStock mensual 12; Gold EIA mensual 5,304. La salida temporal no está versionada ni se subió a S3. Esta ejecución valida un perfil; no demuestra escalabilidad del lote de 50, los 10,000 candidatos ni ejecución en AWS/EMR.
+
 ## Exportación para el tablero web (`tablero/data/v1/`)
 
 El pipeline soporta la exportación de las capas Gold en formato JSON según el contrato acordado con el frontend (esquema `1.0`), disponible en dos modalidades:

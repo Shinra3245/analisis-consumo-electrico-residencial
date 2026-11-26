@@ -1,7 +1,7 @@
 # Plan definitivo general para construir y cerrar el producto
 
 **Estado:** plan rector de implementación del producto final. No representa trabajo ya ejecutado.
-**Base de revisión:** `origin/main` en `58c8fe1`, propuesta V2 aceptada, observaciones del profesor, PR #13 y #14 integrados y contraste independiente de Claude.
+**Base de revisión:** `origin/main` en `5572c1f` (PR #15 integrado) y checkout `ui/dashboard-simplified-ui` en `5225aa2`, propuesta V2 aceptada, observaciones del profesor y PR #13/#14 integrados. La interfaz está comprometida localmente; su rama aún requiere push/PR.
 **Propósito:** reemplazar el enfoque de demos o MVP como entregables por una ruta única de construcción, validación e integración del producto final.
 
 ## 1. Resultado que se debe entregar
@@ -38,18 +38,20 @@ La programación local, los lotes internos y los PRs son medios de implementaci�
 
 ## 3. Estado real que sirve de base
 
-Este estado se contrastó con `origin/main` a `58c8fe1`, el manifiesto Gold v1, el documento de viabilidad de Learner Lab y los PRs integrados. Es evidencia registrada, no una consulta en vivo de la consola AWS.
+Este estado se contrastó con `origin/main` a `5572c1f`, `tablero/data/v2/manifest.json`, los resultados locales del 26 de noviembre y la consola AWS del Learner Lab.
 
-- **Bloque 0:** el plan general y la asignación de bloques ya están en `main`; persisten contradicciones documentales sobre región, estado AWS, salida del sitio S3, versionado y contratos.
+- **Bloque 0:** planes y asignación de bloques están en `main`. El 26-nov se revalidaron región y S3: release v2 privada cargada, SSE-S3 y bloqueo público activos. EMR/Kinesis/CloudFront y presupuesto no se revalidaron en esta sesión.
 - **Brian:** bloque completado. PR #13 añadió la tabla anual y el script; PR #14 fijó fuentes y aclaró metodología. La salida tiene 306 filas, 51 jurisdicciones × 6 años, y hash/manifiesto reproducibles. No se debe volver a asignar su generación como pendiente.
 - **Christian:** bloque de clima estatal mensual pendiente. Su alcance vigente permanece en [`division-bloques-equipo-v2.md`, §4](division-bloques-equipo-v2.md).
 - **Diego:** bloque de ML y anomalías pendiente. Su alcance vigente permanece en [`division-bloques-equipo-v2.md`, §5](division-bloques-equipo-v2.md).
-- **Dashboard:** seis vistas y Gold v1 están versionados; el manifiesto v1 contiene 10 tablas. Aún no hay `tablero/data/v2` ni integración de la tabla demográfica en el dashboard.
-- **Datos ResStock:** Git/S3 registran 10 perfiles de 2018 y 350,400 intervalos. El lote de 50 y 1,752,000 intervalos es una corrida local reportada; no debe anunciarse como artefacto incluido en `main` o S3.
-- **EIA/anomalías/estimaciones:** hay una detección estadística EIA y un backtest log-lineal frente a una baseline estacional. No son el modelo Random Forest solicitado y los candidatos estadísticos no son eventos reales confirmados.
-- **S3:** existe un bucket privado registrado en `us-east-1`, con prefijos `gold/` y `site/`. La documentación de Learner Lab registra versionado deshabilitado. El HTML se publicó con URL prefirmada temporal; los documentos difieren sobre si la visualización abrió completa. Se debe volver a verificar la build actual.
-- **EMR/Kinesis/CloudFront:** EMR Serverless fue denegado; no se creó stream Kinesis; CloudFront tuvo denegaciones de lectura, que no prueban por sí mismas que toda acción del servicio sea imposible.
-- **Checkout local:** la copia de trabajo observada seguía en `avance/docs-demo-s3`, anterior a `origin/main`; conservar sus archivos locales sin seguimiento y usar una rama limpia desde `main` para integrar los planes y el trabajo futuro.
+- **Dashboard:** `origin/main` incluye seis vistas y Gold v2 con 11 tablas y 20,858 filas; el manifiesto reporta 27/27 reglas aprobadas con advertencias. Los cambios de interfaz están comprometidos localmente en `5225aa2`, aún no publicados en una rama remota.
+- **Datos ResStock:** Gold v2 en Git/S3 contiene 10 perfiles/350,400 intervalos. El 26-nov se ejecutaron ingesta local, adaptador y job Spark con 1 perfil/35,040 intervalos y 21/21 reglas aprobadas; el lote reportado de 50 sigue separado y ninguna de esas pruebas alcanza la meta de 10,000.
+- **EIA/anomalías/estimaciones:** Gold v2 contiene candidatos estadísticos EIA, una evaluación sintética y un backtest log-lineal frente a Seasonal Naive. El modelo Random Forest de Diego sigue pendiente; los candidatos no son eventos reales confirmados.
+- **Clima estatal:** Gold v2 conserva la muestra puntual Open-Meteo; la entrega mensual estatal NOAA/NCEI de Christian sigue pendiente.
+- **S3:** el 26-nov se cargaron 12 archivos Gold v2 y dos archivos del sitio bajo prefijos privados de release. Se verificaron Content-Type, SSE-S3 y bloqueo público; versionado deshabilitado. No se generó URL prefirmada ni se desplegó CloudFront.
+- **EMR/Kinesis/CloudFront:** el registro del 18 de noviembre muestra EMR Serverless denegado, Kinesis sin stream y CloudFront sin distribución verificada. Se debe revalidar el estado antes de una acción cloud.
+- **ResStock:** Gold v2 contiene 10 perfiles y 350,400 intervalos. El objetivo de 10,000 perfiles no se ha alcanzado; el lote local reportado de 50 no está en el paquete Gold versionado.
+- **Checkout local:** `ui/dashboard-simplified-ui` parte de `origin/main` en `5572c1f` y contiene commits locales `4258843` y `5225aa2`. Los documentos operativos siguen locales y los archivos sin seguimiento existentes se conservan fuera del commit.
 
 ## 4. Integrantes y límites de responsabilidad
 
@@ -144,16 +146,16 @@ La secuencia es de construcción interna del producto final; no define entregas 
 
 ## 8. Aceptación del producto final
 
-- [ ] La tabla de Brian está consumida en Gold v2 y en el dashboard; el esquema conserva `population_density_per_sq_mi`.
+- [x] La tabla de Brian está consumida en Gold v2 y en el dashboard; el esquema conserva `population_density_per_sq_mi`.
 - [ ] Christian y Diego cerraron sus entregas de acuerdo con los bloques vigentes, sin que este plan haya alterado su asignación.
-- [ ] El producto distingue población, densidad, ventas totales y ventas por habitante; estado mayormente poblado se informa con año y fuente.
-- [ ] La comparación energía-demografía usa estados y DC, con unidades y cobertura; no contiene joins de ciudad y estado incompatibles.
+- [x] El producto distingue población, densidad, ventas totales y ventas por habitante; estado mayormente poblado se informa con año y fuente.
+- [x] La comparación energía-demografía usa estados y DC, con unidades y cobertura; no contiene joins de ciudad y estado incompatibles.
 - [ ] El modelo RF se comparó contra Seasonal Naive y regresión log-lineal, con MAE/RMSE/sMAPE, predicciones, hashes y limitaciones. Periodos ya consultados se declaran como backtest previamente observado.
 - [ ] Anomalías reales candidatas, inyecciones sintéticas y errores de modelo son categorías separadas con sus propias métricas.
 - [ ] El objetivo de 10,000 perfiles se demuestra con archivos descargados, roster y QC; los 10 perfiles Git/S3, lote local de 50 e índice candidato se reportan separadamente.
 - [ ] El clima estatal NOAA está integrado por estado/mes; Open-Meteo conserva etiqueta puntual y no se afirma causalidad.
-- [ ] Las seis vistas consumen Gold v2 y reflejan filas/filtros; no hay valores simulados presentados como reales ni vistas finales vacías.
-- [ ] El bucket permanece privado; `raw/`, `silver/`, Gold y exportaciones están separados, con manifiestos/hash y sin secretos.
+- [x] Las seis vistas locales consumen Gold v2 y reflejan filas/filtros. La integración de clima estatal y Random Forest sigue condicionada a las entregas de Christian y Diego.
+- [~] El bucket permanece privado; Gold v1/v2 y sitio están separados, con manifiestos y sin secretos. No se subieron capas raw/silver ni archivos crudos.
 - [ ] Se realizó al menos un recorrido AWS de los servicios permitidos; EMR/Kinesis/CloudFront aparecen con evidencia como operativo, denegado o no verificado.
 - [ ] La build final del sitio se probó en el endpoint que efectivamente esté disponible; URL prefirmada se identifica como temporal, no permanente.
 - [ ] Código, fuentes, atribuciones, procedimiento reproducible, diagrama tal como quedó construido y limitaciones están en Git.
