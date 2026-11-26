@@ -83,7 +83,7 @@ def build(web, data, output):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--web", type=Path, default=ROOT / "tablero")
-    ap.add_argument("--datos", type=Path, default=ROOT / "tablero/data/v1")
+    ap.add_argument("--datos", type=Path, default=ROOT / "tablero/data/v2")
     ap.add_argument("--salida", type=Path, default=Path("/tmp/consumo-residencial-autonomo.html"))
     a = ap.parse_args()
     build(a.web, a.datos, a.salida)

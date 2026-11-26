@@ -92,3 +92,67 @@ export function heatmap({ width, rows, cells, aria, unit, rowLabel = (r) => r })
   const bar = `<div class="scale" aria-hidden="true"><span>${nf(lo, 2)}</span><i style="background:linear-gradient(90deg,${color(lo)},${color((lo + hi) / 2)},${color(hi)})"></i><span>${nf(hi, 2)} ${esc(unit)}</span></div>`;
   return `<svg class="chart" viewBox="0 0 ${w} ${hh + 26}" role="img" aria-label="${esc(aria)}">${g}</svg>${bar}`;
 }
+
+// points: [{x, y, r, label, state_code, tip, color, isDc, isSelected, showLabel}]
+export function scatterChart({
+  width,
+  height = 340,
+  points,
+  xLabel = 'Densidad estimada (hab./mi²)',
+  yLabel = 'Ventas por habitante (kWh/hab)',
+  aria = 'Dispersión de ventas por habitante frente a densidad poblacional',
+  xDomain,
+  yDomain,
+  yFmt = (v) => nf(v),
+  xFmt = (v) => nf(v),
+}) {
+  const w = Math.max(300, width), iw = w - M.l - M.r, ih = height - M.t - M.b;
+  if (!points || !points.length) return '';
+  let [x0, x1] = xDomain || [0, Math.max(...points.map((p) => p.x)) * 1.05];
+  if (x1 === x0) x1 = x0 + 1;
+  let [y0, y1] = yDomain || [0, Math.max(...points.map((p) => p.y)) * 1.08];
+  if (y1 === y0) y1 = y0 + 1;
+
+  const xt = niceTicks(x0, x1, 5);
+  x0 = xt[0]; x1 = xt[xt.length - 1];
+  const yt = niceTicks(y0, y1, 5);
+  y0 = yt[0]; y1 = yt[yt.length - 1];
+
+  const X = (x) => M.l + ((x - x0) / (x1 - x0 || 1)) * iw;
+  const Y = (y) => M.t + ih - ((y - y0) / (y1 - y0 || 1)) * ih;
+
+  let g = '';
+  for (const t of yt) {
+    g += `<line class="grid" x1="${M.l}" x2="${w - M.r}" y1="${Y(t)}" y2="${Y(t)}"/><text class="tick" x="${M.l - 8}" y="${Y(t) + 4}" text-anchor="end">${esc(yFmt(t))}</text>`;
+  }
+  for (const t of xt) {
+    g += `<line class="grid" x1="${X(t)}" x2="${X(t)}" y1="${M.t}" y2="${M.t + ih}" stroke-dasharray="3 3"/><text class="tick" x="${X(t)}" y="${height - M.b + 18}" text-anchor="middle">${esc(xFmt(t))}</text>`;
+  }
+  g += `<line class="axis" x1="${M.l}" x2="${w - M.r}" y1="${M.t + ih}" y2="${M.t + ih}"/>`;
+  g += `<line class="axis" x1="${M.l}" x2="${M.l}" y1="${M.t}" y2="${M.t + ih}"/>`;
+
+  for (const p of points) {
+    const cx = X(p.x);
+    const cy = Y(p.y);
+    const baseRad = p.r || 5;
+    const rad = p.isSelected ? baseRad + 3 : (p.isDc ? baseRad + 1 : baseRad);
+    const fill = p.color || (p.isSelected ? '#0f8a6d' : (p.isDc ? '#d98a1f' : '#2b8fc4'));
+    const stroke = p.isSelected ? '#0b6f58' : (p.isDc ? '#92400e' : '#1e3a8a');
+    const strokeWidth = p.isSelected ? 2.5 : 1.2;
+
+    if (p.isDc) {
+      g += `<polygon points="${cx},${cy - rad - 2} ${cx + rad + 2},${cy} ${cx},${cy + rad + 2} ${cx - rad - 2},${cy}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="0.95"><title>${esc(p.tip)}</title></polygon>`;
+      g += `<text x="${cx + rad + 4}" y="${cy + 4}" font-size="11" font-weight="700" fill="${stroke}">${esc(p.label || p.state_code)}</text>`;
+    } else {
+      g += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${rad}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="0.85"><title>${esc(p.tip)}</title></circle>`;
+      if (p.isSelected || p.showLabel) {
+        g += `<text x="${cx + rad + 3}" y="${cy + 4}" font-size="11" font-weight="${p.isSelected ? '700' : '600'}" fill="${stroke}">${esc(p.label || p.state_code)}</text>`;
+      }
+    }
+  }
+
+  if (yLabel) g += `<text class="axl" transform="translate(14 ${M.t + ih / 2}) rotate(-90)" text-anchor="middle">${esc(yLabel)}</text>`;
+  if (xLabel) g += `<text class="axl" x="${M.l + iw / 2}" y="${height - 4}" text-anchor="middle">${esc(xLabel)}</text>`;
+
+  return `<svg class="chart" viewBox="0 0 ${w} ${height}" role="img" aria-label="${esc(aria)}">${g}</svg>`;
+}
