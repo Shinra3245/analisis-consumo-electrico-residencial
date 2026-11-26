@@ -120,6 +120,22 @@ Resultado observado: Spark 4.0.1 finalizó con `VALID_WITH_WARNINGS`, 21/21 regl
 
 La salida está en `/tmp/bigdata-spark-piloto-final-20261118` en el entorno donde se hizo la ejecución; no está versionada ni publicada en la nube.
 
+### Prueba de escala con 50 perfiles (26-nov-2026)
+
+Se amplió la cadena con 50 perfiles descargados y aceptados por el ingestor. La primera ejecución se detuvo al llegar al límite de bytes por ejecución, tras 29 perfiles; se reanudó con `--continuar` y un nuevo tope. El resumen final registró 50/50 aceptados, 0 rechazados, 0 fallidos, 0 conflictos y 9,950 candidatos aún sin intentar. Los crudos permanecen localmente bajo `data/raw/` (ignorado por Git).
+
+El adaptador y `preparar_entrada_spark.py` generaron la entrada de Spark bajo `/tmp/omar-escala50-final-20261126/`. Con PySpark 4.0.1, Java 17 y `local[2]`, el job finalizó en 34.4 s con RSS máximo reportado de 119 MB y estado `VALID_WITH_WARNINGS`: 21 reglas aprobadas, 0 fallidas y 2 advertencias metodológicas (clima desacoplado y hora UTC exacta de descarga no registrada). Se cotejaron roster, tamaños, filas y SHA-256 de cada archivo físico contra sus manifiestos; no hubo discrepancias.
+
+| Salida | Filas verificadas |
+|---|---:|
+| Silver ResStock (50 perfiles × 35,040 intervalos) | 1,752,000 |
+| Silver EIA | 5,304 |
+| Silver clima | 336 |
+| Gold ResStock mensual | 600 |
+| Gold EIA mensual | 5,304 |
+
+Hash SHA-256 del manifiesto de ejecución: `56aedf392d50b4c65ae29d829d03dbd3bba2ff5c2eb00442702ed5f9cee40b26`. Esta prueba mide la cadena hasta 50 perfiles; no demuestra capacidad para 10,000 ni ejecución administrada en AWS/EMR. Los Parquet y reportes de esta corrida no se subieron a S3; la prueba separada de un perfil sí se publicó bajo el prefijo privado de validación documentado en [`publicacion-s3-dashboard-v2.md`](publicacion-s3-dashboard-v2.md).
+
 ### Validación del adaptador con un perfil (26-nov-2026)
 
 Además de la ejecución de 10 perfiles documentada arriba, se validó el flujo del ingestor con un perfil recién descargado, consolidado, adaptado y procesado por Spark. La instalación de `pyspark==4.0.1` se hizo en un entorno virtual temporal bajo `/tmp`; no se modificaron las dependencias globales ni se escribieron resultados en el repositorio.

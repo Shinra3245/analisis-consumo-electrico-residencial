@@ -2,7 +2,7 @@
 
 `scripts/ingesta_resstock_lotes.py` prepara el camino hacia la meta de 10,000 perfiles ResStock sin confundir candidatos con datos descargados. Es independiente de `scripts/preparar_datos.py`, cuyo comportamiento piloto no cambia.
 
-**Estado de verificación (26-nov-2026):** ejecución runtime controlada de un perfil. Se descargaron 2,369,382 bytes; 1/1 perfil fue aceptado, con 35,040 intervalos, cero rechazos y cero fallos. La consolidación y validación de hash finalizaron. No representa una prueba de escalabilidad ni el cumplimiento de la meta de 10,000 perfiles.
+**Estado de verificación (26-nov-2026):** prueba runtime de 50 perfiles reales. Se aceptaron 50/50 perfiles, con 293,473,611 bytes y 1,752,000 intervalos; hubo cero rechazos, fallos o conflictos. La primera ejecución alcanzó su tope por ejecución después de 29 aceptados; `--continuar` descargó los 21 restantes con un nuevo tope. Quedan 9,950 IDs candidatos sin intentar. Esta prueba demuestra el flujo hasta 50 perfiles, no la meta de 10,000.
 
 ## Conjuntos que nunca se mezclan
 
@@ -91,12 +91,6 @@ Se rechaza y se envía a cuarentena, con la causa en `error`, todo Parquet que n
 
 Antes de leer cada perfil aceptado, `--consolidar` lo revalida: la ruta debe estar dentro de `--output`, y los bytes y el SHA-256 deben coincidir con el registro aceptado y el archivo debe volver a pasar la validación por perfil (ID, 35,040 intervalos, valores). Si un raw se alteró después de aceptarse, la consolidación se detiene con un error que nombra el perfil y no se publica ninguna salida.
 
-La construcción ocurre en un staging hermano (`.consolidado.stage-*` dentro de `--output`): se escriben allí el Parquet, el CSV y el JSON, se comprueban filas, IDs y SHA-256, y solo entonces se renombra de forma atómica a `consolidado/`. Si algo falla, el staging se elimina y se puede reintentar. Un `consolidado/` preexistente (incluso vacío) se rechaza sin borrarlo; muévelo antes de volver a consolidar. **Ejecución observada:** el 26-nov-2026 se consolidó 1 perfil, 35,040 filas; el hash del Parquet coincidió con `consolidado.json`. La salida usada fue `data/raw/resstock-ingesta-validation-20261126/`, ignorada por Git.
+La construcción ocurre en un staging hermano (`.consolidado.stage-*` dentro de `--output`): se escriben allí el Parquet, el CSV y el JSON, se comprueban filas, IDs y SHA-256, y solo entonces se renombra de forma atómica a `consolidado/`. Si algo falla, el staging se elimina y se puede reintentar. Un `consolidado/` preexistente (incluso vacío) se rechaza sin borrarlo; muévelo antes de volver a consolidar. **Ejecución observada:** además de una prueba inicial de 1 perfil, el 26-nov se consolidaron 50 perfiles y 1,752,000 filas; roster, conteos y hash coincidieron. El consolidado previo de 29 perfiles se conservó como respaldo local. Las salidas están bajo `data/raw/`, ignoradas por Git.
 
-`scripts/preparar_entrada_spark.py` todavía **no** acepta esta salida directamente: exige una carpeta con `manifiesto.json` de `preparar_datos.py` y los nombres fijos `resstock_perfiles_piloto.parquet` y `resstock_seleccion_piloto.csv`, más los CSV de EIA y clima. Falta un adaptador que:
-
-1. renombre o enlace el Parquet y el CSV de selección aceptada a esos nombres, o que `preparar_entrada_spark.py` admita nombres configurables;
-2. genere `manifiesto.json` con `archivo`, `bytes`, `filas`, `sha256` y `profile_roster` por artefacto;
-3. incorpore los CSV de EIA y clima.
-
-El adaptador ya está implementado en [`adaptar_lote_resstock_spark.py`](../scripts/adaptar_lote_resstock_spark.py) y su ejecución de un perfil se documenta en [`adaptador-lote-resstock-spark.md`](adaptador-lote-resstock-spark.md). La prueba confirmó 35,040 filas y el roster de un ID. Esto no prueba que `job_spark_piloto.py` escale a 10,000 perfiles.
+El adaptador que prepara los cinco archivos y manifiestos requeridos está implementado en [`adaptar_lote_resstock_spark.py`](../scripts/adaptar_lote-resstock-spark.py). Se ejecutaron adaptador, empaquetador y job Spark con 50 perfiles; las 1,752,000 filas y los 50 IDs del roster coincidieron. Esto valida el flujo a escala intermedia, no prueba el procesamiento de 10,000 perfiles.

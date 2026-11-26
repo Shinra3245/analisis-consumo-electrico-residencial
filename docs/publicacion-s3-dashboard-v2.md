@@ -106,6 +106,12 @@ Se subieron 14 artefactos derivados a `us-east-1`: los 11 JSON Gold v2 y `manife
 
 Antigravity verificó la carga en la consola S3: Content-Type correspondientes, cifrado SSE-S3 y Block Public Access conservado. El bucket mantiene versionado deshabilitado. No se subieron archivos fuente crudos ni se modificó ninguna política, ACL o configuración de acceso. Esta publicación es privada: no hay endpoint público, CloudFront/OAC ni URL prefirmada generada. El hash se verificó para el artefacto local/manifiesto; no se afirma una recalculación SHA-256 remota de cada objeto.
 
+### Salida Spark de validación de un perfil (26-nov-2026)
+
+Se publicó por separado bajo `validation/spark-one-profile/20261126/` la salida de la prueba Spark local de un perfil. La consola S3 mostró 12 objetos: cinco Parquet (tres Silver y dos Gold), `manifiesto_ejecucion.json`, `reporte_calidad.json` y cinco marcadores vacíos `_SUCCESS` de Spark. Se verificaron Content-Type correspondientes, cifrado SSE-S3 y Block Public Access total activo. No se alteraron políticas, ACL o configuración del bucket ni se creó URL prefirmada. Esta publicación documenta la prueba, no sustituye el release Gold v2 ni contiene los crudos ResStock.
+
+La corrida de 50 perfiles se mantuvo local en `/tmp`; no se publicó a S3. Sus conteos y hash de manifiesto están en [`ejecucion-job-spark-local.md`](ejecucion-job-spark-local.md).
+
 ---
 
 ## 3. Procedimiento Consciente de Carga a S3 (Operador Autorizado)
