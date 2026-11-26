@@ -113,9 +113,11 @@ export function scatterChart({
   let [y0, y1] = yDomain || [0, Math.max(...points.map((p) => p.y)) * 1.08];
   if (y1 === y0) y1 = y0 + 1;
 
-  const xt = niceTicks(x0, x1, 5);
+  // Extiende los ticks hasta cubrir el máximo para que ningún punto quede fuera del área.
+  const cover = (t, hi) => { const st = t[1] - t[0]; while (st > 0 && t[t.length - 1] < hi) t.push(+(t[t.length - 1] + st).toFixed(10)); return t; };
+  const xt = cover(niceTicks(x0, x1, 5), x1);
   x0 = xt[0]; x1 = xt[xt.length - 1];
-  const yt = niceTicks(y0, y1, 5);
+  const yt = cover(niceTicks(y0, y1, 5), y1);
   y0 = yt[0]; y1 = yt[yt.length - 1];
 
   const X = (x) => M.l + ((x - x0) / (x1 - x0 || 1)) * iw;

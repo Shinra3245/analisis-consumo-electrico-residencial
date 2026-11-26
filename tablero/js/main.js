@@ -6,12 +6,12 @@ import { isoHouse } from './iso.js';
 /* ---------- vistas ---------- */
 const ico = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const VIEWS = [
-  { id: 'resumen', label: 'Resumen', short: 'Resumen', icon: ico('<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>'), q: '¿Cuánta electricidad se vende a los hogares, de dónde salen los datos y cómo se leen?' },
-  { id: 'patrones', label: 'Patrones de consumo', short: 'Patrones', icon: ico('<path d="M3 17l5-6 4 3 5-8 4 5"/><path d="M3 21h18"/>'), q: '¿En qué meses, horas y tipos de vivienda se usa más electricidad, y cómo cambia entre estados?' },
-  { id: 'clima', label: 'Clima', short: 'Clima', icon: ico('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/>'), q: '¿Qué datos de temperatura tenemos y por qué todavía no se cruzan con el consumo?' },
-  { id: 'anomalias', label: 'Meses atípicos', short: 'Atípicos', icon: ico('<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17v.5"/>'), q: '¿Qué meses cambiaron mucho más de lo habitual y qué tan confiable es esa detección?' },
-  { id: 'estimaciones', label: 'Estimaciones', short: 'Estimar', icon: ico('<path d="M3 20V8M9 20V4M15 20v-9M21 20V12"/>'), q: '¿Qué tan bien habría acertado un modelo sencillo en meses que ya conocemos?' },
-  { id: 'calidad', label: 'Calidad de datos', short: 'Calidad', icon: ico('<path d="M9 12l2 2 4-4"/><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/>'), q: '¿De dónde viene cada dato, qué periodo cubre y cómo se comprobó que no cambió?' },
+  { id: 'resumen', label: 'Resumen', short: 'Resumen', icon: ico('<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>'), q: 'Cuánta electricidad se vende a los hogares y de dónde salen los datos.' },
+  { id: 'patrones', label: 'Patrones de consumo', short: 'Patrones', icon: ico('<path d="M3 17l5-6 4 3 5-8 4 5"/><path d="M3 21h18"/>'), q: 'Cuándo y dónde se usa más electricidad.' },
+  { id: 'clima', label: 'Clima', short: 'Clima', icon: ico('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/>'), q: 'Temperaturas disponibles y por qué aún no se cruzan con el consumo.' },
+  { id: 'anomalias', label: 'Meses atípicos', short: 'Atípicos', icon: ico('<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17v.5"/>'), q: 'Meses con cambios fuera de lo habitual, para revisar.' },
+  { id: 'estimaciones', label: 'Estimaciones', short: 'Estimar', icon: ico('<path d="M3 20V8M9 20V4M15 20v-9M21 20V12"/>'), q: 'Qué tan bien acierta un modelo sencillo en meses ya conocidos.' },
+  { id: 'calidad', label: 'Calidad de datos', short: 'Calidad', icon: ico('<path d="M9 12l2 2 4-4"/><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/>'), q: 'Origen, cobertura y verificación de cada tabla.' },
 ];
 const state = {
   view: 'resumen',
@@ -128,7 +128,7 @@ function dataTable(head, rows, max = 80) {
   const body = rows.slice(0, max).map((r) => `<tr>${r.map((c, i) => `<td${typeof c === 'number' ? ' class="n"' : ''}>${typeof c === 'number' ? nf(c, 2) : esc(c)}</td>`).join('')}</tr>`).join('');
   return `<details class="data"><summary>Ver datos de la gráfica (${rows.length} filas${rows.length > max ? `, primeras ${max}` : ''})</summary><div class="tbl-wrap"><table class="t"><thead><tr>${head.map((h) => `<th scope="col">${esc(h)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div></details>`;
 }
-const card = ({ id, q, accent = 'none', body, chips = '', limit = '', cls = '' }) => `<section class="card accent-${accent} ${cls}" ${id ? `aria-labelledby="h-${id}"` : ''}><header class="card-h"><h2 id="h-${id}">${esc(q)}</h2>${id ? `<span class="cid" title="Referencia del requisito">${id}</span>` : ''}</header><div class="card-b">${body}</div>${limit ? `<p class="limit"><span class="limit-i" aria-hidden="true">i</span><span>${limit}</span></p>` : ''}${chips ? `<div class="chips" aria-label="Fuente y unidades">${chips}</div>` : ''}</section>`;
+const card = ({ id, q, accent = 'none', body, chips = '', limit = '', more = '', cls = '' }) => `<section class="card accent-${accent} ${cls}" ${id ? `aria-labelledby="h-${id}"` : ''}><header class="card-h"><h2 id="h-${id}">${esc(q)}</h2>${id ? `<span class="cid" title="Referencia del requisito">${id}</span>` : ''}</header><div class="card-b">${body}</div>${limit ? `<p class="limit"><span class="limit-i" aria-hidden="true">i</span><span>${limit}</span></p>` : ''}${more ? `<details class="more"><summary>Más detalle</summary><p>${more}</p></details>` : ''}${chips ? `<div class="chips" aria-label="Fuente y unidades">${chips}</div>` : ''}</section>`;
 const empty = (title, text, extra = '', err = false) => `<div class="empty ${err ? 'err' : ''}" role="status"><strong>${esc(title)}</strong>${text}${extra}</div>`;
 const pendingTables = (names) => `<ul>${names.map((n) => `<li><code>${n}</code> — ${statusLabel(n)}</li>`).join('')}</ul>`;
 function statusLabel(n) {
@@ -169,12 +169,12 @@ function viewResumen() {
   const ht = p?.housing_type;
   const heroMeta = p
     ? `<p class="eyebrow">Vivienda simulada · ResStock #${esc(p.bldg_id)}</p><h2 class="hero-t">${esc(housingTypeName(p.housing_type))} · ${esc(jurisdictionName(p.state_code))}</h2>
-       <p class="sub">Un ejemplo de vivienda <strong>modelada</strong> por computadora para el año ${esc(p.source_year)}; no es una casa real medida.</p>
+       <p class="sub">Vivienda <strong>modelada</strong> (${esc(p.source_year)}), no una casa real medida.</p>
        <dl class="kv"><div><dt>Al año</dt><dd>${nf(p.annual_kwh)} <small>kWh</small></dd></div><div><dt>Por hora, en promedio</dt><dd>${nf(p.mean_hour_kwh, 2)} <small>kWh</small></dd></div><div><dt>Hora de mayor uso</dt><dd>${nf(p.peak_hour_kwh, 2)} <small>kWh</small></dd></div></dl>
        <div class="chips">${chip('res', ['kWh', `${p.source_year}`, '1 vivienda simulada'])}</div>`
     : `<p class="eyebrow">Ilustración de referencia</p><h2 class="hero-t">No hay viviendas simuladas para este filtro</h2>
        <p class="sub">${statusOf('gold_resstock_profile_summary') === 'ok' ? `Las simulaciones solo cubren ${esc(resStates().map(jurisdictionName).join(' y '))}. ` : 'La tabla de viviendas simuladas aún no está disponible. '}La ilustración no muestra cifras.</p>`;
-  out.push(`<section class="card hero" aria-label="Tipo de vivienda"><div class="iso-wrap">${isoHouse(ht)}${typePicker()}<p class="iso-cap">Exterior ilustrativo del tipo de vivienda. No muestra habitaciones ni consumo por cuarto.</p></div><div class="meta">${heroMeta}</div></section>`);
+  out.push(`<section class="card hero" aria-label="Tipo de vivienda"><div class="iso-wrap">${isoHouse(ht)}${typePicker()}<p class="iso-cap">Exterior ilustrativo; sin consumo por cuarto.</p></div><div class="meta">${heroMeta}</div></section>`);
 
   const cards = [];
   if (showAll || state.source === 'eia') {
@@ -191,15 +191,15 @@ function viewResumen() {
       const rows = byYear.get(y), tot = rows.reduce((a, r) => a + r.mwh, 0), pre = rows.filter((r) => r.status !== 'Final').length;
       cards.push(card({
         id: 'R1a', q: `Electricidad vendida a hogares en ${y}`, accent: 'eia',
-        body: `<div class="big">${nf(tot)}<span class="unit">MWh</span></div><p class="sub">${esc(stateName(state.st))} · ${rows.length === 12 ? 'año completo' : `<strong>parcial: ${rows.length} de 12 meses</strong>`}${pre ? ` · incluye ${pre} meses preliminares` : ''}</p>`,
-        chips: chip('eia', ['MWh', `${rows[0].period}…${rows[rows.length - 1].period}`, state.st === 'ALL' ? '51 jurisdicciones' : state.st]) + (pre ? preChip('puede cambiar') : ''),
-        limit: 'Total vendido a los hogares del estado por las compañías eléctricas. 1 MWh = 1,000 kWh. No es una medición por hogar.',
+        body: `<div class="big">${nf(tot)}<span class="unit" title="1 MWh = 1,000 kWh">MWh</span></div><p class="sub stat">${esc(stateName(state.st))} · ${rows.length === 12 ? 'año completo' : `<strong>parcial: ${rows.length} de 12 meses</strong>`}${pre ? ` · ${pre} meses preliminares` : ''}</p>`,
+        chips: `<span class="chip eia"><i></i><b>Fuente: EIA-861M</b> · ${esc(rows[0].period)} a ${esc(rows[rows.length - 1].period)}</span>` + (pre ? preChip('puede cambiar') : ''),
+        limit: 'Ventas reportadas por compañías eléctricas; no son consumo por hogar.',
       }));
       const fin = s.filter((r) => r.status === 'Final').length, prel = s.length - fin;
       cards.push(card({
         id: 'R1b', q: 'Meses con datos en el periodo', accent: 'eia',
-        body: `<div class="big">${nf(fin)}<span class="unit">definitivos</span></div><p class="sub">${nf(prel)} preliminares (EIA aún puede corregirlos) entre ${state.from}…${state.to}${state.prelim ? '' : ' (ocultos por el filtro)'}.</p>`,
-        chips: chip('eia', ['meses', `${state.from}…${state.to}`]), limit: 'El detalle por año está en Calidad de datos.',
+        body: `<div class="big">${nf(fin)}<span class="unit">definitivos</span></div><p class="sub">${nf(prel)} preliminares${state.prelim ? '' : ' (ocultos por el filtro)'}; EIA aún puede corregirlos.</p>`,
+        chips: `<span class="chip eia"><i></i><b>EIA-861M</b> · ${esc(state.from)} a ${esc(state.to)}</span>`, more: 'El detalle de meses por estado y año está en la vista Calidad.',
       }));
     }
   }
@@ -210,8 +210,8 @@ function viewResumen() {
       const total = rowsOf('gold_resstock_profile_summary').length, ps = profiles();
       cards.push(card({
         id: 'R1c', q: 'Viviendas simuladas disponibles', accent: 'res',
-        body: `<div class="big">${nf(ps.length)}<span class="unit">de ${nf(total)} simulaciones</span></div><p class="sub">${esc(state.st === 'ALL' ? 'Todos los estados del piloto' : state.st)}${state.type === 'ALL' ? '' : ` · ${esc(state.type)}`}. Es el tamaño de la muestra simulada, no un conteo de viviendas reales.</p>`,
-        chips: chip('res', ['perfiles', resStates().join('/')]), limit: 'Datos modelados: no representan al estado ni al país.',
+        body: `<div class="big">${nf(ps.length)}<span class="unit">de ${nf(total)} simulaciones</span></div><p class="sub">${esc(state.st === 'ALL' ? 'Estados del piloto' : state.st)}${state.type === 'ALL' ? '' : ` · ${esc(state.type)}`}</p>`,
+        chips: `<span class="chip res"><i></i><b>ResStock 2018</b> · ${esc(resStates().join('/'))}</span>`, limit: 'Muestra simulada: no representa al estado ni al país.',
       }));
     }
   }
@@ -222,8 +222,8 @@ function viewResumen() {
       const all = rowsOf('gold_climate'), pts = new Set(all.map((r) => r.point_id)), ts = all.map((r) => r.timestamp_utc).sort();
       cards.push(card({
         id: 'R1d', q: 'Datos de clima disponibles', accent: 'clim',
-        body: `<div class="big">${pts.size}<span class="unit">puntos</span></div><p class="sub">${ts[0].slice(0, 10)} a ${ts[ts.length - 1].slice(0, 10)} (UTC), ${nf(all.length)} lecturas horarias. Solo ${[...new Set(all.map((r) => r.state_code))].join(', ')}.</p>`,
-        chips: chip('clim', ['°C', 'horario UTC']), limit: 'Temperatura de un modelo de reanálisis, no de estaciones. Se muestra aparte del consumo.',
+        body: `<div class="big">${pts.size}<span class="unit">puntos</span></div><p class="sub">Solo ${[...new Set(all.map((r) => r.state_code))].join(', ')} · ${nf(all.length)} lecturas horarias</p>`,
+        chips: `<span class="chip clim"><i></i><b>Open-Meteo ERA5-Land</b> · ${ts[0].slice(0, 10)} a ${ts[ts.length - 1].slice(0, 10)} UTC</span>`, limit: 'Reanálisis, no estaciones; se muestra aparte del consumo.',
       }));
     }
   }
@@ -231,8 +231,8 @@ function viewResumen() {
     const fc = store.manifest?.analytics?.forecast;
     cards.push(card({
       id: 'R1e', q: 'Error típico del modelo de estimación', accent: 'none',
-      body: fc ? `<div class="big">${nf(fc.median_model_smape_pct, 2)}<span class="unit">%</span></div><p class="sub">Error porcentual (sMAPE) mediano en ${nf(fc.state_count)} jurisdicciones; supera a la referencia simple en ${nf(fc.states_model_beats_naive)}.</p>` : empty('Pendiente', 'No hay un backtest Gold disponible.'),
-      chips: fc ? chip('eia', ['sMAPE', `${fc.holdout[0]}…${fc.holdout[1]}`, 'backtest']) : '',
+      body: fc ? `<div class="big">${nf(fc.median_model_smape_pct, 2)}<span class="unit">%</span></div><p class="sub">sMAPE mediano · mejor que la referencia simple en ${nf(fc.states_model_beats_naive)} de ${nf(fc.state_count)}</p>` : empty('Pendiente', 'No hay un backtest Gold disponible.'),
+      chips: fc ? `<span class="chip eia"><i></i><b>EIA-861M</b> · backtest ${esc(fc.holdout[0])} a ${esc(fc.holdout[1])}</span>` : '',
       limit: 'Evaluado con meses ya conocidos; no es un pronóstico del futuro.',
     }));
   }
@@ -250,16 +250,16 @@ function viewResumen() {
         const avgKwh = totPop > 0 ? (totMwh * 1000) / totPop : 0;
         cards.push(card({
           id: 'R1f', q: 'Electricidad por habitante, 2025', accent: 'demo',
-          body: `<div class="big">${nf(avgKwh, 1)}<span class="unit">kWh/hab</span></div><p class="sub">50 estados + DC en conjunto (${nf(totPop)} residentes al 1 de julio de 2025).</p>`,
-          chips: chip('demo', ['2025', 'Vintage 2025', '51 jurisdicciones', 'EIA-861M']),
-          limit: 'Ventas anuales a hogares divididas entre la población. Es un promedio agregado, no la factura de un hogar.',
+          body: `<div class="big">${nf(avgKwh, 1)}<span class="unit">kWh/hab</span></div><p class="sub">50 estados + DC · ${nf(totPop)} residentes (1 jul 2025)</p>`,
+          chips: '<span class="chip demo"><i></i><b>Census PEP V2025 + EIA-861M</b> · 2025</span>',
+          limit: 'Ventas a hogares ÷ población; no es la factura de un hogar.',
         }));
       } else if (stRow) {
         cards.push(card({
           id: 'R1f', q: `Electricidad por habitante, 2025 · ${stRow.state_code}`, accent: 'demo',
           body: `<div class="big">${nf(stRow.residential_kwh_per_capita, 1)}<span class="unit">kWh/hab</span></div><p class="sub">${jurisdictionName(stRow.state_code)}: ${nf(stRow.population_estimate)} hab. · ${nf(stRow.population_density_per_sq_mi, 1)} hab./mi² (año 2025).</p>`,
-          chips: chip('demo', ['2025', stRow.state_code, `${nf(stRow.residential_sales_mwh)} MWh`]),
-          limit: 'Ventas anuales a hogares divididas entre la población. Es descriptivo: no explica por qué un estado consume más.',
+          chips: `<span class="chip demo"><i></i><b>Census PEP + EIA-861M</b> · 2025 · ${nf(stRow.residential_sales_mwh)} MWh</span>`,
+          limit: 'Ventas a hogares ÷ población; descriptivo, no explica causas.',
         }));
       }
     }
@@ -272,11 +272,11 @@ function viewResumen() {
     const tot = co ? [...co.entries()].filter(([p]) => p.startsWith('2018')) : [];
     out.push(card({
       id: 'R2', q: '¿Se pueden comparar las simulaciones con las ventas reales?', accent: 'none',
-      body: `${empty('No directamente', 'ResStock simula unas pocas viviendas; EIA reporta las ventas de todo el estado. Por eso no se publica una razón entre ambas (la cifra preliminar 87.16 % no se reprodujo y no mide precisión).')}
-      <div class="tbl-wrap" style="max-height:none"><table class="t"><caption class="sr">Cobertura de cada fuente</caption><thead><tr><th scope="col">Fuente</th><th scope="col">Población</th><th scope="col">Periodo</th><th scope="col">Cobertura</th></tr></thead><tbody>
+      body: `${empty('No directamente', 'ResStock simula pocas viviendas; EIA reporta ventas de todo el estado. No se publica una razón entre ambas.')}
+      <div class="tbl-wrap" style="max-height:none"><table class="t wrap"><caption class="sr">Cobertura de cada fuente</caption><thead><tr><th scope="col">Fuente</th><th scope="col">Población</th><th scope="col">Periodo</th><th scope="col">Cobertura</th></tr></thead><tbody>
       <tr><td>${chip('eia', [])}</td><td>Ventas de todo el estado (CO)</td><td>2018</td><td>${tot.length ? `${tot.length} meses · ${nf(tot.reduce((a, [, v]) => a + v.mwh, 0))} MWh` : 'sin datos'}</td></tr>
       <tr><td>${chip('res', [])}</td><td>${(() => { const n = (resSummary() || []).filter((r) => r.state_code === 'CO').length; return n ? `${n} perfiles modelados de CO (no solo unifamiliar aislada)` : 'perfiles piloto no disponibles'; })()}</td><td>2018 (EST fijo)</td><td>Piloto exploratorio; sin ponderación válida</td></tr></tbody></table></div>`,
-      limit: 'Se usa Colorado 2018 como ejemplo porque ahí coinciden ambas fuentes.',
+      more: 'Se usa Colorado 2018 como ejemplo porque ahí coinciden ambas fuentes. La cifra preliminar 87.16 % no se reprodujo y no mide precisión.',
     }));
   }
 
@@ -284,12 +284,13 @@ function viewResumen() {
   out.push(card({
     id: 'R3', q: '¿Cómo leer estas cifras?', accent: 'none',
     body: `<div class="dim-grid">
-      <div class="dim-card"><span class="dot eia"></span><b>Ventas EIA (MWh)</b><div class="sub">Electricidad vendida a todos los hogares de un estado en un mes. 1 MWh = 1,000 kWh. Son totales oficiales, no mediciones por hogar.</div></div>
-      <div class="dim-card"><span class="dot res"></span><b>Viviendas simuladas ResStock (kWh)</b><div class="sub">Consumo calculado por un modelo para viviendas tipo de 2018. Sirven para ver formas y horarios, no para representar al estado.</div></div>
-      <div class="dim-card"><span class="dot demo"></span><b>Por habitante (kWh/hab)</b><div class="sub">Ventas anuales del estado divididas entre su población. Permite comparar estados de distinto tamaño; no es la factura de un hogar.</div></div>
-      <div class="dim-card"><span class="dot clim"></span><b>Clima (°C)</b><div class="sub">Temperatura horaria de un modelo de reanálisis para pocos puntos y días. Se muestra aparte del consumo.</div></div>
+      <div class="dim-card"><span class="dot eia"></span><b>Ventas EIA (MWh)</b><div class="sub">Total mensual vendido a los hogares de un estado (1 MWh = 1,000 kWh).</div></div>
+      <div class="dim-card"><span class="dot res"></span><b>Viviendas simuladas ResStock (kWh)</b><div class="sub">Viviendas tipo modeladas (2018) para ver formas y horarios.</div></div>
+      <div class="dim-card"><span class="dot demo"></span><b>Por habitante (kWh/hab)</b><div class="sub">Ventas anuales ÷ población, para comparar estados.</div></div>
+      <div class="dim-card"><span class="dot clim"></span><b>Clima (°C)</b><div class="sub">Temperatura horaria de reanálisis, pocos puntos y días.</div></div>
     </div>`,
-    limit: 'Las fuentes cubren periodos distintos (EIA 2018–2026, ResStock 2018, clima 1–7 ene 2018) y no se suman entre sí. Washington D.C. (DC) es un distrito federal, no un estado. Ninguna comparación implica causa.',
+    limit: 'Las fuentes no se suman entre sí y ninguna comparación implica causa.',
+    more: 'Periodos: EIA 2018–2026, ResStock 2018, clima 1–7 ene 2018. Washington D.C. (DC) es un distrito federal, no un estado.',
   }));
   return out.join('');
 }
@@ -308,12 +309,12 @@ function viewPatrones() {
     ? `${esc(housingTypeName(p?.housing_type || ''))} · ${esc(p?.state_code || '')}`
     : (state.type !== 'ALL' ? `${esc(housingTypeName(state.type))} · ${esc(state.st === 'ALL' ? 'Muestra general' : state.st)}` : `Todos los tipos de vivienda · ${esc(state.st === 'ALL' ? 'Todos los estados' : jurisdictionName(state.st))}`);
   const heroSub = isIndividual
-    ? `Viendo una sola vivienda simulada (#${esc(p?.bldg_id)}). Elige «Promedio de la muestra» para volver al conjunto.`
-    : `Promedio de las viviendas simuladas para el filtro elegido. Cambia a «Por hora» para ver una vivienda concreta.`;
+    ? `Una vivienda simulada (#${esc(p?.bldg_id)}).`
+    : `Promedio de las viviendas simuladas del filtro.`;
   const heroChip = isIndividual
     ? (p ? chip('res', ['kWh', '1 vivienda simulada']) : '')
     : chip('res', ['kWh', 'promedio de la muestra']);
-  const hero = `<section class="card hero" aria-label="Tipo de vivienda"><div class="iso-wrap">${isoHouse(heroHt)}${isIndividual ? '' : typePicker()}<p class="iso-cap">Exterior ilustrativo; no muestra habitaciones ni consumo por cuarto.</p></div><div class="meta"><p class="eyebrow">${isIndividual ? 'Una vivienda simulada' : 'Viviendas simuladas · promedio'}</p><h2 class="hero-t">${heroTitle}</h2><p class="sub">${heroSub}</p><div class="chips">${heroChip}</div></div></section>`;
+  const hero = `<section class="card hero" aria-label="Tipo de vivienda"><div class="iso-wrap">${isoHouse(heroHt)}${isIndividual ? '' : typePicker()}<p class="iso-cap">Exterior ilustrativo; sin consumo por cuarto.</p></div><div class="meta"><p class="eyebrow">${isIndividual ? 'Una vivienda simulada' : 'Viviendas simuladas · promedio'}</p><h2 class="hero-t">${heroTitle}</h2><p class="sub">${heroSub}</p><div class="chips">${heroChip}</div></div></section>`;
   out.push(hero);
   if (state.gran === 'monthly') {
     out.push('<div class="grid g2">' + patternP1() + patternP1b() + '</div>' + patternP3() + patternP4());
@@ -340,9 +341,10 @@ function patternP1() {
   const pre = s.some((r) => r.status !== 'Final');
   return card({
     ...base,
-    body: slot((w) => lineChart({ width: w, series, xTicks: MES.map((m, i) => ({ x: i + 1, label: m })), xDomain: [1, 12], yLabel: 'MWh', aria, yFmt: cmp })) + `<p class="sub">${esc(aria)}</p>` + dataTable(['Periodo', 'Estado', 'MWh', 'Publicación'], s.map((r) => [r.period, state.st, r.mwh, r.status])),
+    body: slot((w) => lineChart({ width: w, series, xTicks: MES.map((m, i) => ({ x: i + 1, label: m })), xDomain: [1, 12], yLabel: 'MWh', aria, yFmt: cmp })) + dataTable(['Periodo', 'Estado', 'MWh', 'Publicación'], s.map((r) => [r.period, state.st, r.mwh, r.status])),
     chips: chip('eia', ['MWh', `${s[0].period}…${s[s.length - 1].period}`, state.st === 'ALL' ? '51 jurisdicciones' : state.st]) + (pre ? preChip('línea punteada') : ''),
-    limit: 'Cada línea es un año; la punteada tiene meses preliminares. Son ventas totales, no consumo medido por hogar.',
+    limit: 'Una línea por año; punteada = con meses preliminares. Ventas totales, no consumo por hogar.',
+    more: esc(aria),
   });
 }
 
@@ -360,9 +362,10 @@ function patternP1b() {
   const aria = `Consumo mensual modelado en kWh de ${series.length} perfil(es) de ${state.st === 'ALL' ? 'los estados del piloto' : state.st}, calendario fuente EST.`;
   return card({
     ...base,
-    body: slot((w) => lineChart({ width: w, series, xTicks: MES.map((m, i) => ({ x: i + 1, label: m })), xDomain: [1, 12], yLabel: 'kWh por mes', aria, yFmt: cmp })) + `<p class="sub">${esc(aria)}</p>` + dataTable(['Perfil', 'Mes fuente', 'kWh'], rows.map((r) => [`#${r.bldg_id} ${r.housing_type}`, r.source_period, +r.kwh_month])),
+    body: slot((w) => lineChart({ width: w, series, xTicks: MES.map((m, i) => ({ x: i + 1, label: m })), xDomain: [1, 12], yLabel: 'kWh por mes', aria, yFmt: cmp })) + dataTable(['Perfil', 'Mes fuente', 'kWh'], rows.map((r) => [`#${r.bldg_id} ${r.housing_type}`, r.source_period, +r.kwh_month])),
     chips: chip('res', ['kWh', 'mensual', `${ps.length} perfiles`, 'calendario fuente EST']),
-    limit: 'Una vivienda simulada por tipo y estado: sirve para explorar, no para generalizar.',
+    limit: 'Una vivienda simulada por tipo y estado: explorar, no generalizar.',
+    more: esc(aria),
   });
 }
 
@@ -378,9 +381,10 @@ function patternP3() {
   const aria = `Barras de consumo anual modelado en kWh por tipo de vivienda en ${sts.join(' y ')}.`;
   return card({
     ...base,
-    body: slot((w) => barChart({ width: w, groups, yLabel: 'kWh al año', aria, yFmt: cmp })) + `<p class="sub">${esc(aria)}</p>` + dataTable(['Estado', 'Tipo', 'Perfil', 'kWh anual'], ps.map((x) => [x.state_code, x.housing_type, `#${x.bldg_id}`, +x.annual_kwh])),
+    body: slot((w) => barChart({ width: w, groups, yLabel: 'kWh al año', aria, yFmt: cmp })) + dataTable(['Estado', 'Tipo', 'Perfil', 'kWh anual'], ps.map((x) => [x.state_code, x.housing_type, `#${x.bldg_id}`, +x.annual_kwh])),
     chips: chip('res', ['kWh', 'anual 2018', `${ps.length} perfiles`]),
-    limit: 'Una vivienda simulada por tipo y estado: es un ejemplo, no una comparación estadística entre tipos.',
+    limit: 'Un ejemplo por tipo y estado, no una comparación estadística.',
+    more: esc(aria),
   });
 }
 
@@ -469,7 +473,7 @@ function patternP4() {
   const chartCtl = `
   <div class="ctl" style="justify-content:space-between;margin-top:14px">
     <label class="tog"><input type="checkbox" id="chk-demo-dc" ${includeDc ? 'checked' : ''}> Incluir Washington D.C. (DC)</label>
-    <span class="sub" style="font-size:12px;color:var(--ink-2)">${includeDc ? 'DC es un distrito urbano con densidad muy superior a cualquier estado; comprime la escala.' : 'DC se oculta en la gráfica para poder ver la diferencia entre los 50 estados. Sigue en la tabla.'}</span>
+    <span class="sub" style="font-size:12px;color:var(--ink-2);margin:0">${includeDc ? 'DC comprime la escala por su densidad urbana.' : 'DC oculto en la gráfica; sigue en la tabla.'}</span>
   </div>`;
 
   const ariaChart = `Gráfica de dispersión de ventas por habitante (kWh/hab) frente a densidad poblacional (hab./mi²) para el año ${activeYear}. El tamaño de los círculos representa la población residente.`;
@@ -482,7 +486,7 @@ function patternP4() {
     aria: ariaChart,
     xFmt: (v) => nf(v),
     yFmt: (v) => nf(v),
-  })) + `<p class="sub how"><strong>Cómo leerla:</strong> cada círculo es un estado. Más a la derecha = más personas por milla cuadrada; más arriba = más electricidad por persona al año; círculo más grande = más población. Pasa el cursor o toca un punto para ver el detalle.</p>`;
+  })) + `<p class="sub how"><strong>Cómo leerla:</strong> cada círculo es un estado. Derecha = más denso; arriba = más electricidad por persona; tamaño = población. Toca un punto para ver el detalle.</p>`;
 
   // Tabla interactiva ordenable
   const sortCol = state.demoSortCol || 'residential_kwh_per_capita';
@@ -545,7 +549,7 @@ function patternP4() {
 
   const tableHtml = `
   <div style="margin-top:16px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <div style="display:flex;flex-wrap:wrap;gap:4px 12px;justify-content:space-between;align-items:center;margin-bottom:6px">
       <h3 class="h3">50 estados + DC · ${activeYear}</h3>
       <span class="sub" style="font-size:12px;margin:0">Pulsa un encabezado para ordenar</span>
     </div>
@@ -558,13 +562,14 @@ function patternP4() {
     </div>
   </div>`;
 
-  const limitText = `<strong>Descriptivo, no causal.</strong> Que dos medidas se muevan juntas no significa que una cause la otra: el consumo también depende del clima, del uso de gas para calefacción, de las tarifas y del tipo de hogar. Son cifras oficiales agregadas (EIA-861M + Census PEP Vintage 2025), independientes de las simulaciones ResStock.`;
+  const limitText = `<strong>Descriptivo, no causal.</strong> El consumo también depende del clima, la calefacción a gas, las tarifas y el tipo de hogar. Cifras oficiales agregadas (EIA-861M + Census PEP Vintage 2025), aparte de ResStock.`;
 
   return card({
     ...base,
     body: yearTabs + summaryStrip + chartCtl + chartHtml + tableHtml,
     chips: chip('demo', [`Año ${activeYear}`, '50 estados + DC', 'kWh/hab · hab./mi²']),
-    limit: limitText,
+    limit: '<strong>Descriptivo, no causal.</strong>',
+    more: limitText.replace('<strong>Descriptivo, no causal.</strong> ', ''),
   });
 }
 
@@ -612,7 +617,7 @@ function patternP2() {
   const tzRows = isIndividual ? rows : rows.filter((r) => r.time_zone === activeTz);
 
   const tzSwitcher = (!isIndividual && allTzs.length > 1)
-    ? `<div class="ctl" style="margin-top:6px"><label>Zona horaria <select id="sel-tz">${allTzs.map((z) => `<option value="${esc(z)}" ${z === activeTz ? 'selected' : ''}>${esc(z)}</option>`).join('')}</select></label><span class="sub" style="font-size:12px;margin:0">Se separa por zona horaria para no mezclar horas locales distintas.</span></div>`
+    ? `<div class="ctl" style="margin-top:6px"><label>Zona horaria <select id="sel-tz">${allTzs.map((z) => `<option value="${esc(z)}" ${z === activeTz ? 'selected' : ''}>${esc(z)}</option>`).join('')}</select></label><span class="sub" style="font-size:12px;margin:0">Separado para no mezclar horas locales.</span></div>`
     : '';
 
   const sel = selProfile + tzSwitcher;
@@ -645,14 +650,18 @@ function patternP2() {
     : chip('res', ['kWh por hora', `hora local ${tz}`, 'promedio', `${state.type === 'ALL' ? 'todos los tipos' : housingTypeName(state.type)}`]);
 
   const limit = isIndividual
-    ? 'Filas: meses; columnas: horas del día; color más intenso = más consumo (mediana). Es una sola vivienda simulada.'
-    : 'Filas: meses; columnas: horas del día; color más intenso = más consumo (mediana por estado, tipo y zona horaria). <strong>Muestra simulada: no representa a la población ni a las ventas totales.</strong>';
+    ? 'Una sola vivienda simulada.'
+    : '<strong>Muestra simulada: no representa a la población ni a las ventas totales.</strong>';
+  const howHm = isIndividual
+    ? 'Filas: meses; columnas: horas del día; color más intenso = más consumo (mediana).'
+    : 'Filas: meses; columnas: horas del día; color más intenso = más consumo (mediana por estado, tipo y zona horaria).';
 
   return card({
     ...base,
-    body: sel + slot((w) => heatmap({ width: w, rows: periods, cells, unit: 'kWh/h', aria })) + `<p class="sub"><strong>Hora local · ${esc(tz)}</strong>. ${esc(aria)}${nPart ? ` \u25e9 ${nPart} periodo(s) parcial(es) con borde punteado: no se comparan como meses completos.` : ''}</p>` + dataTable(tableHead, tableRows),
+    body: sel + slot((w) => heatmap({ width: w, rows: periods, cells, unit: 'kWh/h', aria })) + `<p class="sub"><strong>Hora local · ${esc(tz)}</strong>${nPart ? ` · ${nPart} periodo(s) parcial(es) con borde punteado: no comparables con meses completos.` : ''}</p>` + dataTable(tableHead, tableRows),
     chips,
     limit,
+    more: `${howHm} ${esc(aria)}`,
   });
 }
 
@@ -678,9 +687,10 @@ function viewClima() {
       const aria = `Temperatura horaria en °C de ${by.size} puntos (${[...by.keys()].join(', ')}); mínimo ${nf(Math.min(...all), 1)} °C y máximo ${nf(Math.max(...all), 1)} °C.`;
       out.push(card({
         id: 'C1', q: '¿Qué temperatura hubo en los puntos consultados?', accent: 'clim',
-        body: slot((w) => lineChart({ width: w, series, xTicks: ticks, yLabel: '°C', xLabel: 'Fecha UTC (mes-día)', aria, yFmt: (v) => nf(v) })) + `<p class="sub">${esc(aria)}</p>` + dataTable(['Punto', 'UTC', '°C'], rows.map((r) => [r.point_id, r.timestamp_utc, +r.temperature_c]), 60),
+        body: slot((w) => lineChart({ width: w, series, xTicks: ticks, yLabel: '°C', xLabel: 'Fecha UTC (mes-día)', aria, yFmt: (v) => nf(v) })) + dataTable(['Punto', 'UTC', '°C'], rows.map((r) => [r.point_id, r.timestamp_utc, +r.temperature_c]), 60),
         chips: chip('clim', ['°C', 'horario UTC', `${by.size} puntos`, `${rows[0].timestamp_utc.slice(0, 10)}…`]),
-        limit: 'Valores de un modelo de reanálisis (ERA5-Land) para celdas de terreno, no de estaciones meteorológicas.',
+        limit: 'Reanálisis ERA5-Land por celda de terreno, no estaciones.',
+        more: esc(aria),
       }));
     }
   }
@@ -688,7 +698,8 @@ function viewClima() {
   const days = all ? new Set(all.map((r) => r.timestamp_utc.slice(0, 10))).size : null;
   out.push(card({
     id: 'C2', q: '¿Se puede relacionar el clima con el consumo?', accent: 'none',
-    body: empty('Todavía no', `Hay solo ${days ? `${days} días` : '7 días'} y ${all ? new Set(all.map((r) => r.point_id)).size : 2} puntos de clima, con un horario distinto al de las simulaciones (UTC frente a hora fija EST). Sin una regla de unión documentada no se dibuja una correlación ni se sugiere causa.`),
+    body: empty('Todavía no', `Solo ${days ? `${days} días` : '7 días'} y ${all ? new Set(all.map((r) => r.point_id)).size : 2} puntos; no se dibuja correlación ni se sugiere causa.`),
+    more: 'El clima está en UTC y las simulaciones en hora fija EST; falta una regla de unión documentada.',
   }));
   return out.join('');
 }
@@ -706,11 +717,11 @@ function viewAnomalias() {
     rows.map((r) => [r.period, r.state_code, +r.yoy_change_pct, r.season, +r.robust_z, r.partition, 'Candidato estadístico']), 60);
   const metrics = dataTable(['Cambio inyectado', 'Recall', 'Precisión', 'Falsos positivos', 'Casos positivos'],
     evals.map((r) => [`±${nf(+r.injection_pct)}%`, `${nf(+r.recall * 100, 1)}%`, `${nf(+r.precision * 100, 1)}%`, `${nf(+r.false_positive_rate * 100, 1)}%`, `${r.tp}/${r.tp + r.fn}`]));
-  return `<div class="banner syn" role="note"><strong>Cómo leer esta vista:</strong> un «mes atípico» es un candidato estadístico que pide revisión, no un evento confirmado. La prueba de sensibilidad usa cambios artificiales (sintéticos) inyectados a propósito.</div>`
-    + `<div class="grid g3">${card({ id: 'A1', q: 'Meses atípicos en datos definitivos', accent: 'eia', body: `<div class="big">${nf(counts.candidatos_entrenamiento + counts.candidatos_prueba)}<span class="unit">candidatos</span></div><p class="sub">${nf(counts.candidatos_entrenamiento)} en el periodo de ajuste · ${nf(counts.candidatos_prueba)} en el de prueba.</p>`, chips: chip('eia', ['51 estados', '2018–2025']), limit: 'Cambios que superan un umbral estadístico; requieren revisión humana.' })}
-    ${card({ id: 'A2', q: 'Meses atípicos en datos preliminares', accent: 'eia', body: `<div class="big">${nf(counts.candidatos_preliminares_2026)}<span class="unit">candidatos</span></div><p class="sub">Se evalúan aparte y no se usan para fijar el umbral.</p>`, chips: preChip('2026, corte enero–agosto'), limit: 'Los valores preliminares de EIA pueden actualizarse.' })}
-    ${card({ id: 'A3', q: '¿Detecta cambios artificiales? (prueba sintética)', accent: 'syn', body: metrics, chips: '<span class="chip syn"><i></i><b>Sintético</b> · cambios inyectados</span>', limit: 'Recall = cambios artificiales detectados; precisión = alertas que eran correctas. Detecta poco los cambios pequeños y no mide el desempeño ante eventos reales.' })}</div>`
-    + card({ id: 'A4', q: `Lista de meses atípicos para revisar (${rows.length})`, accent: 'eia', body: table, chips: chip('eia', ['variación interanual', `k = 3.5 MAD`, `${state.from}…${state.to}`]), limit: 'Cada mes se compara con el mismo mes del año anterior. Se marca si el cambio se aleja más de 3.5 desviaciones robustas (MAD) de lo habitual para ese estado y estación, según el periodo de ajuste.' });
+  return `<div class="banner syn" role="note"><strong>Candidatos, no eventos confirmados.</strong> La prueba de sensibilidad usa cambios sintéticos inyectados a propósito.</div>`
+    + `<div class="grid g3">${card({ id: 'A1', q: 'Meses atípicos en datos definitivos', accent: 'eia', body: `<div class="big">${nf(counts.candidatos_entrenamiento + counts.candidatos_prueba)}<span class="unit">candidatos</span></div><p class="sub">${nf(counts.candidatos_entrenamiento)} en ajuste · ${nf(counts.candidatos_prueba)} en prueba</p>`, chips: '<span class="chip eia"><i></i><b>EIA-861M</b> · 51 estados · 2018–2025</span>', limit: 'Requieren revisión humana.' })}
+    ${card({ id: 'A2', q: 'Meses atípicos en datos preliminares', accent: 'eia', body: `<div class="big">${nf(counts.candidatos_preliminares_2026)}<span class="unit">candidatos</span></div><p class="sub">Aparte; no fijan el umbral</p>`, chips: preChip('2026, corte enero–agosto'), limit: 'Valores preliminares: EIA puede actualizarlos.' })}
+    ${card({ id: 'A3', q: '¿Detecta cambios artificiales? (prueba sintética)', accent: 'syn', body: metrics, chips: '<span class="chip syn"><i></i><b>Sintético</b> · cambios inyectados</span>', limit: 'Detecta poco los cambios pequeños y no mide eventos reales.', more: 'Recall = cambios artificiales detectados; precisión = alertas que eran correctas.' })}</div>`
+    + card({ id: 'A4', q: `Lista de meses atípicos para revisar (${rows.length})`, accent: 'eia', body: table, chips: chip('eia', ['variación interanual', `k = 3.5 MAD`, `${state.from}…${state.to}`]), limit: 'Cambio interanual fuera de lo habitual (k = 3.5 MAD).', more: 'Cada mes se compara con el mismo mes del año anterior. Se marca si el cambio se aleja más de 3.5 desviaciones robustas (MAD) de lo habitual para ese estado y estación, según el periodo de ajuste.' });
 }
 
 /* ---------- Estimaciones: backtest temporal, no proyección futura ---------- */
@@ -722,7 +733,6 @@ function viewEstimaciones() {
   const byState = state.st === 'ALL' ? metrics : metrics.filter((r) => r.state_code === state.st);
   const picked = state.st === 'ALL' ? all : all.filter((r) => r.state_code === state.st);
   const periods = [...new Set(picked.map((r) => r.period))].sort();
-  const monthTicks = periods.filter((p) => ['01', '04', '07', '10'].includes(p.slice(5, 7)));
   const toSeries = (key, name, color, dash) => ({
     name, color, dash, markers: false,
     points: periods.map((p, i) => {
@@ -731,10 +741,12 @@ function viewEstimaciones() {
       return { x: i, y, tip: `${p} · ${name}: ${nf(y)} MWh` };
     }),
   });
+  // Ticks adaptativos: trimestral en escritorio, semestral en tablet, anual en móvil.
+  const tickStep = (w) => (w < 480 ? 12 : w < 760 ? 6 : 3);
   const chart = slot((w) => lineChart({
-    width: w, height: 330,
+    width: w, height: w < 480 ? 280 : 330,
     series: [toSeries('actual_mwh', 'Real (EIA)', 'var(--eia)'), toSeries('naive_mwh', 'Referencia simple', 'var(--ink-2)', '6 4'), toSeries('model_mwh', 'Modelo', 'var(--res)')],
-    xTicks: monthTicks.map((p) => ({ x: periods.indexOf(p), label: p })), xDomain: [0, periods.length - 1],
+    xTicks: periods.map((p, i) => ({ p, i })).filter(({ i }) => i % tickStep(w) === 0).map(({ p, i }) => ({ x: i, label: p })), xDomain: [0, periods.length - 1],
     yLabel: 'Ventas EIA (MWh)', xLabel: 'Mes evaluado', aria: 'Backtest mensual de ventas EIA: observado, naive estacional y modelo log-lineal con mes.', zeroBase: false,
     yFmt: (v) => cmp(v),
   }));
@@ -748,11 +760,11 @@ function viewEstimaciones() {
   const detail = picked.map((r) => [r.period, +r.actual_mwh, +r.naive_mwh, +r.model_mwh]);
   const lineTable = dataTable(['Periodo', 'EIA observado (MWh)', 'Naive estacional (MWh)', 'Modelo (MWh)'], detail, 48);
   const stateLabel = state.st === 'ALL' ? 'suma de 51 jurisdicciones' : state.st;
-  return `<div class="banner warn" role="note"><strong>Esto no es un pronóstico del futuro.</strong> El modelo aprendió con 2018–2023 y se comparó contra los meses reales de 2024–2025 (backtest). Los meses preliminares de 2026 no se usan.</div>`
-    + `<div class="grid g3">${card({ id: 'E1', q: 'Error del modelo', accent: 'eia', body: `<div class="big">${nf(modelMetric, 2)}<span class="unit">%</span></div><p class="sub">${state.st === 'ALL' ? 'Mediana entre estados' : `Estado ${state.st}`}</p>`, chips: chip('eia', ['2018–2025', 'periodos separados']), limit: 'sMAPE: diferencia porcentual promedio entre lo estimado y lo real en 2024–2025. Menor es mejor.' })}
-    ${card({ id: 'E2', q: 'Error de la referencia simple', accent: 'none', body: `<div class="big">${nf(naiveMetric, 2)}<span class="unit">%</span></div><p class="sub">El modelo mejora en ${nf(nWins)} de ${nf(byState.length)} estados del filtro.</p>`, chips: chip('eia', ['naive estacional']), limit: 'La referencia simple («naive estacional») repite los valores del último año de ajuste.' })}
-    ${card({ id: 'E3', q: 'Meses evaluados', accent: 'none', body: `<div class="big">24<span class="unit">meses</span></div><p class="sub">${stateLabel} · 2024-01 a 2025-12.</p>`, chips: chip('eia', ['sin preliminares']), limit: 'Un solo corte temporal; los resultados pueden cambiar con otros periodos de evaluación.' })}</div>`
-    + card({ id: 'E4', q: `Real frente a estimado · ${stateLabel}`, accent: 'eia', body: chart + lineTable, chips: chip('eia', ['MWh', 'backtest']), limit: 'Modelo log-lineal con tendencia y efecto del mes, ajustado solo con 2018–2023. No se extiende a 2026 ni a años futuros.' });
+  return `<div class="banner warn" role="note"><strong>No es un pronóstico.</strong> Ajustado con 2018–2023 y comparado con 2024–2025 reales; sin preliminares de 2026.</div>`
+    + `<div class="grid g3">${card({ id: 'E1', q: 'Error del modelo', accent: 'eia', body: `<div class="big">${nf(modelMetric, 2)}<span class="unit">%</span></div><p class="sub">${state.st === 'ALL' ? 'Mediana entre estados' : `Estado ${state.st}`}</p>`, chips: chip('eia', ['2018–2025', 'periodos separados']), limit: 'sMAPE: menor es mejor.', more: 'sMAPE: diferencia porcentual promedio entre lo estimado y lo real en 2024–2025.' })}
+    ${card({ id: 'E2', q: 'Error de la referencia simple', accent: 'none', body: `<div class="big">${nf(naiveMetric, 2)}<span class="unit">%</span></div><p class="sub">El modelo mejora en ${nf(nWins)} de ${nf(byState.length)} estados del filtro.</p>`, chips: chip('eia', ['naive estacional']), limit: 'Repite el último año de ajuste (naive estacional).' })}
+    ${card({ id: 'E3', q: 'Meses evaluados', accent: 'none', body: `<div class="big">24<span class="unit">meses</span></div><p class="sub">${stateLabel} · 2024-01 a 2025-12.</p>`, chips: chip('eia', ['sin preliminares']), limit: 'Un solo corte temporal; otros periodos pueden dar otro resultado.' })}</div>`
+    + card({ id: 'E4', q: `Real frente a estimado · ${stateLabel}`, accent: 'eia', body: chart + lineTable, chips: chip('eia', ['MWh', 'backtest']), limit: 'No se extiende a 2026 ni a años futuros.', more: 'Modelo log-lineal con tendencia y efecto del mes, ajustado solo con 2018–2023.' });
 }
 
 /* ---------- Flujo / Calidad ---------- */
@@ -774,9 +786,9 @@ function viewCalidad() {
         id: 'Q1', q: '¿Qué meses tiene cada estado en EIA?', accent: 'eia',
         body: `<ul class="legend"><li><span class="cell12"><i></i></span>mes definitivo</li><li><span class="cell12"><i class="p"></i></span>mes preliminar</li><li><span class="cell12"><i class="m"></i></span>mes faltante</li></ul>
         <div class="tbl-wrap" style="max-height:420px"><table class="t"><caption class="sr">Meses finales, preliminares y faltantes por estado y año</caption><thead><tr><th scope="col">Estado</th>${years.map((y) => `<th scope="col">${y}</th>`).join('')}</tr></thead><tbody>${sts.map((s) => `<tr class="${s === state.st ? 'sel' : ''}"><th scope="row">${s}</th>${years.map((y) => cell(s, y)).join('')}</tr>`).join('')}</tbody></table></div>
-        <p class="sub">${sts.length} jurisdicciones · ${nf(rows.length)} registros. Meses preliminares por año: ${years.map((y, i) => `${y}: ${tot[i] / sts.length || 0}`).filter((_, i) => tot[i]).join(', ') || 'ninguno'} (por estado).</p>`,
+        <p class="tbl-hint" aria-hidden="true">Desliza la tabla para ver más años →</p><p class="sub">${sts.length} jurisdicciones · ${nf(rows.length)} registros. Preliminares por estado: ${years.map((y, i) => `${y}: ${tot[i] / sts.length || 0}`).filter((_, i) => tot[i]).join(', ') || 'ninguno'} .</p>`,
         chips: chip('eia', ['meses por año', `${years[0]}…${years[years.length - 1]}`, `${sts.length} jurisdicciones`]),
-        limit: 'En el año en curso (2026) faltan meses porque EIA aún no los publica; no es un error.',
+        limit: 'Faltan meses de 2026 porque EIA aún no los publica; no es un error.',
       }));
     }
   }
@@ -792,10 +804,10 @@ function viewCalidad() {
   }).join('');
   out.push(card({
     id: 'Q2', q: '¿De dónde viene cada tabla y se verificó?', accent: 'none',
-    body: `<p class="sub">Índice de datos (manifiesto): ${man ? `esquema ${esc(man.schema_version ?? man.manifest_version)} · origen ${/^[a-z]+:/i.test(DATA_BASE) ? 'externo configurado (dirección oculta)' : `local <code>${esc(DATA_BASE)}</code>`}` : esc(store.manifestMessage || 'no disponible')}</p><div class="tbl-wrap"><table class="t"><caption class="sr">Tablas Gold consumidas y su validación</caption><thead><tr><th scope="col">Tabla</th><th scope="col">Fuente</th><th class="n" scope="col">Filas</th><th class="n" scope="col">Bytes</th><th scope="col">SHA-256</th><th scope="col">Entradas</th><th scope="col">Estado</th></tr></thead><tbody>${trs}</tbody></table></div>`,
-    limit: 'Al abrir el tablero se comparan filas, tamaño y huella SHA-256 de cada tabla con el manifiesto; si no coinciden, la tabla no se usa.',
+    body: `<p class="sub">Índice de datos (manifiesto): ${man ? `esquema ${esc(man.schema_version ?? man.manifest_version)} · origen ${/^[a-z]+:/i.test(DATA_BASE) ? 'externo configurado (dirección oculta)' : `local <code>${esc(DATA_BASE)}</code>`}` : esc(store.manifestMessage || 'no disponible')}</p><p class="tbl-hint" aria-hidden="true">Desliza la tabla para ver todas las columnas →</p><div class="tbl-wrap"><table class="t compact"><caption class="sr">Tablas Gold consumidas y su validación</caption><thead><tr><th scope="col">Tabla</th><th scope="col">Fuente</th><th class="n" scope="col">Filas</th><th class="n" scope="col">Bytes</th><th scope="col">SHA-256</th><th scope="col">Entradas</th><th scope="col">Estado</th></tr></thead><tbody>${trs}</tbody></table></div>`,
+    limit: 'Si filas, tamaño o SHA-256 no coinciden con el manifiesto, la tabla no se usa.',
   }));
-  out.push(`<div class="grid g2">${card({ id: 'Q3', q: '¿Hay un flujo de datos en vivo?', body: empty('No', 'El tablero lee una copia local de datos ya procesados. Aún no hay salida de reproducción del pipeline (<code>replay_id</code>, <code>ingested_at_utc</code>) y no se simula un estado «en vivo».') })}
+  out.push(`<div class="grid g2">${card({ id: 'Q3', q: '¿Hay un flujo de datos en vivo?', body: empty('No', 'Copia local de datos procesados; no se simula un estado «en vivo».'), more: 'Aún no hay salida de reproducción del pipeline (<code>replay_id</code>, <code>ingested_at_utc</code>).' })}
   ${card({ id: 'Q4', q: '¿Qué controles de calidad se aplicaron?', body: empty('Pendiente', 'Se mostrarán cuando el procesamiento en Spark exporte <code>quality_status</code> y <code>quality_flags</code> al manifiesto.') })}</div>`);
   return out.join('');
 }

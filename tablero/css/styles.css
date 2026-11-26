@@ -482,6 +482,62 @@ th:has(.btn-sort:hover) { background: #eef2f7; }
   .seg button { flex: 1; }
 }
 
+/* ---------- Refinamiento UI: navegación, controles y ajuste de texto ---------- */
+.card h2, .hero-t, .sub, .limit, .chip, .dim-card, .empty, .banner, .lead { overflow-wrap: anywhere; hyphens: auto; }
+.big { font-size: clamp(24px, 2.4vw + 12px, 34px); overflow-wrap: anywhere; }
+.big .unit { white-space: nowrap; }
+.card-h h2 { min-width: 0; }
+.chip { white-space: normal; }
+.chip b { white-space: normal; }
+.sub.stat { font-weight: 600; color: var(--ink); }
+.t.wrap th, .t.wrap td { white-space: normal; min-width: 120px; vertical-align: top; }
+.dim-card .badge-dc { margin: 4px 0 0; white-space: normal; }
+
+/* Navegación lateral */
+.rail { background: linear-gradient(180deg, #fff 0%, #f8faff 100%); }
+.rail a { border: 1px solid transparent; }
+.rail a:hover { border-color: var(--line); }
+.rail a[aria-current=page] { border-color: #d5e0fb; box-shadow: 0 1px 2px rgba(36, 83, 199, 0.12); }
+.rail a:focus-visible { outline-offset: -2px; }
+
+/* Botones y segmentados */
+.seg button:focus-visible, .year-tab:focus-visible, .type-pick button:focus-visible, .btn-sort:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+.seg button:active, .year-tab:active, .type-pick button:active { transform: translateY(1px); }
+
+/* Menús desplegables */
+.fld select, .ctl select { box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); text-overflow: ellipsis; }
+.fld select:focus-visible, .ctl select:focus-visible { background-color: #fbfcff; }
+.ctl select { max-width: 100%; }
+.filters > summary { border-radius: var(--radius); transition: background 0.15s; }
+.filters > summary:hover { background: var(--surface-2); }
+details.data summary { min-height: 36px; }
+
+@media (max-width: 900px) {
+  .rail { background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(8px); }
+  .rail a { min-height: 54px; border-radius: 12px; }
+  .rail a[aria-current=page] { box-shadow: none; }
+  .filters { top: 0; }
+  .hero .iso-wrap { min-height: 0; }
+}
+@media (max-width: 480px) {
+  .type-pick { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+  .card { padding: 16px; }
+  .card-h { gap: 8px; }
+}
+
+/* Disclosure de detalle metodológico y tablas compactas */
+details.more { margin-top: 10px; font-size: 13px; color: var(--ink-2); }
+details.more summary { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; cursor: pointer; color: var(--accent); font-weight: 650; border-radius: 6px; }
+details.more summary::before { content: "+"; font-weight: 700; width: 1em; text-align: center; }
+details.more[open] summary::before { content: "−"; }
+details.more p { margin: 4px 0 0; line-height: 1.5; overflow-wrap: anywhere; }
+.t.compact th, .t.compact td { padding: 5px 10px; font-size: 12.5px; }
+.t.compact td[style] { min-width: 300px; }
+.tbl-hint { display: none; margin: 8px 0 0; font-size: 12px; font-weight: 600; color: var(--ink-3); }
+.tbl-wrap { background: linear-gradient(90deg, var(--surface) 30%, transparent) left / 24px 100% no-repeat local, linear-gradient(270deg, var(--surface) 30%, transparent) right / 24px 100% no-repeat local, linear-gradient(90deg, rgba(15,23,42,.12), transparent) left / 10px 100% no-repeat scroll, linear-gradient(270deg, rgba(15,23,42,.12), transparent) right / 10px 100% no-repeat scroll, var(--surface); }
+.tbl-wrap .t td, .tbl-wrap .t th { background-clip: padding-box; }
+@media (max-width: 1100px) { .tbl-hint { display: block; } }
+
 /* ---------- Reducción de movimiento ---------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
