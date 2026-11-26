@@ -20,4 +20,4 @@ Antes de combinar fuentes se comprobarán claves de ubicación y tiempo, zonas h
 
 ## Volumen de referencia
 
-La propuesta estima al menos 10,000 perfiles con registros de 15 minutos para un año, aproximadamente 350.4 millones de filas. Se mantiene como meta de escala a validar, no como requisito para el primer incremento. El MVP comienza con un subconjunto cuyo volumen se medirá. No publicar datos fuente hasta confirmar que su licencia permite redistribución; preferir scripts, metadatos y muestras autorizadas.
+La selección final v2 tiene 10,000 perfiles raw validados en S3 privado, con 35,040 registros de 15 minutos por perfil (350.4 millones en total). Este conteo corresponde a la adquisición y validación de los Parquet, no a Spark procesado ni a tablas Gold. El paquete del dashboard sigue en el piloto de 10 perfiles. No publicar datos fuente en un sitio público; conservar atribución, licencia y acceso privado según la decisión de publicación.

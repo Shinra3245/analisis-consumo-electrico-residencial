@@ -13,9 +13,9 @@
 | Brian | PR #13 y #14 están mergeados. Gold v2 incluye sus 306 filas (51 jurisdicciones × seis años) dentro de 11 tablas y 20,858 filas; manifiesto: 27/27 controles aprobados con advertencias. | Su bloque está `COMPLETADO`; no se le reasigna trabajo. |
 | Christian | Su alcance de clima estatal NOAA/NCEI se conserva tal como aparece en `division-bloques-equipo-v2.md`, §4. | Omar espera y revisa la interfaz de entrega; no modifica sus tareas ni su archivo. |
 | Diego | Su alcance de ML estatal y anomalías ResStock se conserva tal como aparece en `division-bloques-equipo-v2.md`, §5. | Omar consume sus artefactos por contrato; no modifica sus tareas ni su archivo. |
-| Datos ResStock | Gold v2 contiene 10 perfiles/350,400 intervalos; el 26-nov se completó ingesta/adaptador/Spark con 50 perfiles/1,752,000 intervalos, 0 rechazos y 21/21 QC. Restan 9,950 candidatos. | Validación de escala intermedia completada. Mantener el lote local separado de Gold v2; no afirmar meta de 10,000. |
-| S3 | El 26-nov se publicaron 14 objetos Gold/web y 12 objetos derivados de validación Spark de un perfil; SSE-S3 y bloqueo público verificados. Versionado deshabilitado. | La publicación privada está completada. No hay URL pública ni CloudFront; los crudos y la salida Spark de 50 siguen locales. |
-| Servicios AWS | Learner Lab listo; 0 budgets, 0 streams Kinesis; `ListApplications` de EMR denegado y listado CloudFront denegado con 0 distribuciones. | Revalidación completada y documentada. No crear recursos ni cambiar permisos; Spark continúa local. |
+| Datos ResStock | Gold v2 del dashboard contiene 10 perfiles/350,400 intervalos; la ingesta raw v2 alcanzó 10,000 perfiles únicos en S3 (350,400,000 intervalos raw). Se validó además un lote real de Spark de 5 perfiles (175,200 filas Silver, 60 Gold mensual y 21/21 QC); Spark/QC global a escala 10,000 sigue pendiente. | Mantener adquisición raw completada y procesar la selección v2 por lotes; separar Gold del dashboard, el lote local de 50, el piloto cloud de 5 y los raws S3. |
+| S3 | El 26-nov se publicaron Gold/web, 12 objetos de validación Spark de un perfil, un piloto S3 → Spark → S3 de 5 perfiles y 10,000 Parquet raw bajo prefijos privados separados. SSE-S3 y bloqueo público verificados; versionado deshabilitado. | La publicación privada está completada. No hay URL pública ni CloudFront; el lote de 5 no sustituye el procesamiento de escala ni actualiza Gold del dashboard. |
+| Servicios AWS | Learner Lab listo; 0 budgets, 0 streams Kinesis; EMR denegó `ListApplications` y `CreateApplication`; CloudFront denegó `ListDistributions` y `CreateDistribution`. | Revalidación completada y documentada. No crear recursos ni cambiar permisos; Spark local/CloudShell es la vía disponible. |
 
 ## 2. Cierre del Bloque 0 — estado, contratos y documentación
 
@@ -34,9 +34,9 @@ Actualizar bajo este bloque los documentos operativos AWS y de seguimiento para 
 - S3 observado: bucket privado, prefijos `gold/` y `site/`, ACL deshabilitadas, Block Public Access, cifrado SSE-S3. Versionado se observó **deshabilitado**; no describirlo como activado.
 - Objetos S3: inventariar claves exactas, fecha, bytes, content type, hash si se dispone y si la URL temporal abrió. La guía cita un HTML de 8.5 MB y la nota del Learner Lab cita otro de 56,429 bytes; no tratarlos como el mismo artefacto sin verificar sus claves.
 - URL: las URL prefirmadas son temporales. No incluirlas en Git, documentación pública, screenshots ni este repositorio.
-- EMR Serverless: el 26-nov `ListApplications` devolvió `AccessDeniedException`; no hay aplicación ni job EMR desplegado.
+- EMR Serverless: el 26-nov `ListApplications` y `CreateApplication` devolvieron `AccessDeniedException`; no hay aplicación ni job EMR desplegado.
 - Kinesis: el listado del 26-nov mostró cero streams; no se creó uno porque el consumidor cloud no está disponible.
-- CloudFront: el 26-nov el listado de distribuciones devolvió `AccessDenied` y no se observó ninguna distribución; no hay endpoint estable.
+- CloudFront: el 26-nov `ListDistributions` y `CreateDistribution` devolvieron `AccessDenied`; no se observó ninguna distribución y no hay endpoint estable.
 - Budgets: el listado del 26-nov mostró cero presupuestos; no hay alerta ni límite duro configurado.
 - Recurso del medidor: se observó USD 1.20 de USD 50, sesión de 4 horas; el medidor puede no reflejar todos los cargos ni cortar recursos.
 - Comparación Colorado/EIA 87.16%: el agregado fuente no está en `main`, por lo que se mantiene como `NO REPRODUCIDO`, no como precisión.
@@ -46,7 +46,7 @@ Actualizar bajo este bloque los documentos operativos AWS y de seguimiento para 
 - Usar el nombre real de Brian: `population_density_per_sq_mi`. El texto antiguo `estimated_population_per_sq_mile` no es el campo integrado. No modificar la tabla ya mergeada.
 - Mantener separadas `gold/v2/` (tablas canónicas) y `site/data/v2/` (exportaciones aprobadas para el frontend). `tablero/data/v2/` es la carpeta fuente/exportación local, no un prefijo S3 alternativo.
 - Mantener `gold/v1/pilot/` intacto. No reemplazar manifest o artefactos v1.
-- Corregir contradicciones sobre ResStock: 10 perfiles/350,400 intervalos en Gold v2; lote local verificado de 50/1,752,000 intervalos; 9,950 IDs siguen sin intentar y la meta de 10,000 no se ha procesado.
+- Corregir contradicciones sobre ResStock: Gold v2 del dashboard conserva 10 perfiles/350,400 intervalos; lote local verificado de 50/1,752,000; raw v2 tiene 10,000 perfiles en S3; Spark/QC/Silver/Gold a 10,000 siguen sin ejecutarse.
 - Corregir contradicciones de evaluación: backtest previo de 2024–2025 fue consultado. No volver a llamarlo prueba ciega o no vista. 2026 contiene meses preliminares y se debe etiquetar como tales.
 - Alinear la nomenclatura del manifiesto y la especificación UI; campos y cifras deben provenir del CSV/Gold y no de valores escritos a mano.
 
@@ -54,7 +54,7 @@ Actualizar bajo este bloque los documentos operativos AWS y de seguimiento para 
 
 - [x] Auditoría del 26-nov cubre región, S3, Budgets, EMR Serverless, Kinesis y CloudFront. Los permisos/recursos ausentes quedaron documentados; la auditoría no implica despliegue de esos servicios.
 - [ ] Los documentos no describen como activa una arquitectura objetivo.
-- [x] Los conjuntos de 10 perfiles en Gold, lote local de 50, prueba local de 1 y meta de 10,000 candidatos están separados.
+- [x] Los conjuntos de 10 perfiles Gold, lote local de 50 y raw S3 de 10,000 están separados; se distinguen adquisición y procesamiento.
 - [ ] Los contratos de Brian/Christian/Diego y sus campos actuales están identificados sin duplicar tareas.
 - [ ] La cifra 87.16% permanece no reproducida hasta contar con su agregado fuente verificable.
 
@@ -108,7 +108,7 @@ Artefactos aceptados:
 
 ## 5. Resolver el objetivo de escala ResStock
 
-La meta de la propuesta V2 es 10,000 perfiles; 10,000 IDs en el índice no cuentan como perfiles. El objetivo de Omar es coordinar la ingestión y verificar escala; las tareas analíticas específicas del detector siguen dentro del bloque de Diego.
+La meta de la propuesta V2 es 10,000 perfiles. La adquisición raw final v2 se completó en S3 privado con 10,000 perfiles validados; el procesamiento Spark/QC/Gold a escala sigue pendiente. El objetivo de Omar es coordinar y verificar esa etapa; las tareas analíticas específicas del detector siguen dentro del bloque de Diego.
 
 ### Pasos de implementación
 
@@ -123,7 +123,8 @@ La meta de la propuesta V2 es 10,000 perfiles; 10,000 IDs en el índice no cuent
 
 ### Criterios de cierre de escala
 
-- [ ] Hay 10,000 archivos/perfiles únicos realmente descargados y aceptados, o un reporte exacto de qué número se aceptó y por qué faltó el resto. Los IDs candidatos no cuentan.
+- [x] Hay 10,000 perfiles raw únicos aceptados en S3, con 35,040 filas por ID, selección v2 y dos reemplazos registrados. Los dos rechazados originales no cuentan.
+- [ ] Spark/QC consolida esos 10,000 perfiles con 350,400,000 filas y roster/hash global verificable.
 - [ ] El roster y manifiesto reproducen conteos, bytes y SHA-256; el lote puede procesarse por Spark sin cargarlo como payload web.
 - [ ] El reporte separa los 10 perfiles incluidos en Git, el lote local reportado de 50 y la nueva selección final.
 - [ ] El alcance y representatividad se describen sin sobreprometer.
@@ -152,7 +153,7 @@ La meta de la propuesta V2 es 10,000 perfiles; 10,000 IDs en el índice no cuent
 - [ ] Las seis vistas usan datos de manifiesto v2 y explican qué muestran, fuente, geografía, periodo y unidad.
 - [ ] Las tablas del manifest pasan validación de esquema/filas/hash antes de renderizarse.
 - [ ] Los filtros cambian números y gráficas desde los datos, con casos vacíos/preliminares explicados.
-- [ ] La visualización no mezcla 10,000 IDs candidatos con perfiles procesados ni ventas EIA con perfiles ResStock.
+- [ ] La visualización distingue los 10 perfiles Gold del dashboard, los 50 procesados localmente y los 10,000 perfiles raw en S3, sin presentarlos como Spark/Gold procesado ni mezclar ventas EIA con consumo ResStock.
 - [ ] No existe cifra de pronóstico/anomalía sin la tabla Gold y la métrica que la respalda.
 
 ## 7. S3 organizado y despliegue AWS
@@ -235,7 +236,7 @@ Los pasos de escala, build y publicación son actividades internas del producto 
 
 - [x] El dashboard se integró a `main` mediante PR #16; los archivos locales ajenos y sin seguimiento se conservaron.
 - [x] Región, S3, Budgets, EMR Serverless, Kinesis y CloudFront se revalidaron el 26-nov. Se documentaron cero Budgets/streams y errores de permisos; la auditoría está cerrada, aunque los servicios denegados no quedaron desplegados.
-- [x] Ingesta/adaptador/Spark validados con 50 perfiles/1,752,000 intervalos y 21/21 controles; se distinguen de los 10 perfiles Gold v2 y de los 9,950 candidatos restantes.
+- [x] Ingesta/adaptador/Spark locales validados con 50 perfiles/1,752,000 intervalos y 21/21 controles; se distinguen de los 10 perfiles Gold v2 y de los 10,000 perfiles raw en S3.
 - [x] El 87.16% se mantiene como no reproducido, no como precisión ni métrica validada.
 
 ### Brian / demografía
@@ -247,12 +248,12 @@ Los pasos de escala, build y publicación son actividades internas del producto 
 ### Producto, escala y AWS
 
 - [ ] Christian y Diego se integran al dashboard sin reescribir sus tareas ni código fuera del bloque Omar.
-- [ ] ResStock llega a meta V2 de 10,000 perfiles aceptados con QC, o se reporta con claridad la meta no lograda y la evidencia del bloqueo.
-- [x] La escalabilidad intermedia de ingesta, adaptador y job Spark se validó con 50 perfiles; 10,000 sigue siendo una meta separada no alcanzada.
+- [x] La meta de ingesta raw V2 de 10,000 perfiles aceptados se alcanzó en S3 privado y está respaldada por reconciliación y manifiestos.
+- [ ] La escala Spark de 10,000 perfiles, QC global y salidas Silver/Gold siguen pendientes; la prueba de 50 solo valida escala intermedia.
 - [ ] Forecast ML y anomaly outputs están probados/reproducidos y las limitaciones/splits visibles.
 - [x] El dashboard local tiene seis vistas que consumen Gold v2; pruebas sintéticas se identifican como tales y los candidatos no se presentan como eventos confirmados.
 - [x] S3 contiene el paquete Gold v2 con manifiesto y el HTML autónomo, publicados bajo prefijos privados de release.
-- [x] S3 contiene la salida derivada de la prueba Spark de un perfil, bajo un prefijo de validación privado; no se subieron crudos ni la salida de 50 perfiles.
+- [x] S3 contiene la salida derivada de la prueba Spark de un perfil, un lote piloto Spark de 5 perfiles y los 10,000 Parquet raw validados bajo prefijos privados separados; no se subió el resultado local de 50 perfiles.
 - [ ] La URL estable existe solo si CloudFront/OAC quedó realmente desplegado; de otro modo se declara S3 prefirmado temporal y se conserva ruta local.
 - [x] EMR/Kinesis/CloudFront/Budgets se revisaron en consola y se documentaron como denegados, inexistentes o sin presupuesto; la ejecución Spark se identifica como local.
 - [ ] Diagrama, fuente/cortes, hashes, comandos, atribución y guía para profesor son reproducibles.

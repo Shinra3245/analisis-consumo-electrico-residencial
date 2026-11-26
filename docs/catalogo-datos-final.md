@@ -2,14 +2,16 @@
 
 Versión revisada de la entrega de Brian García Mares (22030511), consultada el 17 de noviembre de 2026. Estados: **Confirmado**, **Pendiente**, **No verificado**. Términos y matriz de publicación: [decision-publicacion-datos.md](decision-publicacion-datos.md). El ZIP original no se incluye; se copiaron los artefactos derivados cuyo hash fue verificado.
 
-## Alcance real de lo descargado
+## Corte inicial de la entrega revisada (17-nov-2026)
 
 | Concepto | Estado |
 |---|---|
-| 10,000 perfiles ResStock | **Selección propuesta** (identificadores y URL), no descargada. |
-| Perfiles ResStock descargados y validados | **10** (piloto, Colorado y Nueva York, 64,509,497 bytes crudos). Los 10,000 no están descargados. |
-| Volumen estimado de 10,000 perfiles | Proyección de 350,400,000 intervalos y 64.51 GB crudos, extrapolada del piloto de 10; **no verificada**. |
-| Crudos enumerados en el manifiesto | **Pendiente:** el ZIP no los contiene; solo hashes y URL. |
+| Selección de 10,000 perfiles ResStock | **Candidatos**, no descargados en ese corte. |
+| Perfiles ResStock descargados y validados | **10** del piloto, Colorado y Nueva York (64,509,497 bytes crudos). |
+| Volumen de 10,000 perfiles | Proyección inicial de 350,400,000 intervalos y 64.51 GB crudos, extrapolada del piloto; no era una medición. |
+| Archivos crudos enumerados en el manifiesto del ZIP | No incluidos en el ZIP; solo se registraban sus hashes y URL. |
+
+**Estado actualizado (26-nov-2026):** la selección final v2 fue descargada y validada en S3 privado: 10,000 perfiles únicos, 35,040 filas cada uno. Este corte inicial no describe el estado actual. Para la selección final y su evidencia consulte [`decision-seleccion-resstock-final-v2.md`](decision-seleccion-resstock-final-v2.md). El procesamiento Spark/QC Silver/Gold de los 10,000 sigue pendiente. La proyección de 64.51 GB es histórica y no debe presentarse como tamaño medido del conjunto final.
 
 ## Inventario
 

@@ -22,7 +22,7 @@ Se cargaron desde la salida verificada del job Spark local y S3 reportó los cua
 | gold/v1/pilot/run_manifest.json | 4,253 | 514a7cbfd7cf05505d2adeef44e4b1fc8e187ffd7c52ac547f471be255a1257b |
 | gold/v1/pilot/quality_report.json | 12,945 | 8583afae33d28032f8afb5a74144b9c8c4b14900eb3ec92c7369c88e05771bd4 |
 
-Los Parquet son derivados (Gold): 120 filas ResStock mensual del piloto y 5,304 filas EIA mensual multestado. No se subieron archivos crudos ni Silver. El acceso del bucket se mantiene privado.
+Los Parquet de esta publicación son derivados (Gold): 120 filas ResStock mensual del piloto y 5,304 filas EIA mensual multestado; este release no incluía archivos crudos ni Silver. Después se cargaron 10,000 Parquet raw ResStock en prefijos privados separados (véase [`decision-seleccion-resstock-final-v2.md`](decision-seleccion-resstock-final-v2.md)). El acceso del bucket se mantiene privado.
 
 El Learner Lab es temporal. La URL deja de servir cuando vence o cuando expiran las credenciales de la sesión, lo que ocurra primero. Esto no es todavía alojamiento permanente del sitio.
 
@@ -44,6 +44,9 @@ El empaquetador incorpora demo/styles.css y demo/app.js dentro de demo/index.htm
 4. Abrir la URL en una ventana o navegador sin la sesión de AWS para confirmar el acceso.
 5. Compartir la URL solo durante la demostración. El bucket debe seguir bloqueando el acceso público.
 
-## Estado de otros servicios
+## Estado de otros servicios (Revalidado el 26-nov-2026)
 
-EMR Serverless mostró falta de permisos en la consola y no se creó una aplicación. Kinesis permitió abrir el formulario, pero no se creó un stream porque no hay consumidor cloud disponible. Por ahora Spark/replay se mantienen locales. CloudFront: se observó acceso de lectura parcial denegado, lo que no prueba que todas las acciones estén bloqueadas ni que exista una distribución; no hay URL permanente pública registrada. Estado observado el 2026-11-18, sin revalidar. La arquitectura completa de `arquitectura-aws-por-etapas.md` es objetivo, no lo implementado.
+- **EMR Serverless:** La API devolvió `AccessDeniedException` tanto en `ListApplications` como en `CreateApplication` (`no identity-based policy allows...`). No se puede usar cómputo administrado EMR en este entorno. Spark 4.0.1 se ejecutó en modo local dentro de CloudShell para el lote de prueba de cinco perfiles; el procesamiento global de 10,000 no se ha ejecutado.
+- **Amazon Kinesis:** La API permitió `ListStreams` (0 streams) y `DescribeLimits` (20,000 shards), pero no se creó un stream debido a que no existe consumidor cloud habilitado (al estar bloqueado EMR Serverless). El replay se mantiene local.
+- **CloudFront:** La API devolvió `AccessDenied` en `ListDistributions` y en `CreateDistribution` (`no identity-based policy allows...`). La consola web muestra 0 distribuciones. No es posible crear una CDN con HTTPS pública mediante CloudFront en Learner Lab; el acceso demostrativo a S3 se efectúa exclusivamente mediante URLs prefirmadas temporales directas sobre objetos privados.
+- **S3:** Bucket verificado con Block Public Access total activado y SSE-S3. La arquitectura completa con EMR y Kinesis en la nube queda como diseño objetivo, habiendo alcanzado el nivel factible en Learner Lab (alojamiento seguro de datos Gold y tablero web autocontenido en S3 privado).

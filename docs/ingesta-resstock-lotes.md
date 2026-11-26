@@ -1,8 +1,8 @@
 # Ingesta ResStock por lotes (reanudable e idempotente)
 
-`scripts/ingesta_resstock_lotes.py` prepara el camino hacia la meta de 10,000 perfiles ResStock sin confundir candidatos con datos descargados. Es independiente de `scripts/preparar_datos.py`, cuyo comportamiento piloto no cambia.
+`scripts/ingesta_resstock_lotes.py` documenta y permite repetir el flujo local controlado de perfiles ResStock. Es independiente de `scripts/preparar_datos.py`, cuyo comportamiento piloto no cambia. La meta raw de 10,000 se alcanzó después por la ruta S3 descrita más abajo.
 
-**Estado de verificación (26-nov-2026):** prueba runtime de 50 perfiles reales. Se aceptaron 50/50 perfiles, con 293,473,611 bytes y 1,752,000 intervalos; hubo cero rechazos, fallos o conflictos. La primera ejecución alcanzó su tope por ejecución después de 29 aceptados; `--continuar` descargó los 21 restantes con un nuevo tope. Quedan 9,950 IDs candidatos sin intentar. Esta prueba demuestra el flujo hasta 50 perfiles, no la meta de 10,000.
+**Estado local (26-nov-2026):** el método de descarga/consolidación local se probó con 50 perfiles, 293,473,611 bytes, 1,752,000 intervalos y cero incidentes; la ejecución local de 200 perfiles se documenta más abajo. La falta de disco detuvo este método local y sigue siendo un límite válido de esa ruta. Por separado, la ingesta S3 completó 10,000 perfiles raw aceptados (selección final v2), como se registra en [`decision-seleccion-resstock-final-v2.md`](decision-seleccion-resstock-final-v2.md). Esta ingesta cloud no equivale a Spark procesado.
 
 ## Conjuntos que nunca se mezclan
 
@@ -11,7 +11,7 @@
 | Candidatos | IDs de `datos/resstock_seleccion_propuesta.csv` (10,000 filas) | Archivo versionado; no son descargas |
 | Intentados | Perfiles con registro en `roster.jsonl` | Diario de la ingesta |
 | Descargados | Registros con bytes recibidos (aceptados o rechazados) | Diario |
-| Aceptados | Descargados que pasaron la validación Parquet | Diario; **único conjunto que cuenta como procesado** |
+| Aceptados | Perfiles raw descargados que pasaron las validaciones Parquet del ingestor | Diario; acredita raw válido, no ejecución de Spark ni QC Silver/Gold |
 
 El resumen informa `aceptados_sobre_meta` (por ejemplo `0/10000`) y nunca deriva un total procesado del tamaño de la selección. La selección es de cobertura de estratos, no una muestra representativa ni un estimador nacional.
 
@@ -94,3 +94,11 @@ Antes de leer cada perfil aceptado, `--consolidar` lo revalida: la ruta debe est
 La construcción ocurre en un staging hermano (`.consolidado.stage-*` dentro de `--output`): se escriben allí el Parquet, el CSV y el JSON, se comprueban filas, IDs y SHA-256, y solo entonces se renombra de forma atómica a `consolidado/`. Si algo falla, el staging se elimina y se puede reintentar. Un `consolidado/` preexistente (incluso vacío) se rechaza sin borrarlo; muévelo antes de volver a consolidar. **Ejecución observada:** además de una prueba inicial de 1 perfil, el 26-nov se consolidaron 50 perfiles y 1,752,000 filas; roster, conteos y hash coincidieron. El consolidado previo de 29 perfiles se conservó como respaldo local. Las salidas están bajo `data/raw/`, ignoradas por Git.
 
 El adaptador que prepara los cinco archivos y manifiestos requeridos está implementado en [`adaptar_lote_resstock_spark.py`](../scripts/adaptar_lote-resstock-spark.py). Se ejecutaron adaptador, empaquetador y job Spark con 50 perfiles; las 1,752,000 filas y los 50 IDs del roster coincidieron. Esto valida el flujo a escala intermedia, no prueba el procesamiento de 10,000 perfiles.
+
+## Bloque local de 200 perfiles y límite del disco (corte previo a la ingesta S3, 26-nov-2026)
+
+**Ejecución:** `python scripts/ingesta_resstock_lotes.py --descargar --offset 50 --limite 200 --concurrencia 4 --max-bytes-lote 1800000000 --output data/raw/resstock-bloque-50-250-20261126`. Es una salida nueva (ventana `[50, 250)` del orden estable, sin solape con los 50 ya verificados, que no se tocaron). Resultado: 200 aceptados, 0 rechazados/fallidos/conflictos; 1,248,659,514 bytes (media 6,243,297; mín. 2,547,464; máx. 7,573,947); 257 s de pared; RSS pico 150 MB en descarga y 597 MB al consolidar (30.5 s); 7,008,000 filas. Espacio libre en `/home` de 57.83 GB a 56.66 GB. Parquet consolidado SHA-256 `027b89b4…c3e3` (84,267,422 bytes); `roster.jsonl` `d86431ef…59c3`.
+
+**Cifras acumuladas:** 250 aceptados (50 + 200), 9,750 pendientes. Media observada 6,168,532 bytes/perfil, por lo que los 9,750 restantes requieren ≈ 60.1 GB de crudos, más ≈ 4.1 GB del Parquet consolidado (≈ 421 KB/perfil) y espacio para entrada/salida Spark. El host dispone de ≈ 56.7 GB (52.8 GiB) y no hay otro volumen persistente grande: faltan ≥ 3.5 GB solo para los crudos, y ≈ 10 GB o más contando consolidación y margen. A 1.29 s/perfil (concurrencia 4) la descarga restante tomaría ≈ 3.5 h; el límite es el disco, no el tiempo.
+
+**Decisión histórica para la ruta local:** no se descargó el resto en el disco del host por falta de capacidad. La meta raw se completó después mediante ingesta directa a S3, sin usar ese disco; ver [`Estado y evidencia actual de Scale-10k`](ingesta-resstock-s3-privado.md#estado-y-evidencia-actual-de-scale-10k). El procesamiento Spark global de los 10,000 sigue pendiente.

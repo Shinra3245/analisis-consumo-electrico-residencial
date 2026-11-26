@@ -1,0 +1,162 @@
+{
+  "manifest_version": "1.0",
+  "integrated_date": "2026-11-26",
+  "note": "Release v2: selection CSV with 2 documented replacements; raw validated in S3 (10,000 profiles); Spark/QC downstream not yet executed. Other artifacts unchanged from v1 (this folder materializes only eia, clima and the selection).",
+  "artifacts": [
+    {
+      "file": "eia_residencial_mensual.csv",
+      "format": "csv",
+      "bytes": 171187,
+      "rows": 5304,
+      "sha256": "dff80ba19688732949ef340046e1257eab4bb1e206b0480162b7ed61fba9f93a",
+      "source": "EIA-861M Monthly-States",
+      "source_url": "https://www.eia.gov/electricity/data/eia861m/xls/sales_revenue.xlsx",
+      "license": "U.S. EIA public reuse policy; cite source and publication date",
+      "transform": "Filter years 2018-2026, residential sector, normalize to CSV; exact replay of XLSX SHA-256 c7963ad7c9bd2020cc7472f100a9c5330a4dff97a62be95407137a14b9c4044e"
+    },
+    {
+      "file": "cobertura_eia.csv",
+      "format": "csv",
+      "bytes": 15625,
+      "rows": 459,
+      "sha256": "51f80a45eeca0e6606fb9d44d827a76591d50becd65effbf65af07a6901e210c",
+      "source": "EIA-861M Monthly-States",
+      "source_url": "https://www.eia.gov/electricity/data/eia861m/xls/sales_revenue.xlsx",
+      "license": "U.S. EIA public reuse policy; cite source and publication date",
+      "transform": "Aggregate month status and sales by year/state/sector from eia_residencial_mensual.csv"
+    },
+    {
+      "file": "clima_open_meteo_muestra.csv",
+      "format": "csv",
+      "bytes": 29891,
+      "rows": 336,
+      "sha256": "c73e7c14b7c1d6c5b72ef158b35b061fb2c6da213798c99993aee398503f10a6",
+      "source": "Open-Meteo Historical Weather API, ERA5-Land",
+      "source_url": "https://open-meteo.com/en/docs/historical-weather-api",
+      "license": "CC BY 4.0; free API use non-commercial under Open-Meteo Terms",
+      "transform": "Two Colorado locations, 2018-01-01 through 2018-01-07, hourly UTC, temperature_2m in Celsius; normalized JSON response to CSV. Raw JSON absent from delivered archive."
+    },
+    {
+      "file": "resstock_perfiles_piloto.parquet",
+      "format": "parquet",
+      "bytes": 1976684,
+      "rows": 350400,
+      "sha256": "87b5d725858a5726b3c191df1251c63c30e4abcd484fefd41aefa2b7cd34975b",
+      "source": "ResStock 2025 Release 1, AMY 2018, upgrade=0",
+      "source_url": "https://data.openei.org/submissions/4520",
+      "license": "CC BY 4.0; academic research use, preserve disclaimer and attribution",
+      "transform": "10 selected individual profiles concatenated and columns renamed to bldg_id/timestamp_fin_local/electricidad_kwh; source Parquet files absent from delivered archive."
+    },
+    {
+      "file": "resstock_seleccion_propuesta.csv",
+      "format": "csv",
+      "bytes": 2812952,
+      "rows": 10000,
+      "sha256": "247394923fd54ad52528a4913e53bec4e330e26f0734bf0a15cea3f67482199d",
+      "source": "ResStock 2025 Release 1 national metadata, upgrade=0",
+      "source_url": "https://data.openei.org/submissions/4520",
+      "license": "CC BY 4.0; academic research use, preserve disclaimer and attribution",
+      "transform": "Stratified candidate selection of 10,000 IDs/URLs (random.Random(22030511), 254 strata, original quotas); v2 = v1 with 2 same-index same-stratum replacements for IDs permanently rejected by profile validation (negative energy). Raw Parquet of the 10,000 IDs validated in private S3; Spark/QC/Silver/Gold downstream NOT yet run.",
+      "derived_from": {
+        "file": "resstock_seleccion_propuesta.csv",
+        "sha256": "caaf96067883d6a7c2b79010647614e66bd631f6d30aab38190015a4a2a8f826",
+        "bytes": 2812952,
+        "rows": 10000,
+        "replacements": [
+          {
+            "index": 9812,
+            "replaces_bldg_id": 294772,
+            "bldg_id": 432862,
+            "condado_codigo": "G5501250",
+            "peso_viviendas": 253.90367272727272,
+            "estado": "WI",
+            "tipo_vivienda": "Single-Family Detached",
+            "upgrade": 0
+          },
+          {
+            "index": 1717,
+            "replaces_bldg_id": 481740,
+            "bldg_id": 491767,
+            "condado_codigo": "G0900030",
+            "peso_viviendas": 253.90367272727272,
+            "estado": "CT",
+            "tipo_vivienda": "Multi-Family with 2 - 4 Units",
+            "upgrade": 0
+          }
+        ],
+        "metadata": {
+          "archivo": "metadata_and_annual_results/national/full/parquet/upgrade0.parquet",
+          "etag": "dcaa5c1d994a279be79d1dbc061e078d-9",
+          "version_id": "hCkLSyMEL7M9_swgWRQhzTkqdRK2HS6d",
+          "last_modified": "2025-10-21T12:24:44Z",
+          "bytes": 465060991,
+          "filas": 549971,
+          "lectura": "rangos (2,486,799 bytes), If-Match ETag"
+        },
+        "validation_status": "raw_validated_s3_pending_spark",
+        "raw_validation": {
+          "fecha": "2026-11-26",
+          "fuente": "adenda de verificación de Antigravity sobre el almacén S3 privado (sin identificar bucket, cuenta ni credenciales)",
+          "perfiles_unicos_aceptados": 10000,
+          "primarios": 9998,
+          "reemplazos": [
+            432862,
+            491767
+          ],
+          "filas_por_perfil": 35040,
+          "verificado": [
+            "SHA-256/checksum",
+            "ContentLength",
+            "relectura exacta"
+          ],
+          "manifiestos_ingesta": 25,
+          "clave_canonica": "raw/resstock/scale10k/<release>/<bldg_id>.parquet (la que resuelve procesar_resstock_s3_lotes.py)",
+          "rechazados_historicos": [
+            {
+              "bldg_id": 294772,
+              "estado": "WI",
+              "tipo_vivienda": "Single-Family Detached",
+              "motivo": "energía negativa",
+              "situacion": "aislado; excluido de la selección v2 y del conteo; conservado en el diario original"
+            },
+            {
+              "bldg_id": 481740,
+              "estado": "CT",
+              "tipo_vivienda": "Multi-Family with 2 - 4 Units",
+              "motivo": "energía negativa",
+              "situacion": "aislado; excluido de la selección v2 y del conteo; conservado en el diario original"
+            }
+          ]
+        },
+        "downstream": {
+          "spark_qc_gold_ejecutado": false,
+          "aviso": "El job Spark, el QC de 21 reglas y los Silver/Gold NO se han ejecutado sobre la selección v2 a escala 10,000. Este estado solo acredita raw válido en S3; no acredita 10,000 perfiles procesados."
+        }
+      }
+    },
+    {
+      "file": "resstock_cobertura_estratos.csv",
+      "format": "csv",
+      "bytes": 9494,
+      "rows": 254,
+      "sha256": "0609af77240580337285ab0b987765ef9d923332a4acf9ea5b89684bdb311519",
+      "source": "ResStock 2025 Release 1 national metadata, upgrade=0",
+      "source_url": "https://data.openei.org/submissions/4520",
+      "license": "CC BY 4.0; academic research use, preserve disclaimer and attribution",
+      "transform": "Candidate and proposed quota counts by state and RECS housing type."
+    },
+    {
+      "file": "demo_colorado_2018_verificacion.csv",
+      "format": "csv",
+      "bytes": 579,
+      "rows": 12,
+      "sha256": "a2509408d2eba973887d3a18c1cf9e18c089b89e79c993959cff092b2e37f8d0",
+      "source": "ResStock aggregate Colorado + EIA-861M",
+      "source_url": "https://data.openei.org/submissions/4520; https://www.eia.gov/electricity/data/eia861m/",
+      "license": "ResStock CC BY 4.0 and EIA reuse policy; preserve both attributions",
+      "transform": "Monthly comparison delivered by Brian; reported ratio is descriptive across different populations. Not independently recomputed from the absent ResStock aggregate raw file."
+    }
+  ],
+  "release_id": "resstock-seleccion-final-v2",
+  "supersedes_manifest_sha256": "47f05d508bf37ece7b756da64e5f7e6875a5c2836314947409e837095cc98f72"
+}

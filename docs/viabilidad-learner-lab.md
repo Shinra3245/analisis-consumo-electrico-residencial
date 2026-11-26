@@ -2,7 +2,7 @@
 
 **Fecha del registro:** 2026-11-26 (revalidación en consola de S3, Budgets, EMR Serverless, Kinesis y CloudFront)
 
-**Estado actual:** Learner Lab `Ready` en `us-east-1`. El medidor mostró USD 1.20 de USD 50; no es presupuesto ni límite duro. Se confirmó que no hay Budgets configurados ni streams Kinesis; EMR Serverless devuelve `AccessDeniedException` al listar aplicaciones y CloudFront devuelve `AccessDenied` al listar distribuciones. En S3 se verificaron la release privada Gold/web de 14 objetos y la salida privada de validación Spark de un perfil (7 archivos de datos/reporte y 5 marcadores `_SUCCESS`, 12 objetos). Se verificaron Content-Type, SSE-S3 y Block Public Access; versionado deshabilitado. No se creó URL prefirmada ni se cambió configuración de acceso.
+**Estado actual:** Learner Lab `Ready` en `us-east-1`. El medidor se observó en USD 1.20 de USD 50 durante la revalidación del 26-nov; no es un presupuesto ni un tope duro. No hay Budgets configurados ni streams Kinesis. EMR Serverless devuelve `AccessDeniedException` en lectura y creación; CloudFront devuelve `AccessDenied` en lectura y creación. En S3 se verificaron la release Gold v2/web, la validación Spark de un perfil, un lote real S3 → Spark → S3 de 5 perfiles, y la ingesta raw Scale-10k (10,000 Parquet únicos; véase [`decision-seleccion-resstock-final-v2.md`](decision-seleccion-resstock-final-v2.md)). El lote de 5 generó 175,200 filas Silver y 60 Gold mensual, con 21/21 reglas QC aprobadas, cuatro objetos derivados verificados y marca de commit. Ese piloto no es procesamiento de la selección v2 de 10,000: Spark/QC global y Silver/Gold de escala siguen pendientes. SSE-S3 y Block Public Access continúan verificados; versionado deshabilitado. No se generó una URL pública estable.
 
 El Learner Lab es temporal y no productivo. Sus recursos y su medidor no se extrapolan a una cuenta AWS real. No se incluyen identificadores, correos, ARN, credenciales, tokens ni nombres de buckets.
 
@@ -20,12 +20,12 @@ El Learner Lab es temporal y no productivo. Sus recursos y su medidor no se extr
 
 | Servicio | Estado observado | Evidencia y próximo paso |
 |---|---|---|
-| S3 | Releases privadas publicadas y verificadas | Se publicaron 14 objetos Gold v2/web y 12 objetos de validación Spark de 1 perfil bajo prefijos separados. Se verificaron Content-Type, SSE-S3 y Block Public Access. No hay URL pública ni prefirmada nueva; versionado deshabilitado. El HTML v1 de 56,429 bytes y la URL temporal del 18-nov son evidencia histórica distinta. |
-| Kinesis Data Streams | 0 streams | Listado verificado el 26-nov; no se creó stream. El replay permanece local, sin consumidor cloud preparado. |
-| EMR Serverless | Denegado en la acción verificada | `ListApplications` devolvió `AccessDeniedException`. No se creó aplicación ni se inició cómputo; Spark 4.0.1 se ejecutó localmente. |
-| CloudFront | 0 distribuciones; listado denegado | La consola mostró `AccessDenied` al consultar distribuciones. No se desplegó CloudFront/OAC ni hay URL estable. |
-| AWS Budgets | 0 presupuestos | Lista verificada el 26-nov. El medidor de Learner Lab no reemplaza un Budget; no se creó uno durante esta revisión. |
-| IAM | Parcial o bloqueado | La lista de roles muestra `LabRole`; `iam:GetPolicy`, `access-analyzer:ListPolicyGenerations` y `account:GetAccountInformation` devolvieron `AccessDenied`. No se crearán roles ni se intentará ampliar permisos. |
+| S3 | Releases y raw privados publicados y verificados | Se publicaron Gold v2/web, 12 objetos de validación Spark de 1 perfil, un lote Spark real de 5 perfiles (4 objetos derivados más marca de commit) y 10,000 raws ResStock v2 bajo prefijos separados. El lote de 5 tuvo readback y 21/21 QC; no equivale a procesar los raws v2. Se verificaron Content-Type, SSE-S3 y Block Public Access. No hay URL pública estable; versionado deshabilitado. |
+| Kinesis Data Streams | 0 streams (lectura permitida) | `ListStreams` devolvió 0 streams; `DescribeLimits` reportó límite de 20,000 shards. No se creó stream para evitar costos estériles, dado que EMR Serverless está denegado y no existe consumidor cloud en el entorno. |
+| EMR Serverless | Denegado en lectura y creación | `ListApplications` y `CreateApplication` devolvieron `AccessDeniedException` (`no identity-based policy allows...`). No es posible ejecutar cómputo cloud en Learner Lab; el pipeline Spark 4.0.1 se mantiene localmente reproducible. |
+| CloudFront | 0 distribuciones; API denegada en lectura y creación | `ListDistributions` y `CreateDistribution` devolvieron `AccessDenied` (`no identity-based policy allows...`). La consola web visual mostró 0 distribuciones sin error modal, pero la API deniega la creación. No es viable configurar CDN/HTTPS pública en este entorno. |
+| AWS Budgets | 0 presupuestos (lectura permitida) | `DescribeBudgets` devolvió 0 presupuestos. El medidor de Learner Lab no reemplaza un Budget; consumo monitoreado directamente en Vocareum. |
+| IAM | Parcial o bloqueado | La sesión asume `voclabs/LabRole`; llamadas administrativas y de ampliación devuelven `AccessDenied`. No se intentan eludir políticas. |
 
 ## 3. Límites y control de riesgo
 

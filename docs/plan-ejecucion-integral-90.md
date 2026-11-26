@@ -3,6 +3,8 @@
 **Alcance:** demostrador académico integrado conforme a la propuesta V2.  
 **Estado:** plan organizado por requisitos, dependencias y evidencia. Actualización de ejecución al 18 de noviembre de 2026: ya se creó un bucket S3 privado, se cargó la demo autónoma y se guardaron dos tablas Gold más manifiesto/reporte. EMR Serverless negó permisos; Kinesis y CloudFront no están desplegados. Para la sesión temporal del Learner Lab se avanza sin esperar confirmación externa y se usa alternativa local cuando un permiso falta; ver [registro de viabilidad](viabilidad-learner-lab.md).
 
+**Actualización posterior (26-nov-2026):** la ingesta raw final v2 llegó a 10,000 perfiles únicos validados en S3 privado (350,400,000 intervalos); el Gold del dashboard sigue siendo el piloto de 10 perfiles. El procesamiento Spark/QC/Silver/Gold a escala 10,000 aún no está realizado.
+
 ## 1. Qué exige el curso y qué propone el proyecto
 
 ### Requisitos confirmados en el material del curso
@@ -26,7 +28,7 @@
 
 | Área | Ya existe | Falta para cerrar la propuesta |
 |---|---|---|
-| Datos | 10 perfiles ResStock en un Parquet (350,400 filas), 10,000 IDs candidatos, 5,304 registros EIA y 336 horas-punto climáticas. | Decidir el tamaño de la muestra de trabajo con medición de volumen/costo; completar el histórico y cobertura climática necesarios para el análisis seleccionado; conservar atribución y trazabilidad. |
+| Datos (corte inicial del plan) | 10 perfiles ResStock en un Parquet (350,400 filas), selección candidata de 10,000 IDs, 5,304 registros EIA y 336 horas-punto climáticas. | Actualización 26-nov: selección final v2 con 10,000 perfiles raw en S3 privado y 350,400,000 intervalos; Spark/QC/Gold a esa escala aún pendiente. |
 | Procesamiento | Contrato de datos, guía Spark, scripts EIA y de preparación, hashes del piloto. | Implementar y ejecutar pipelines Spark reproducibles de lote y flujo, con particiones, linaje, controles y resultados persistentes. |
 | Aplicación | Demo web estática local con gráficas y filtros. | Cargar Gold generado desde datos, completar las vistas funcionales y publicar con acceso seguro. |
 | Nube | Bucket privado S3, demo HTML y artefactos Gold del piloto ya cargados; URL prefirmada de dos horas verificada. | EMR Serverless fue denegado por permisos; Kinesis no se creó por falta de consumidor cloud; CloudFront no está desplegado. Continuar Spark local y reintentar servicios solo si el entorno lo permite con el costo acotado. |
@@ -173,7 +175,7 @@ El orden se define por lo que necesita cada bloque para funcionar y por sus crit
 | Fase | Requisitos y actividades | Evidencia para cerrar la fase | Dependencia |
 |---|---|---|---|
 | 0. Trazabilidad de alcance | Mapear cada compromiso de la propuesta V2 a datos, procesamiento, analítica, aplicación y evidencia. Separar requisitos del curso, compromisos de la propuesta y decisiones opcionales. | Matriz de requisitos sin criterios inventados; alcance de demostrador escrito. | Ninguna. |
-| 1. Datos y gobernanza | Validar fuentes, licencias/atribución, cobertura, formatos, unidades y zona horaria. Medir disponibilidad y volumen del subconjunto; distinguir los 10,000 IDs candidatos de perfiles descargados. | Catálogo y manifiesto verificados; decisión de uso; volumen observado y pendientes visibles. | Fase 0. |
+| 1. Datos y gobernanza | Mantener atribución/licencias y distinguir v1 de la selección raw final v2; validar roster y hashes antes de Spark. | Raw Scale-10k verificado en S3; Spark/QC/Gold deben seguir registrándose como etapas separadas. | Fase 0. |
 | 2. Contratos y calidad local | Fijar esquemas y llaves por fuente, reglas de calidad, zonas horarias y condiciones de unión. Implementar transformaciones reproducibles y probarlas con la muestra local. | Contrato versionado, reporte de calidad, conteos reproducibles y salida Parquet/Gold de referencia. | Fase 1. |
 | 3. Base cloud segura y presupuesto | Acordar cuenta responsable, permisos mínimos, región, cuota, presupuesto máximo y costo por operación. Preparar S3 privado, roles y observabilidad sin subir todo el conjunto. | Estimación fechada; presupuesto y alertas configurados; políticas revisadas; acceso público bloqueado. | Fase 2. No crear recursos facturables antes de esta puerta. |
 | 4. Spark batch en EMR | Reutilizar la lógica validada localmente; procesar una muestra pequeña en EMR Serverless; producir salidas Bronze/Silver/Gold en S3 y medir costo/tiempo/filas. | Resultados cotejados con local, logs y métricas, configuración limitada y workers detenidos. | Fases 2 y 3. |
